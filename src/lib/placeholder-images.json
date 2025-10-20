@@ -1,3 +1,70 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-image-1",
+      "description": "Modern printing press in action",
+      "imageUrl": "https://images.unsplash.com/photo-1562155695-fb6e1f95fcfd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwcmludGluZyUyMHByZXNzfGVufDB8fHx8MTc2MDk0NzM0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "printing press"
+    },
+    {
+      "id": "product-business-cards",
+      "description": "Stack of stylish business cards",
+      "imageUrl": "https://images.unsplash.com/photo-1623305465231-d884ce752d59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxidXNpbmVzcyUyMGNhcmRzfGVufDB8fHx8MTc2MDk0NzM0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business cards"
+    },
+    {
+      "id": "product-flyers",
+      "description": "Colorful promotional flyers",
+      "imageUrl": "https://images.unsplash.com/photo-1630734242356-a6f858790740?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmbHllcnN8ZW58MHx8fHwxNzYwOTQ3MzQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "flyers"
+    },
+    {
+      "id": "product-posters",
+      "description": "A large, vibrant poster hanging on a wall",
+      "imageUrl": "https://images.unsplash.com/photo-1621974182258-ce59c657267d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwb3N0ZXIlMjBkZXNpZ258ZW58MHx8fHwxNzYwOTMxNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "poster design"
+    },
+    {
+      "id": "product-brochures",
+      "description": "Folded company brochures on a table",
+      "imageUrl": "https://images.unsplash.com/photo-1642530026057-56d62e6adf29?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxicm9jaHVyZXN8ZW58MHx8fHwxNzYwOTQ3MzQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brochures"
+    },
+    {
+      "id": "product-banners",
+      "description": "Large vinyl banner for an event",
+      "imageUrl": "https://images.unsplash.com/photo-1562809683-67b524a5ce11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2aW55bCUyMGJhbm5lcnxlbnwwfHx8fDE3NjA5NDczNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vinyl banner"
+    },
+    {
+      "id": "product-stickers",
+      "description": "Assortment of custom stickers",
+      "imageUrl": "https://images.unsplash.com/photo-1496326864168-be8e45080478?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjdXN0b20lMjBzdGlja2Vyc3xlbnwwfHx8fDE3NjA5NDczNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "custom stickers"
+    },
+    {
+      "id": "product-tshirt",
+      "description": "Custom printed t-shirt",
+      "imageUrl": "https://images.unsplash.com/photo-1564864310852-e1e98eb07010?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwcmludGVkJTIwdC1zaGlydHxlbnwwfHx8fDE3NjA5NDczNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "printed t-shirt"
+    },
+    {
+      "id": "product-mugs",
+      "description": "Coffee mugs with custom logos",
+      "imageUrl": "https://images.unsplash.com/photo-1584761657361-45b0fa848469?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwcmludGVkJTIwbXVnc3xlbnwwfHx8fDE3NjA5NDczNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "printed mugs"
+    },
+    {
+      "id": "about-us-image",
+      "description": "A team of designers collaborating",
+      "imageUrl": "https://images.unsplash.com/photo-1553877522-43269d4ea984?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZXNpZ24lMjB0ZWFtfGVufDB8fHx8MTc2MDk0NzM0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "design team"
+    },
+    {
+      "id": "contact-us-image",
+      "description": "A modern office front desk",
+      "imageUrl": "https://images.unsplash.com/photo-1677272292936-8d9d6e714c2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvZmZpY2UlMjByZWNlcHRpb258ZW58MHx8fHwxNzYwOTQ3MzQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "office reception"
+    }
+  ]
 }
