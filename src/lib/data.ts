@@ -43,3 +43,17 @@ export async function getProductById(id: string): Promise<Product | undefined> {
 
   return data;
 }
+
+export async function getAppBackground(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('app_background')
+    .single();
+
+  if (error) {
+    console.error('Error fetching app background:', error);
+    return null;
+  }
+
+  return data?.app_background || null;
+}
