@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/toaster';
 import { getAppBackground } from '@/lib/data';
 
@@ -11,7 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const backgroundUrl = await getAppBackground();
+  let backgroundUrl;
+  try {
+    backgroundUrl = await getAppBackground();
+  } catch (error) {
+    console.error("Failed to fetch app background, proceeding without it:", error);
+    backgroundUrl = null;
+  }
 
   return (
     <html lang="ru">
@@ -23,7 +28,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased flex flex-col min-h-screen">
+      <body className="font-body antialiased h-screen w-screen overflow-hidden">
         {backgroundUrl && (
           <video
             className="fixed -z-10 w-full h-full object-cover"
@@ -34,10 +39,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             playsInline
           />
         )}
-        <div className="relative z-10 flex flex-col min-h-screen">
+        <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
           <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          <main className="h-full overflow-y-auto">{children}</main>
         </div>
         <Toaster />
       </body>

@@ -1,35 +1,59 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://firebase.google.com/docs/studio/customize-workspace
-{pkgs}: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.11"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
+{ pkgs, ... }: { # Добавили "..." для полной совместимости Nix
+  # Используемый канал nixpkgs.
+  channel = "stable-24.11";
+
+  # Используй https://search.nixos.org/packages для поиска пакетов
   packages = [
-    pkgs.nodejs_20
-    pkgs.zulu
-    pkgs.gh
+    pkgs.nodejs_20 # Важно для TypeScript/JavaScript
+    # pkgs.zulu   # Раскомментируй, если нужен Java (JDK)
+    # pkgs.gh     # Раскомментируй, если нужен GitHub CLI
   ];
-  # Sets environment variables in the workspace
-  env = {};
-  # This adds a file watcher to startup the firebase emulators. The emulators will only start if
-  # a firebase.json file is written into the user's directory
-  services.firebase.emulators = {
-    # Disabling because we are using prod backends right now
-    detect = false;
-    projectId = "demo-app";
-    services = ["auth" "firestore"];
-  };
+
+  # Устанавливает переменные окружения в рабочем пространстве
+  env = {}; # Ты можешь добавить сюда переменные окружения, например: MY_API_KEY="your_key"
+
   idx = {
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+    # Ищи расширения на https://open-vsx.org/ и используй "publisher.id"
     extensions = [
+      # "angular.ng-template" # Пример, раскомментируй, если нужно
       # "vscodevim.vim"
     ];
+
+    # Включает и настраивает превью для твоего веб-приложения
+    previews = {
+      enable = true;
+      previews = {
+        web = {
+          command = [
+            "npm"
+            "run"
+            "dev"
+            "--"
+            "--port"
+            "$PORT"
+            "--hostname"
+            "0.0.0.0"
+          ];
+          manager = "web";
+          # При необходимости укажи директорию, содержащую твоё веб-приложение (например, "frontend" или "app/client")
+          # cwd = "app/client";
+        };
+      };
+    };
+
     workspace = {
       onCreate = {
         default.openFiles = [
           "src/app/page.tsx"
         ];
-      }
+      };
     };
   };
+
+  # Если ты хочешь запускать эмуляторы Firebase, тебе нужно включить их явно:
+  # services.firebase.emulators = {
+  #   detect = true; # Установи true, чтобы Firebase Studio пыталась запустить эмуляторы
+  #   projectId = "remontprinterovorder"; # Используй свой Project ID
+  #   services = ["auth" "firestore"]; # Укажи, какие эмуляторы нужны
+  # };
 }
