@@ -15,14 +15,18 @@ export async function getAllProducts(): Promise<Product[]> {
   return data;
 }
 
-export async function getFeaturedProducts(count: number): Promise<Product[]> {
-    const { data, error } = await supabase
+export async function getFeaturedProducts(ids: number[]): Promise<Product[]> {
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
     .from('products')
     .select('*')
-    .limit(count);
+    .in('id', ids);
 
   if (error) {
-    console.error('Error fetching featured products:', error);
+    console.error('Error fetching featured products by IDs:', error);
     return [];
   }
 

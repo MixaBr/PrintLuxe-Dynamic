@@ -1,21 +1,26 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import Link from 'next/link'; // Added Link import
 import Slide from '@/components/layout/Slide';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import type { HomePageData } from '@/lib/slide-data';
 import type { Product } from '@/lib/data';
+import ProductCard from '@/components/products/ProductCard';
 
 interface HomePageClientProps {
+  homePageData: HomePageData;
   featuredProducts: Product[];
 }
 
-export default function HomePageClient({ featuredProducts }: HomePageClientProps) {
+export default function HomePageClient({ homePageData, featuredProducts }: HomePageClientProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const slide1Ref = useRef<HTMLDivElement>(null);
   const slide2Ref = useRef<HTMLDivElement>(null);
   const slide3Ref = useRef<HTMLDivElement>(null);
+  const slide4Ref = useRef<HTMLDivElement>(null);
 
-  const slideRefs = [slide1Ref, slide2Ref, slide3Ref];
+  const slideRefs = [slide1Ref, slide2Ref, slide3Ref, slide4Ref];
   const [visibleSlide, setVisibleSlide] = useState(0);
 
   useEffect(() => {
@@ -57,35 +62,91 @@ export default function HomePageClient({ featuredProducts }: HomePageClientProps
   return (
     <div className="relative h-full">
       <div ref={scrollContainerRef} className="snap-y snap-mandatory h-full overflow-y-scroll no-scrollbar">
-        {/* Slide 1 */}
+        {/* Slide 1 - Hero */}
         <div ref={slide1Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
             <div className="text-center text-white">
-              <h1 className="text-4xl md:text-6xl font-bold font-headline">Добро пожаловать в PrintLuxe</h1>
-              <p className="mt-4 text-lg md:text-xl">Ваш надежный партнер в мире дизайна и печати.</p>
+              {homePageData?.error ? (
+                <>
+                  <h1 className="text-4xl md:text-6xl font-bold font-headline text-red-500">Ошибка загрузки</h1>
+                  <p className="mt-4 text-lg md:text-xl">{homePageData.error}</p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-4xl md:text-6xl font-bold font-headline">{homePageData?.hero?.title}</h1>
+                  <p className="mt-4 text-lg md:text-xl">{homePageData?.hero?.subtitle}</p>
+                </>
+              )}
             </div>
           </Slide>
         </div>
 
-        {/* Slide 2 */}
+        {/* Slide 2 - Featured Parts */}
         <div ref={slide2Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
-            <div className="text-center text-white">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline">Наши лучшие предложения</h2>
-              {/* Featured products will be displayed here */}
+            <div className="flex flex-col items-center text-center text-white w-full max-w-6xl mx-auto h-full px-4 py-8 md:py-16">
+                <div>
+                    <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.featured?.title}</h2>
+                    <p className="mt-4 text-lg md:text-xl">{homePageData?.featured?.subtitle}</p>
+                    {featuredProducts?.length > 0 ? (
+                        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {featuredProducts.map(product => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="mt-8">Рекомендуемые товары скоро появятся.</p>
+                    )}
+                </div>
+                <div className="mt-auto">
+                    <Link href="/catalog" className="mt-8 inline-block bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-3 px-8 rounded hover:bg-white/30 transition-colors duration-200 text-lg">
+                        В каталог
+                    </Link>
+                </div>
             </div>
           </Slide>
         </div>
 
-        {/* Slide 3 */}
+        {/* Slide 3 - Services */}
         <div ref={slide3Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
-            <div className="text-center text-white">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline">Свяжитесь с нами</h2>
-              <p className="mt-4 text-lg md:text-xl">Готовы начать проект? Мы всегда на связи.</p>
+            <div className="text-center text-white w-full max-w-4xl mx-auto">
+                <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.services?.title}</h2>
+                <p className="mt-4 text-lg md:text-xl">{homePageData?.services?.subtitle}</p>
+                {(homePageData?.services?.list || []).length > 0 && (
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                        {(homePageData.services.list || []).map(service => (
+                            <div key={service.title} className="bg-white/10 p-6 rounded-lg">
+                                <h3 className="font-bold text-xl">{service.title}</h3>
+                                <p className="mt-2 opacity-80">{service.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
           </Slide>
         </div>
+
+        {/* Slide 4 - Benefits */}
+        <div ref={slide4Ref} className="h-full w-full flex-shrink-0 snap-start">
+          <Slide>
+            <div className="text-center text-white w-full max-w-4xl mx-auto">
+                <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.benefits?.title}</h2>
+                <p className="mt-4 text-lg md:text-xl">{homePageData?.benefits?.subtitle}</p>
+                {(homePageData?.benefits?.list || []).length > 0 && (
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                        {(homePageData.benefits.list || []).map(benefit => (
+                            <div key={benefit.title} className="bg-white/10 p-6 rounded-lg">
+                                <h3 className="font-bold text-xl">{benefit.title}</h3>
+                                <p className="mt-2 opacity-80">{benefit.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+          </Slide>
+        </div>
+
       </div>
 
       {/* Fixed Navigation Buttons */}
