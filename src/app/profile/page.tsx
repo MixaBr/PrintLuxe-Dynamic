@@ -42,36 +42,32 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-12 md:px-8 md:py-16 space-y-8">
+    <div className="container mx-auto px-4 py-8 md:px-8 space-y-8">
       {/* Horizontal Menu Bar */}
-      <Card>
-        <CardContent className="p-2">
-            <nav className="flex flex-wrap items-center gap-2">
-                {menuItems.map(item => (
-                <Button
-                    key={item.href}
-                    variant="ghost"
-                    asChild
-                    className={cn(
-                        "justify-start gap-2",
-                        item.danger && "text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    )}
-                >
-                    <Link href={item.href}>
-                    {item.icon}
-                    <span>{item.label}</span>
-                    </Link>
-                </Button>
-                ))}
-                <form action={handleLogout} className="ml-auto">
-                    <Button variant="outline" className="font-bold">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Выйти
-                    </Button>
-                </form>
-            </nav>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center justify-center gap-2 -mt-4">
+        {menuItems.map(item => (
+          <Button
+            key={item.href}
+            variant="ghost"
+            asChild
+            className={cn(
+                "bg-white/50 text-black hover:bg-white flex-1 min-w-[150px] transition-colors duration-200",
+                item.danger && "text-destructive hover:bg-destructive/10 hover:text-destructive"
+            )}
+          >
+            <Link href={item.href}>
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          </Button>
+        ))}
+        <form action={handleLogout} className="flex-1 min-w-[150px]">
+            <Button variant="ghost" className="w-full bg-white/50 text-black hover:bg-white font-bold">
+                <LogOut className="mr-2 h-4 w-4" />
+                Выйти
+            </Button>
+        </form>
+      </div>
 
       {/* Main Profile Content */}
       <Card>
