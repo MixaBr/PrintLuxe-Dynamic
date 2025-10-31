@@ -95,7 +95,7 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
               <User 
                 className={cn(
                   "h-6 w-6 group-hover:text-blue-900 transition-colors",
-                  isAuthenticated ? "text-primary" : "text-white"
+                  isAuthenticated ? "text-destructive" : "text-white"
                 )} 
                 strokeWidth={3} 
               />
