@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Trash2, Home, User, Mail, Phone, Calendar, BarChart2, Save } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProfile } from "./actions";
+import { DeleteAccountButton } from "./DeleteAccountButton"; // Import the new component
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -40,12 +41,12 @@ export default async function ProfilePage() {
     redirect("/login");
   };
 
+  // Removed the 'Delete Account' item from this array
   const menuItems = [
     { href: "/profile/orders", label: "Мои заказы", icon: <ShoppingCart /> },
     { href: "/profile/payments", label: "Мои оплаты", icon: <CreditCard /> },
     { href: "/profile/purchases", label: "Мои покупки", icon: <ShoppingBag /> },
     { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star /> },
-    { href: "/profile/delete", label: "Удалить аккаунт", icon: <Trash2 />, danger: true },
   ];
   
   const addresses = profile?.addresses || [];
@@ -53,7 +54,6 @@ export default async function ProfilePage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
-        // Supabase returns date as 'YYYY-MM-DD'
         return format(new Date(dateString), 'yyyy-MM-dd');
     } catch (e) {
         return '';
@@ -70,8 +70,7 @@ export default async function ProfilePage() {
             variant="ghost"
             asChild
             className={cn(
-                "bg-white/50 text-black hover:bg-white hover:text-black flex-1 min-w-[150px] transition-colors duration-200",
-                item.danger && "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                "bg-white/50 text-black hover:bg-white hover:text-black flex-1 min-w-[150px] transition-colors duration-200"
             )}
           >
             <Link href={item.href}>
@@ -80,6 +79,10 @@ export default async function ProfilePage() {
             </Link>
           </Button>
         ))}
+        
+        {/* Add the new DeleteAccountButton component here */}
+        <DeleteAccountButton />
+
         <form action={handleLogout} className="flex-1 min-w-[150px]">
             <Button variant="ghost" className="w-full bg-white/50 text-black hover:bg-white hover:text-black font-bold">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -150,15 +153,17 @@ export default async function ProfilePage() {
                       </div>
                       <div className="space-y-1">
                           <label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Телефон</label>
-                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} />
+                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} placeholder="Например, +375291234567"/>
+                           <p className="text-xs text-muted-foreground">В формате E.164</p>
                       </div>
                        <div className="space-y-1">
                           <label htmlFor="telegram_link" className="text-sm font-medium text-muted-foreground">Telegram</label>
-                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} />
+                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} placeholder="@username" />
                       </div>
                        <div className="space-y-1">
                           <label htmlFor="viber_phone" className="text-sm font-medium text-muted-foreground">Viber</label>
-                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} />
+                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} placeholder="Например, +375291234567"/>
+                          <p className="text-xs text-muted-foreground">В формате E.164</p>
                       </div>
                   </div>
               </div>

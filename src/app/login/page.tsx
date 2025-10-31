@@ -1,132 +1,130 @@
-'use client';
+'use client'
 
+import { useFormState } from 'react-dom';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn, signUp } from './actions';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
-import { signIn, signUp } from '@/app/login/actions';
-import { useSearchParams } from 'next/navigation';
-
-function LoginForm() {
-  const [state, formAction] = useFormState(signIn, null);
-  const { pending } = useFormStatus();
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Вход в аккаунт</CardTitle>
-        <CardDescription>
-          Введите email и пароль для доступа к вашему профилю.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="example@email.com"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Пароль</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full font-bold" disabled={pending}>
-            {pending ? 'Вход...' : 'Войти'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RegisterForm() {
-  const [state, formAction] = useFormState(signUp, null);
-  const { pending } = useFormStatus();
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  useEffect(() => {
-    if (state?.success) {
-      setMessage({ type: 'success', text: 'Регистрация прошла успешно! Пожалуйста, проверьте свою почту для подтверждения.' });
-    } else if (state?.error) {
-      setMessage({ type: 'error', text: state.error });
-    }
-  }, [state]);
-
-  return (
-     <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Создание аккаунта</CardTitle>
-        <CardDescription>Заполните форму для регистрации.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="space-y-4">
-           {message && (
-            <div className={`${message.type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'} px-4 py-3 rounded relative`} role="alert">
-              <span className="block sm:inline">{message.text}</span>
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="name-reg">Имя</Label>
-            <Input id="name-reg" name="name" placeholder="Иван Иванов" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email-reg">Email</Label>
-            <Input id="email-reg" name="email" type="email" placeholder="example@email.com" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password-reg">Пароль</Label>
-            <Input id="password-reg" name="password" type="password" required />
-          </div>
-          <Button type="submit" className="w-full font-bold" disabled={pending}>
-            {pending ? 'Регистрация...' : 'Зарегистрироваться'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  )
-}
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [signInState, signInAction] = useFormState(signIn, null);
+  const [signUpState, signUpAction] = useFormState(signUp, null);
+
+  const [isArchived, setIsArchived] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin"); // 'signin' or 'signup'
+
+  useEffect(() => {
+    if (signInState?.error === 'ACCOUNT_ARCHIVED') {
+      setIsArchived(true);
+    } else if (signInState?.error) {
+        console.error("Sign In Error:", signInState.error);
+    }
+  }, [signInState]);
+
+  useEffect(() => {
+    if (signUpState?.success) {
+      setActiveTab("signin");
+    } else if (signUpState?.error) {
+      console.error("Sign Up Error:", signUpState.error);
+    }
+  }, [signUpState]);
+
+  const handleOkClick = () => {
+    setIsArchived(false);
+    router.push('/contact');
+  };
+
+  const getErrorMessage = (state: any) => {
+      if (!state?.error || state.error === 'ACCOUNT_ARCHIVED') return null;
+      return state.error;
+  }
+
+  const getSuccessMessage = (state: any) => {
+      if (!state?.success) return null;
+      return "Регистрация прошла успешно! Теперь вы можете войти.";
+  }
+
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-15rem)] px-4 py-12">
-      <Tabs defaultValue="login" className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Вход</TabsTrigger>
-          <TabsTrigger value="register">Регистрация</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <LoginForm />
-        </TabsContent>
-        <TabsContent value="register">
-          <RegisterForm />
-        </TabsContent>
-      </Tabs>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md mx-4">
+        <CardHeader>
+           <div className="flex justify-around mb-4 border-b">
+            <Button variant={activeTab === 'signin' ? "default" : "ghost"} onClick={() => setActiveTab('signin')} className="flex-1 rounded-none">Вход</Button>
+            <Button variant={activeTab === 'signup' ? "default" : "ghost"} onClick={() => setActiveTab('signup')} className="flex-1 rounded-none">Регистрация</Button>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">{activeTab === 'signin' ? 'Войти в аккаунт' : 'Создать аккаунт'}</CardTitle>
+          <CardDescription className="text-center">
+            {activeTab === 'signin' ? 'Введите свои данные для входа' : 'Заполните форму для регистрации'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activeTab === 'signin' ? (
+            <form action={signInAction} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль</Label>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              {getErrorMessage(signInState) && (
+                <p className="text-sm font-medium text-destructive">{getErrorMessage(signInState)}</p>
+              )}
+              <Button type="submit" className="w-full">Войти</Button>
+            </form>
+          ) : (
+            <form action={signUpAction} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Имя</Label>
+                    <Input id="name" name="name" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="email-signup">Email</Label>
+                    <Input id="email-signup" name="email" type="email" placeholder="m@example.com" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="password-signup">Пароль</Label>
+                    <Input id="password-signup" name="password" type="password" required />
+                </div>
+                {getErrorMessage(signUpState) && (
+                    <p className="text-sm font-medium text-destructive">{getErrorMessage(signUpState)}</p>
+                )}
+                {getSuccessMessage(signUpState) && (
+                    <p className="text-sm font-medium text-green-600">{getSuccessMessage(signUpState)}</p>
+                )}
+                <Button type="submit" className="w-full">Зарегистрироваться</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={isArchived} onOpenChange={setIsArchived}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Аккаунт заблокирован</AlertDialogTitle>
+            <AlertDialogDescription>
+                Ваш аккаунт помечен для удаления. Вы не можете его больше использовать. Если Вы все же хотите восстановить доступ к аккаунту, свяжитесь с нами любым доступным способом.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleOkClick}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

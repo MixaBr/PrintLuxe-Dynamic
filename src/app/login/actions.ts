@@ -14,23 +14,52 @@ export async function signIn(prevState: any, formData: FormData) {
   
   const emailValidation = emailSchema.safeParse(email);
   if (!emailValidation.success) {
-    return redirect('/login?error=' + encodeURIComponent(emailValidation.error.errors[0].message));
+    return { error: emailValidation.error.errors[0].message };
   }
 
   const passwordValidation = passwordSchema.safeParse(password);
   if (!passwordValidation.success) {
-    return redirect('/login?error=' + encodeURIComponent(passwordValidation.error.errors[0].message));
+    return { error: passwordValidation.error.errors[0].message };
   }
 
   const supabase = createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
-  if (error) {
-    return redirect('/login?error=' + encodeURIComponent('Неверные учетные данные. Пожалуйста, попробуйте снова.'));
+  if (signInError || !authData.user) {
+    return { error: 'Неверные учетные данные. Пожалуйста, попробуйте снова.' };
+  }
+
+  const user = authData.user;
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('status')
+    .eq('user_id', user.id)
+    .single();
+
+  if (profile && profile.status === 'archived') {
+    // Immediately sign out to clear the session cookie that was just set.
+    // This prevents the session from ever being established in the browser.
+    await supabase.auth.signOut();
+    
+    // As a security measure, also revoke all tokens for this user on the server.
+    const { error: adminSignOutError } = await supabase.auth.admin.signOut(user.id);
+    if (adminSignOutError) {
+        console.error("Admin sign out error:", adminSignOutError);
+    }
+
+    return { error: 'ACCOUNT_ARCHIVED' };
+  }
+
+  if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = row not found
+    console.error("Profile fetch error:", profileError);
+    // Also sign out here to be safe
+    await supabase.auth.signOut();
+    return { error: 'Произошла ошибка при проверке вашего профиля.' };
   }
 
   revalidatePath('/', 'layout')
