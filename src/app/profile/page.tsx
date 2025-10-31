@@ -51,7 +51,7 @@ export default async function ProfilePage() {
             variant="ghost"
             asChild
             className={cn(
-                "bg-white/50 text-black hover:bg-white flex-1 min-w-[150px] transition-colors duration-200",
+                "bg-white/50 text-black hover:bg-white hover:text-black flex-1 min-w-[150px] transition-colors duration-200",
                 item.danger && "text-destructive hover:bg-destructive/10 hover:text-destructive"
             )}
           >
@@ -62,7 +62,7 @@ export default async function ProfilePage() {
           </Button>
         ))}
         <form action={handleLogout} className="flex-1 min-w-[150px]">
-            <Button variant="ghost" className="w-full bg-white/50 text-black hover:bg-white font-bold">
+            <Button variant="ghost" className="w-full bg-white/50 text-black hover:bg-white hover:text-black font-bold">
                 <LogOut className="mr-2 h-4 w-4" />
                 Выйти
             </Button>
