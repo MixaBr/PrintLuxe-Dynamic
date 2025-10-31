@@ -125,11 +125,12 @@ export default async function ProfilePage() {
                       </div>
                        <div className="space-y-1">
                           <label htmlFor="gender" className="text-sm font-medium text-muted-foreground">Пол</label>
-                          <Select name="gender" defaultValue={profile?.gender || ''}>
+                          <Select name="gender" defaultValue={profile?.gender || 'not_selected'}>
                             <SelectTrigger id="gender">
                                 <SelectValue placeholder="Не выбрано" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="not_selected">Не выбрано</SelectItem>
                                 <SelectItem value="male">Мужской</SelectItem>
                                 <SelectItem value="female">Женский</SelectItem>
                                 <SelectItem value="other">Другой</SelectItem>

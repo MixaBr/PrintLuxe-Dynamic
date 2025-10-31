@@ -14,11 +14,13 @@ export async function updateProfile(formData: FormData) {
     return redirect('/login');
   }
 
+  const genderValue = formData.get('gender') as string;
+
   const profileData = {
     first_name: formData.get('first_name') as string,
     last_name: formData.get('last_name') as string,
     phone: formData.get('phone') as string,
-    gender: formData.get('gender') as string,
+    gender: genderValue === 'not_selected' ? null : genderValue,
     birth_date: formData.get('birth_date') as string,
   };
   
