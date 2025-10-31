@@ -3,6 +3,7 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
 import { getAppBackground } from '@/lib/data';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'PrintLuxe Dynamic',
@@ -17,6 +18,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     console.error("Failed to fetch app background, proceeding without it:", error);
     backgroundUrl = null;
   }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <html lang="ru">
@@ -40,7 +46,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
         )}
         <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
-          <Header />
+          <Header isAuthenticated={!!user} />
           <main className="h-full overflow-y-auto">{children}</main>
         </div>
         <Toaster />

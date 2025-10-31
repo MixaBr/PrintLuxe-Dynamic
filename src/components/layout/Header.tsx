@@ -21,7 +21,7 @@ const navLinks = [
   { href: '/contact', label: 'Контакты' },
 ];
 
-export function Header() {
+export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -91,8 +91,14 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
-            <Link href="/login">
-              <User className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+            <Link href={isAuthenticated ? "/profile" : "/login"}>
+              <User 
+                className={cn(
+                  "h-6 w-6 group-hover:text-blue-900 transition-colors",
+                  isAuthenticated ? "text-primary" : "text-white"
+                )} 
+                strokeWidth={3} 
+              />
               <span className="sr-only">Профиль</span>
             </Link>
           </Button>
