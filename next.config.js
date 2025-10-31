@@ -1,4 +1,4 @@
-const allowedOrigin = '9000-firebase-studio26082025-1760212682543.cluster-beimwvuktjcu6sechxlysokr36.cloudworkstations.dev';
+const allowedOrigin = '9000-firebase-studio-1760946131578.cluster-6aufaxcfanfh2quaz7stglulic.cloudworkstations.dev';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -45,15 +45,8 @@ const nextConfig = {
     ]
   },
 
-  // ✅ ИСПРАВЛЕНИЕ: allowedDevOrigins теперь на верхнем уровне
   allowedDevOrigins: [allowedOrigin],
 
-  // experimental теперь пустой, если больше нет других экспериментальных флагов
-  // Если у вас были другие экспериментальные флаги, оставьте experimental объект с ними.
-  // Например:
-  // experimental: {
-  //   someOtherExperimentalFlag: true,
-  // },
 };
 
 module.exports = nextConfig;

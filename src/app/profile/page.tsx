@@ -152,6 +152,14 @@ export default async function ProfilePage() {
                           <label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Телефон</label>
                           <Input id="phone" name="phone" defaultValue={profile?.phone || ''} />
                       </div>
+                       <div className="space-y-1">
+                          <label htmlFor="telegram_link" className="text-sm font-medium text-muted-foreground">Telegram</label>
+                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} />
+                      </div>
+                       <div className="space-y-1">
+                          <label htmlFor="viber_phone" className="text-sm font-medium text-muted-foreground">Viber</label>
+                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} />
+                      </div>
                   </div>
               </div>
 

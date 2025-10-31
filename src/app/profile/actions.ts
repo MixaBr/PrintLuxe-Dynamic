@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -13,7 +12,7 @@ export async function updateProfile(formData: FormData) {
   if (!user) {
     return redirect('/login');
   }
-
+  
   const genderValue = formData.get('gender') as string;
 
   const profileData: {
@@ -22,30 +21,32 @@ export async function updateProfile(formData: FormData) {
     phone: string;
     gender: string | null;
     birth_date: string | null;
+    telegram_link: string;
+    viber_phone: string;
   } = {
     first_name: formData.get('first_name') as string,
     last_name: formData.get('last_name') as string,
     phone: formData.get('phone') as string,
     gender: genderValue === 'not_selected' ? null : genderValue,
     birth_date: formData.get('birth_date') as string,
+    telegram_link: formData.get('telegram_link') as string,
+    viber_phone: formData.get('viber_phone') as string,
   };
-  
-  // Ensure empty string is converted to null for the database
+
   if (profileData.birth_date === '') {
-    profileData.birth_date = null;
+      profileData.birth_date = null;
   }
 
-  const { error } = await supabase
+  const { error: updateError } = await supabase
     .from('profiles')
     .update(profileData)
     .eq('user_id', user.id);
 
-  if (error) {
-    console.error('Error updating profile:', error);
-    // Optionally, redirect with an error message
-    return redirect('/profile?error=' + encodeURIComponent('Не удалось обновить профиль.'));
+  if (updateError) {
+    return redirect('/profile?error=' + encodeURIComponent('Не удалось обновить профиль: ' + updateError.message));
   }
 
   revalidatePath('/profile');
+
   redirect('/profile?success=' + encodeURIComponent('Профиль успешно обновлен!'));
 }
