@@ -16,7 +16,13 @@ export async function updateProfile(formData: FormData) {
 
   const genderValue = formData.get('gender') as string;
 
-  const profileData = {
+  const profileData: {
+    first_name: string;
+    last_name: string;
+    phone: string;
+    gender: string | null;
+    birth_date: string | null;
+  } = {
     first_name: formData.get('first_name') as string,
     last_name: formData.get('last_name') as string,
     phone: formData.get('phone') as string,
@@ -25,8 +31,7 @@ export async function updateProfile(formData: FormData) {
   };
   
   // Ensure empty string is converted to null for the database
-  if (!profileData.birth_date) {
-    // @ts-ignore
+  if (profileData.birth_date === '') {
     profileData.birth_date = null;
   }
 
