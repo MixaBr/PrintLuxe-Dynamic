@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Trash2 } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Trash2, Home } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -40,6 +40,9 @@ export default async function ProfilePage() {
     { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star /> },
     { href: "/profile/delete", label: "Удалить аккаунт", icon: <Trash2 />, danger: true },
   ];
+  
+  // Safely access addresses, default to empty array if null or undefined
+  const addresses = profile?.addresses || [];
 
   return (
     <div className="container mx-auto px-4 py-8 md:px-8 space-y-8">
@@ -95,6 +98,34 @@ export default async function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Addresses Block */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+              <Home className="w-10 h-10 text-primary" />
+              <div>
+                <CardTitle className="font-headline text-3xl">Адреса пользователя</CardTitle>
+                <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
+              </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {Array.isArray(addresses) && addresses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {addresses.map((address, index) => (
+                <div key={index} className="p-4 border rounded-lg bg-muted/20">
+                  <p className="font-semibold">{address.label || `Адрес ${index + 1}`}</p>
+                  <p className="text-muted-foreground">{address.street}, {address.city}, {address.zip_code}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">У вас пока нет сохраненных адресов.</p>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
