@@ -23,3 +23,19 @@ export type CartItem = {
   product: Product;
   quantity: number;
 };
+
+export type Address = {
+  id: number;
+  profile_id: number;
+  order_id: number | null;
+  postal_code: string | null;
+  country: string | null;
+  city: string | null;
+  street: string | null;
+  building: string | null;
+  housing: string | null;
+  apartment: string | null;
+  created_at: string;
+  updated_at: string;
+  address_type: 'delivery' | 'billing' | 'other' | null;
+};

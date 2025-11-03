@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -11,7 +10,9 @@ import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProfile } from "./actions";
-import { DeleteAccountButton } from "./DeleteAccountButton"; // Import the new component
+import { DeleteAccountButton } from "./DeleteAccountButton";
+import AddressManager from "./AddressManager"; // Import the new component
+import type { Address } from "@/lib/definitions";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -33,6 +34,12 @@ export default async function ProfilePage() {
   const { data: roleData } = roleRes;
   const role = roleData?.role || 'user';
 
+  let addresses: Address[] = [];
+  if (profile) {
+    const { data: addressData } = await supabase.from('addresses').select('*').eq('profile_id', profile.id);
+    addresses = addressData || [];
+  }
+
   const handleLogout = async () => {
     "use server";
     const supabase = createClient();
@@ -41,7 +48,6 @@ export default async function ProfilePage() {
     redirect("/login");
   };
 
-  // Removed the 'Delete Account' item from this array
   const menuItems = [
     { href: "/profile/orders", label: "Мои заказы", icon: <ShoppingCart /> },
     { href: "/profile/payments", label: "Мои оплаты", icon: <CreditCard /> },
@@ -49,8 +55,6 @@ export default async function ProfilePage() {
     { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star /> },
   ];
   
-  const addresses = profile?.addresses || [];
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
@@ -80,7 +84,6 @@ export default async function ProfilePage() {
           </Button>
         ))}
         
-        {/* Add the new DeleteAccountButton component here */}
         <DeleteAccountButton />
 
         <form action={handleLogout} className="flex-1 min-w-[150px]">
@@ -197,30 +200,20 @@ export default async function ProfilePage() {
       {/* Addresses Block */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-              <Home className="w-10 h-10 text-primary" />
-              <div>
-                <CardTitle className="font-headline text-3xl">Адреса пользователя</CardTitle>
-                <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
-              </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+                <Home className="w-10 h-10 text-primary" />
+                <div>
+                  <CardTitle className="font-headline text-3xl">Адреса пользователя</CardTitle>
+                  <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
+                </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {Array.isArray(addresses) && addresses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {addresses.map((address, index) => (
-                <div key={index} className="p-4 border rounded-lg bg-muted/20">
-                  <p className="font-semibold">{address.label || `Адрес ${index + 1}`}</p>
-                  <p className="text-muted-foreground">{address.street}, {address.city}, {address.zip_code}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">У вас пока нет сохраненных адресов.</p>
-          )}
+          <AddressManager initialAddresses={addresses} />
         </CardContent>
       </Card>
-
     </div>
   );
 }

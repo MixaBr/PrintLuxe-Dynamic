@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { Address } from '@/lib/definitions';
 
 export async function updateProfile(formData: FormData) {
   const supabase = createClient();
@@ -111,4 +112,71 @@ export async function deleteAccount(formData: FormData) {
   // Revalidate path and redirect
   revalidatePath('/'); // Revalidate the whole site to reflect logout
   redirect('/login?message=' + encodeURIComponent('Ваш аккаунт был успешно удален.'));
+}
+
+
+export async function addOrUpdateAddress(formData: FormData) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'Пользователь не авторизован' };
+    }
+
+    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', user.id).single();
+
+    if (!profile) {
+        return { error: 'Профиль пользователя не найден' };
+    }
+
+    const addressId = formData.get('id') as string;
+    const addressData = {
+        profile_id: profile.id,
+        address_type: (formData.get('address_type') as string) || null,
+        country: (formData.get('country') as string) || null,
+        postal_code: (formData.get('postal_code') as string) || null,
+        city: (formData.get('city') as string) || null,
+        street: (formData.get('street') as string) || null,
+        building: (formData.get('building') as string) || null,
+        housing: (formData.get('housing') as string) || null,
+        apartment: (formData.get('apartment') as string) || null,
+    };
+
+    let error;
+    if (addressId) {
+        // Update existing address
+        const { error: updateError } = await supabase.from('addresses').update(addressData).eq('id', addressId);
+        error = updateError;
+    } else {
+        // Create new address
+        const { error: insertError } = await supabase.from('addresses').insert(addressData);
+        error = insertError;
+    }
+
+    if (error) {
+        console.error('Address operation error:', error);
+        return { error: `Не удалось сохранить адрес: ${error.message}` };
+    }
+
+    revalidatePath('/profile');
+    return { success: 'Адрес успешно сохранен!' };
+}
+
+export async function deleteAddress(addressId: number) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'Пользователь не авторизован' };
+    }
+
+    const { error } = await supabase.from('addresses').delete().eq('id', addressId);
+
+    if (error) {
+        console.error('Delete address error:', error);
+        return { error: `Не удалось удалить адрес: ${error.message}` };
+    }
+
+    revalidatePath('/profile');
+    return { success: 'Адрес успешно удален!' };
 }
