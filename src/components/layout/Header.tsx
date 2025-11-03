@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wrench, ShoppingCart, User, Menu } from 'lucide-react';
+import { Wrench, ShoppingCart, User, Menu, Briefcase, Wrench as AdminIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 const navLinks = [
   { href: '/', label: 'Главная' },
@@ -66,10 +73,6 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
                     <NavLink key={link.href} {...link} />
                   ))}
                 </nav>
-                <div className="mt-auto p-4 border-t border-gray-700 space-y-2">
-                  <Link href="/manager" className={cn("text-sm font-medium transition-colors hover:text-white block", pathname.startsWith('/manager') ? "text-white" : "text-gray-300")} onClick={() => setIsMobileMenuOpen(false)}>Панель менеджера</Link>
-                  <Link href="/admin" className={cn("text-sm font-medium transition-colors hover:text-white block", pathname.startsWith('/admin') ? "text-white" : "text-gray-300")} onClick={() => setIsMobileMenuOpen(false)}>Администрирование</Link>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -85,6 +88,28 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Icons (Right) */}
         <div className="flex items-center gap-2">
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors">
+                 <Briefcase className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+                 <span className="sr-only">Панели</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link href="/manager">
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  <span>Панель менеджера</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin">
+                  <AdminIcon className="mr-2 h-4 w-4" />
+                  <span>Администрирование</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
             <Link href="/cart">
               <ShoppingCart className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />

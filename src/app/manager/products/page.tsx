@@ -7,14 +7,33 @@ import Image from "next/image";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+
 
 export default async function ManagerProductsPage() {
     const products = await getAllProducts();
+    const menuItems = [
+        { href: "/manager", label: "Панель управления" },
+        { href: "/manager/orders", label: "Заказы" },
+        { href: "/manager/products", label: "Товары" },
+        { href: "/manager/clients", label: "Клиенты" },
+    ]
+
 
     return (
-        <div className="space-y-6">
+         <div className="container mx-auto px-4 py-12 md:px-8 md:py-16 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="font-headline text-3xl font-bold">Панель менеджера</h1>
+                <nav className="flex items-center gap-2">
+                    {menuItems.map(item => (
+                        <Button key={item.href} variant="outline" asChild>
+                            <Link href={item.href}>{item.label}</Link>
+                        </Button>
+                    ))}
+                </nav>
+            </div>
             <div className="flex items-center justify-between">
-                <h1 className="font-headline text-3xl font-bold">Товары</h1>
+                <h2 className="font-headline text-2xl font-bold">Товары</h2>
                 <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Добавить товар
