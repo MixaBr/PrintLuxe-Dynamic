@@ -74,31 +74,31 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
 
     return (
         <div>
-            <div className="flex justify-end mb-4">
-                <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Добавить адрес</Button>
+            <div className="flex justify-end mb-2">
+                <Button size="sm" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Добавить адрес</Button>
             </div>
-            <ScrollArea className="h-72 w-full rounded-md border">
+            <ScrollArea className="h-52 w-full rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Тип</TableHead>
                             <TableHead>Адрес</TableHead>
-                            <TableHead>Действия</TableHead>
+                            <TableHead className="w-[100px]">Действия</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {addresses.length > 0 ? (
                             addresses.map((address) => (
                                 <TableRow key={address.id}>
-                                    <TableCell>{addressTypeMap[address.address_type || 'other'] || 'Не указан'}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="text-xs">{addressTypeMap[address.address_type || 'other'] || 'Не указан'}</TableCell>
+                                    <TableCell className="text-xs">
                                         {`${address.postal_code || ''}, ${address.country || ''}, г. ${address.city || ''}, ул. ${address.street || ''}, д. ${address.building || ''}${address.housing ? `, корп. ${address.housing}` : ''}${address.apartment ? `, кв. ${address.apartment}` : ''}`}
                                     </TableCell>
-                                    <TableCell className="space-x-2">
-                                        <Button variant="outline" size="icon" onClick={() => handleEdit(address)} disabled={isPending}>
+                                    <TableCell className="space-x-1">
+                                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleEdit(address)} disabled={isPending}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="destructive" size="icon" onClick={() => handleDelete(address.id)} disabled={isPending}>
+                                        <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDelete(address.id)} disabled={isPending}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
@@ -106,7 +106,7 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center">У вас пока нет сохраненных адресов.</TableCell>
+                                <TableCell colSpan={3} className="text-center h-24">У вас пока нет сохраненных адресов.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

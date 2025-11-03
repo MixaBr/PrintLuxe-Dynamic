@@ -65,7 +65,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 space-y-8">
+    <div className="container mx-auto px-4 py-4 md:px-8 space-y-4">
       {/* Horizontal Menu Bar */}
       <div className="flex flex-wrap items-center justify-center gap-2 -mt-4">
         {menuItems.map(item => (
@@ -97,12 +97,12 @@ export default async function ProfilePage() {
       {/* Main Profile Content */}
       <form action={updateProfile}>
         <Card>
-          <CardHeader>
+          <CardHeader className="py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <UserCircle className="w-12 h-12 text-primary" />
+                <UserCircle className="w-10 h-10 text-primary" />
                 <div>
-                  <CardTitle className="font-headline text-3xl">Профиль пользователя</CardTitle>
+                  <CardTitle className="font-headline text-2xl">Профиль пользователя</CardTitle>
                   <CardDescription>Ваша личная и контактная информация</CardDescription>
                 </div>
               </div>
@@ -112,27 +112,27 @@ export default async function ProfilePage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 pt-0 pb-4">
               {/* Personal Info */}
               <div>
-                  <h3 className="font-semibold text-lg flex items-center gap-2 mb-3"><User className="w-5 h-5" />Личная информация</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><User className="w-5 h-5" />Личная информация</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <label htmlFor="first_name" className="text-sm font-medium text-muted-foreground">Имя</label>
-                          <Input id="first_name" name="first_name" defaultValue={profile?.first_name || ''} />
+                          <label htmlFor="first_name" className="text-xs font-medium text-muted-foreground">Имя</label>
+                          <Input id="first_name" name="first_name" defaultValue={profile?.first_name || ''} className="h-9 text-sm" />
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="last_name" className="text-sm font-medium text-muted-foreground">Фамилия</label>
-                          <Input id="last_name" name="last_name" defaultValue={profile?.last_name || ''} />
+                          <label htmlFor="last_name" className="text-xs font-medium text-muted-foreground">Фамилия</label>
+                          <Input id="last_name" name="last_name" defaultValue={profile?.last_name || ''} className="h-9 text-sm" />
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="birth_date" className="text-sm font-medium text-muted-foreground">Дата рождения</label>
-                          <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDate(profile?.birth_date)} />
+                          <label htmlFor="birth_date" className="text-xs font-medium text-muted-foreground">Дата рождения</label>
+                          <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDate(profile?.birth_date)} className="h-9 text-sm" />
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="gender" className="text-sm font-medium text-muted-foreground">Пол</label>
+                          <label htmlFor="gender" className="text-xs font-medium text-muted-foreground">Пол</label>
                           <Select name="gender" defaultValue={profile?.gender || 'not_selected'}>
-                            <SelectTrigger id="gender">
+                            <SelectTrigger id="gender" className="h-9 text-sm">
                                 <SelectValue placeholder="Не выбрано" />
                             </SelectTrigger>
                             <SelectContent>
@@ -148,24 +148,24 @@ export default async function ProfilePage() {
 
               {/* Contact Info */}
               <div>
-                  <h3 className="font-semibold text-lg flex items-center gap-2 mb-3"><Mail className="w-5 h-5" />Контактные данные</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><Mail className="w-5 h-5" />Контактные данные</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <p className="text-sm font-medium text-muted-foreground">Email</p>
-                          <p>{user.email}</p>
+                          <p className="text-xs font-medium text-muted-foreground">Email</p>
+                          <p className="text-sm">{user.email}</p>
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Телефон</label>
-                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} placeholder="Например, +375291234567"/>
+                          <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">Телефон</label>
+                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm"/>
                            <p className="text-xs text-muted-foreground">В формате E.164</p>
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="telegram_link" className="text-sm font-medium text-muted-foreground">Telegram</label>
-                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} placeholder="@username" />
+                          <label htmlFor="telegram_link" className="text-xs font-medium text-muted-foreground">Telegram</label>
+                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} placeholder="@username" className="h-9 text-sm" />
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="viber_phone" className="text-sm font-medium text-muted-foreground">Viber</label>
-                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} placeholder="Например, +375291234567"/>
+                          <label htmlFor="viber_phone" className="text-xs font-medium text-muted-foreground">Viber</label>
+                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm"/>
                           <p className="text-xs text-muted-foreground">В формате E.164</p>
                       </div>
                   </div>
@@ -173,23 +173,23 @@ export default async function ProfilePage() {
 
                {/* Statistics */}
               <div>
-                  <h3 className="font-semibold text-lg flex items-center gap-2 mb-3"><BarChart2 className="w-5 h-5" />Статистика и статус</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><BarChart2 className="w-5 h-5" />Статистика и статус</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <p className="text-sm font-medium text-muted-foreground">Роль</p>
-                          <p className="capitalize">{role}</p>
+                          <p className="text-xs font-medium text-muted-foreground">Роль</p>
+                          <p className="capitalize text-sm">{role}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-sm font-medium text-muted-foreground">Статус</p>
-                          <p className="capitalize">{profile?.status || 'active'}</p>
+                          <p className="text-xs font-medium text-muted-foreground">Статус</p>
+                          <p className="capitalize text-sm">{profile?.status || 'active'}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-sm font-medium text-muted-foreground">Всего покупок</p>
-                          <p>{profile?.total_purchases || 0}</p>
+                          <p className="text-xs font-medium text-muted-foreground">Всего покупок</p>
+                          <p className="text-sm">{profile?.total_purchases || 0}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-sm font-medium text-muted-foreground">Последний вход</p>
-                          <p>{profile?.last_login_at ? format(new Date(profile.last_login_at), 'dd.MM.yyyy HH:mm') : 'Не записывался'}</p>
+                          <p className="text-xs font-medium text-muted-foreground">Последний вход</p>
+                          <p className="text-sm">{profile?.last_login_at ? format(new Date(profile.last_login_at), 'dd.MM.yyyy HH:mm') : 'Не записывался'}</p>
                       </div>
                   </div>
               </div>
@@ -199,18 +199,18 @@ export default async function ProfilePage() {
 
       {/* Addresses Block */}
       <Card>
-        <CardHeader>
+        <CardHeader className="py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-                <Home className="w-10 h-10 text-primary" />
+                <Home className="w-8 h-8 text-primary" />
                 <div>
-                  <CardTitle className="font-headline text-3xl">Адреса пользователя</CardTitle>
+                  <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
                   <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
                 </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 pb-4">
           <AddressManager initialAddresses={addresses} />
         </CardContent>
       </Card>
