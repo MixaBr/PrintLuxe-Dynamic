@@ -66,8 +66,9 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
                     <NavLink key={link.href} {...link} />
                   ))}
                 </nav>
-                <div className="mt-auto p-4 border-t border-gray-700">
-                  <Link href="/admin" className={cn("text-sm font-medium transition-colors hover:text-white", pathname.startsWith('/admin') ? "text-white" : "text-gray-300")} onClick={() => setIsMobileMenuOpen(false)}>Администрирование</Link>
+                <div className="mt-auto p-4 border-t border-gray-700 space-y-2">
+                  <Link href="/manager" className={cn("text-sm font-medium transition-colors hover:text-white block", pathname.startsWith('/manager') ? "text-white" : "text-gray-300")} onClick={() => setIsMobileMenuOpen(false)}>Панель менеджера</Link>
+                  <Link href="/admin" className={cn("text-sm font-medium transition-colors hover:text-white block", pathname.startsWith('/admin') ? "text-white" : "text-gray-300")} onClick={() => setIsMobileMenuOpen(false)}>Администрирование</Link>
                 </div>
               </div>
             </SheetContent>
