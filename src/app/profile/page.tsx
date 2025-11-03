@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Trash2 } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -36,7 +36,6 @@ export default async function ProfilePage() {
       addresses = addressData;
     }
   }
-
 
   const handleLogout = async () => {
     "use server";
@@ -198,18 +197,7 @@ export default async function ProfilePage() {
       </form>
        {/* Addresses Block */}
       <Card>
-         <CardHeader className="flex flex-row items-start justify-between gap-4 py-4">
-            <div className="flex items-center gap-4">
-              <Home className="w-8 h-8 text-primary" />
-              <div>
-                <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
-                <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
-              </div>
-            </div>
-        </CardHeader>
-        <CardContent className="pt-0 pb-4">
-           <AddressManager initialAddresses={addresses} />
-        </CardContent>
+        <AddressManager initialAddresses={addresses} />
       </Card>
     </div>
   );
