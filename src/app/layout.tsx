@@ -24,6 +24,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     data: { user },
   } = await supabase.auth.getUser();
 
+  let userRole: string | null = null;
+  if (user) {
+    const { data: roleData } = await supabase
+      .from('role_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    userRole = roleData?.role || 'buyer';
+  }
+
+
   return (
     <html lang="ru">
       <head>
@@ -46,7 +57,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
         )}
         <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
-          <Header isAuthenticated={!!user} />
+          <Header isAuthenticated={!!user} userRole={userRole} />
           <main className="h-full overflow-y-auto">{children}</main>
         </div>
         <Toaster />

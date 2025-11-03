@@ -11,7 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -20,20 +20,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type NavLinkItem = {
+  href: string;
+  label: string;
+};
 
-const navLinks = [
+const baseLinks: NavLinkItem[] = [
   { href: '/', label: 'Главная' },
   { href: '/catalog', label: 'Каталог' },
   { href: '/about', label: 'О нас' },
   { href: '/contact', label: 'Контакты' },
-  { href: '/manager', label: 'Панель менеджера' },
-  { href: '/admin', label: 'Панель админа' },
 ];
 
+const managerLink: NavLinkItem = { href: '/manager', label: 'Панель менеджера' };
+const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админа' };
 
-export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
+
+export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navLinks = useMemo(() => {
+    const links = [...baseLinks];
+    if (userRole === 'manager') {
+      links.push(managerLink);
+    }
+    if (userRole === 'admin') {
+      links.push(managerLink, adminLink);
+    }
+    return links;
+  }, [userRole]);
+
+  const showDropdown = userRole === 'admin' || userRole === 'manager';
 
   const NavLink = ({ href, label }: { href: string; label: string }) => (
     <Link
@@ -91,28 +109,42 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         {/* Icons (Right) */}
         <div className="flex items-center gap-2">
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors">
-                 <Briefcase className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
-                 <span className="sr-only">Панели</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <Link href="/manager">
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  <span>Панель менеджера</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin">
-                  <AdminIcon className="mr-2 h-4 w-4" />
-                  <span>Панель админа</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+           {showDropdown && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors">
+                   <Briefcase className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+                   <span className="sr-only">Панели</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {userRole === 'manager' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/manager">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      <span>Панель менеджера</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                 {userRole === 'admin' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/manager">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        <span>Панель менеджера</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">
+                        <AdminIcon className="mr-2 h-4 w-4" />
+                        <span>Панель админа</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+           )}
           <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
             <Link href="/cart">
               <ShoppingCart className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
