@@ -26,12 +26,10 @@ const navLinks = [
   { href: '/catalog', label: 'Каталог' },
   { href: '/about', label: 'О нас' },
   { href: '/contact', label: 'Контакты' },
+  { href: '/manager', label: 'Панель менеджера' },
+  { href: '/admin', label: 'Панель админа' },
 ];
 
-const panelLinks = [
-    { href: '/manager', label: 'Панель менеджера' },
-    { href: '/admin', label: 'Панель админа' },
-];
 
 export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
@@ -78,14 +76,6 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
                     <NavLink key={link.href} {...link} />
                   ))}
                 </nav>
-                <div className="mt-auto p-4 border-t border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-semibold mb-4">Панели управления</h3>
-                    <nav className="flex flex-col gap-4">
-                        {panelLinks.map((link) => (
-                            <NavLink key={link.href} {...link} />
-                        ))}
-                    </nav>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
