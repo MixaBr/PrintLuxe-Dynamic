@@ -25,6 +25,7 @@ export function DeleteAccountButton() {
     setIsVerified(true);
   };
   
+  // This makes the function globally available for the reCAPTCHA script
   if (typeof window !== 'undefined') {
     (window as any).onCaptchaVerify = handleCaptchaVerify;
   }
@@ -37,6 +38,7 @@ export function DeleteAccountButton() {
         <AlertDialog onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
+                // Reset verification state when dialog closes
                 setIsVerified(false);
             }
         }}>

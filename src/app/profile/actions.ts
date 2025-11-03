@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { Address } from '@/lib/definitions';
 
 export async function updateProfile(formData: FormData) {
   const supabase = createClient();
@@ -34,6 +33,7 @@ export async function updateProfile(formData: FormData) {
     viber_phone: formData.get('viber_phone') as string,
   };
 
+  // Convert empty strings to null for nullable fields
   if (profileData.birth_date === '') {
       profileData.birth_date = null;
   }
@@ -53,11 +53,11 @@ export async function updateProfile(formData: FormData) {
     .eq('user_id', user.id);
 
   if (updateError) {
+    console.error('Profile update error:', updateError);
     return redirect('/profile?error=' + encodeURIComponent('Не удалось обновить профиль: ' + updateError.message));
   }
 
   revalidatePath('/profile');
-
   redirect('/profile?success=' + encodeURIComponent('Профиль успешно обновлен!'));
 }
 

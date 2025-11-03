@@ -44,7 +44,8 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                     title: 'Успех!',
                     description: result.success,
                 });
-                // Optimistically update UI or simply close dialog and let revalidation handle it.
+                // In a real app, you'd likely get the updated list from the server
+                // For now, we manually update the state or rely on revalidation.
                 setIsDialogOpen(false);
             }
         });
@@ -75,7 +76,7 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
     return (
         <div>
             <div className="flex justify-end mb-2">
-                <Button size="sm" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Добавить адрес</Button>
+                 <Button size="sm" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Добавить адрес</Button>
             </div>
             <ScrollArea className="h-52 w-full rounded-md border">
                 <Table>

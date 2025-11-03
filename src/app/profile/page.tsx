@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Trash2 } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -9,8 +9,10 @@ import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { updateProfile, deleteAccount } from "./actions";
+import { updateProfile } from "./actions";
 import { DeleteAccountButton } from "./DeleteAccountButton";
+import AddressManager from "./AddressManager";
+import type { Address } from "@/lib/definitions";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -26,6 +28,14 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
   const { data: roleData } = await supabase.from('role_users').select('role').eq('user_id', user.id).single();
   const role = roleData?.role || 'user';
+
+  let addresses: Address[] = [];
+  if (profile) {
+    const { data: addressData } = await supabase.from('addresses').select('*').eq('profile_id', profile.id);
+    if (addressData) {
+      addresses = addressData;
+    }
+  }
 
 
   const handleLogout = async () => {
@@ -46,8 +56,10 @@ export default async function ProfilePage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
-        return format(new Date(dateString), 'yyyy-MM-dd');
+        // Adding a time to handle timezone issues and ensure it's parsed as local
+        return format(new Date(`${dateString}T00:00:00`), 'yyyy-MM-dd');
     } catch (e) {
+        console.warn(`Invalid date string received: ${dateString}`);
         return '';
     }
   }
@@ -186,8 +198,7 @@ export default async function ProfilePage() {
       </form>
        {/* Addresses Block */}
       <Card>
-        <CardHeader className="py-4">
-          <div className="flex items-center justify-between gap-4">
+         <CardHeader className="flex flex-row items-start justify-between gap-4 py-4">
             <div className="flex items-center gap-4">
               <Home className="w-8 h-8 text-primary" />
               <div>
@@ -195,17 +206,9 @@ export default async function ProfilePage() {
                 <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
               </div>
             </div>
-            <Button>
-              <PlusCircle className="mr-2" />
-              Добавить адрес
-            </Button>
-          </div>
         </CardHeader>
         <CardContent className="pt-0 pb-4">
-           {/* Address content will go here */}
-           <div className="text-center text-muted-foreground py-8 border rounded-lg mt-4 h-32 flex items-center justify-center">
-              <p>У вас пока нет сохраненных адресов.</p>
-            </div>
+           <AddressManager initialAddresses={addresses} />
         </CardContent>
       </Card>
     </div>
