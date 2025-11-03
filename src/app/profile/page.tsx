@@ -64,7 +64,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4 md:px-8 space-y-4">
+    <div className="container mx-auto px-4 py-8 md:px-8 space-y-4">
       {/* Horizontal Menu Bar */}
       <div className="flex flex-wrap items-center justify-center gap-2 -mt-4">
         {menuItems.map(item => (
