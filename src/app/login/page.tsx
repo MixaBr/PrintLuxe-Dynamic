@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,8 +59,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md mx-4">
+    <div className="flex items-center justify-center min-h-full">
+      <Card className={cn(
+          "w-full max-w-md mx-4",
+          "bg-card/80 backdrop-blur-sm border-white/20"
+      )}>
         <CardHeader>
            <div className="flex justify-around mb-4 border-b">
             <Button variant={activeTab === 'signin' ? "default" : "ghost"} onClick={() => setActiveTab('signin')} className="flex-1 rounded-none">Вход</Button>
