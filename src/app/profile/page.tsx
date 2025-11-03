@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -9,10 +9,8 @@ import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { updateProfile } from "./actions";
+import { updateProfile, deleteAccount } from "./actions";
 import { DeleteAccountButton } from "./DeleteAccountButton";
-import AddressManager from "./AddressManager"; // Import the new component
-import type { Address } from "@/lib/definitions";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -25,20 +23,10 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  const [profileRes, roleRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-    supabase.from('role_users').select('role').eq('user_id', user.id).single()
-  ]);
-
-  const { data: profile } = profileRes;
-  const { data: roleData } = roleRes;
+  const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+  const { data: roleData } = await supabase.from('role_users').select('role').eq('user_id', user.id).single();
   const role = roleData?.role || 'user';
 
-  let addresses: Address[] = [];
-  if (profile) {
-    const { data: addressData } = await supabase.from('addresses').select('*').eq('profile_id', profile.id);
-    addresses = addressData || [];
-  }
 
   const handleLogout = async () => {
     "use server";
@@ -196,22 +184,28 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
       </form>
-
-      {/* Addresses Block */}
+       {/* Addresses Block */}
       <Card>
         <CardHeader className="py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-                <Home className="w-8 h-8 text-primary" />
-                <div>
-                  <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
-                  <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
-                </div>
-            </div>
+              <div className="flex items-center gap-4">
+                  <Home className="w-8 h-8 text-primary" />
+                  <div>
+                    <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
+                    <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
+                  </div>
+              </div>
+              <Button>
+                <PlusCircle className="mr-2" />
+                Добавить адрес
+              </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 pb-4">
-          <AddressManager initialAddresses={addresses} />
+           {/* Address content will go here */}
+           <div className="text-center text-muted-foreground py-8 border rounded-lg mt-4 h-32 flex items-center justify-center">
+              <p>У вас пока нет сохраненных адресов.</p>
+            </div>
         </CardContent>
       </Card>
     </div>
