@@ -3,8 +3,11 @@ export type Product = {
   name: string;
   description: string;
   price: number;
+  price1?: number;
+  price2?: number;
   imageId: string;
   category: string;
+  photo_url?: string;
 };
 
 export type User = {

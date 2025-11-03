@@ -4,6 +4,7 @@ import type { Product } from '@/lib/data';
 
 interface ProductCardProps {
   product: Product;
+  isAuthenticated: boolean;
 }
 
 // Helper function to format the product name for proper wrapping.
@@ -14,9 +15,8 @@ const formatNameForWrapping = (name: string) => {
   return name.split('/').join('/​');
 };
 
-export default function ProductCard({ product }: ProductCardProps) {
-  const isLoggedIn = false;
-  const price = isLoggedIn ? product.price2 : product.price1;
+export default function ProductCard({ product, isAuthenticated }: ProductCardProps) {
+  const price = isAuthenticated ? product.price2 : product.price1;
 
   const handleAddToCart = () => {
     // This is a placeholder for the actual add to cart logic.
