@@ -30,7 +30,7 @@ const navLinks = [
 
 const panelLinks = [
     { href: '/manager', label: 'Панель менеджера' },
-    { href: '/admin', label: 'Администрирование' },
+    { href: '/admin', label: 'Панель админа' },
 ];
 
 export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
@@ -118,7 +118,7 @@ export function Header({ isAuthenticated }: { isAuthenticated: boolean }) {
               <DropdownMenuItem asChild>
                 <Link href="/admin">
                   <AdminIcon className="mr-2 h-4 w-4" />
-                  <span>Администрирование</span>
+                  <span>Панель админа</span>
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
