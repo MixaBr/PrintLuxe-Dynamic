@@ -188,17 +188,17 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader className="py-4">
           <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                  <Home className="w-8 h-8 text-primary" />
-                  <div>
-                    <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
-                    <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
-                  </div>
+            <div className="flex items-center gap-4">
+              <Home className="w-8 h-8 text-primary" />
+              <div>
+                <CardTitle className="font-headline text-2xl">Адреса пользователя</CardTitle>
+                <CardDescription>Ваши сохраненные адреса доставки</CardDescription>
               </div>
-              <Button>
-                <PlusCircle className="mr-2" />
-                Добавить адрес
-              </Button>
+            </div>
+            <Button>
+              <PlusCircle className="mr-2" />
+              Добавить адрес
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 pb-4">
