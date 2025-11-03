@@ -81,6 +81,31 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: passwordValidation.error.errors[0].message };
   }
 
+  const token = formData.get('g-recaptcha-response') as string;
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!token) {
+      return { error: 'Пожалуйста, пройдите проверку reCAPTCHA.' };
+  }
+
+  try {
+      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `secret=${secretKey}&response=${token}`,
+      });
+      const recaptchaData = await response.json();
+
+      if (!recaptchaData.success) {
+          return { error: 'Проверка reCAPTCHA не удалась. Попробуйте еще раз.' };
+      }
+  } catch (error) {
+      console.error('reCAPTCHA verification error:', error);
+      return { error: 'Ошибка при проверке reCAPTCHA.' };
+  }
+
   const supabase = createClient()
 
   const { data, error } = await supabase.auth.signUp({
