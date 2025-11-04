@@ -41,7 +41,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
           <ScrollArea className="max-h-32 w-full pr-4">
