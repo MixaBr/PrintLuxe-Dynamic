@@ -63,6 +63,18 @@ export default async function ProfilePage() {
     }
   }
 
+  const formatLoginTime = (dateString: string | null) => {
+    if (!dateString) return 'Не записывался';
+    try {
+      const loginDate = new Date(dateString);
+      loginDate.setHours(loginDate.getHours() + 3);
+      return format(loginDate, 'dd.MM.yyyy HH:mm');
+    } catch (e) {
+      console.warn(`Invalid login date string received: ${dateString}`);
+      return 'Ошибка формата';
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 md:px-8 space-y-4">
       {/* Horizontal Menu Bar */}
@@ -188,7 +200,7 @@ export default async function ProfilePage() {
                       </div>
                       <div className="space-y-1">
                           <p className="text-xs font-medium text-muted-foreground">Последний вход</p>
-                          <p className="text-sm">{profile?.last_login_at ? format(new Date(profile.last_login_at), 'dd.MM.yyyy HH:mm') : 'Не записывался'}</p>
+                          <p className="text-sm">{formatLoginTime(profile?.last_login_at)}</p>
                       </div>
                   </div>
               </div>
