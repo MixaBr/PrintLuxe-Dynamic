@@ -44,24 +44,8 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Вес, г": product.weight,
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
-
-  // Safely parse image_urls from Supabase text[] format
-  let additionalImages: string[] = [];
-  if (product.image_urls && typeof product.image_urls === 'string') {
-      // It's a string like '{"url1","url2"}'
-      additionalImages = (product.image_urls as string)
-          .replace(/^{"/, '') // Remove leading {"
-          .replace(/"}$/, '') // Remove trailing "}
-          .split('","'); // Split by ","
-  } else if (Array.isArray(product.image_urls)) {
-      // It might already be an array of strings
-      additionalImages = product.image_urls;
-  }
   
-  const allImages = [
-      ...(product.photo_url ? [product.photo_url] : []), 
-      ...additionalImages
-    ].filter(url => url && typeof url === 'string' && url.startsWith('http'));
+  const allImages: string[] = (Array.isArray(product.image_urls) ? product.image_urls : [product.photo_url]).filter(Boolean) as string[];
 
   const hasMultipleImages = allImages.length > 1;
 
@@ -109,8 +93,8 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
                 </Carousel>
                ) : (
-                <Image
-                    src={allImages[0] || '/placeholder.png'}
+                allImages.length > 0 && <Image
+                    src={allImages[0]}
                     alt={`Image of ${product.name}`}
                     fill
                     className="object-contain"
