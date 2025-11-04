@@ -40,7 +40,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
           <DialogDescription>
