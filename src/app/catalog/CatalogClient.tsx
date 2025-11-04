@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useTransition, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Product } from '@/lib/definitions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,21 +21,45 @@ interface CatalogClientProps {
 }
 
 export default function CatalogClient({ products, categories }: CatalogClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('query') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [viewMode, setViewMode] = useState<'carousel' | 'table'>('carousel');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-      const matchesSearch = searchTerm === '' ||
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.article_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.product_number?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const newSearchTerm = params.get('query') || '';
+    const newCategory = params.get('category') || 'all';
+    
+    if (newSearchTerm !== searchTerm) {
+      setSearchTerm(newSearchTerm);
+    }
+    if (newCategory !== selectedCategory) {
+      setSelectedCategory(newCategory);
+    }
+  }, [searchParams]);
+
+  const handleFilterChange = () => {
+    startTransition(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (searchTerm) {
+        params.set('query', searchTerm);
+      } else {
+        params.delete('query');
+      }
+      if (selectedCategory !== 'all') {
+        params.set('category', selectedCategory);
+      } else {
+        params.delete('category');
+      }
+      params.delete('page'); // Reset to first page on new filter
+      router.push(`/catalog?${params.toString()}`);
     });
-  }, [products, searchTerm, selectedCategory]);
+  };
 
   const handleRowDoubleClick = (product: Product) => {
     setSelectedProduct(product);
@@ -43,14 +68,31 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   return (
     <>
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <Input
-          placeholder="Поиск по названию или артикулу..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow"
-        />
+        <div className="flex-grow flex gap-2">
+            <Input
+            placeholder="Поиск по названию или артикулу..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
+            className="flex-grow"
+            />
+            <Button onClick={handleFilterChange} disabled={isPending}>
+                {isPending ? 'Поиск...' : 'Найти'}
+            </Button>
+        </div>
         <div className="flex items-center gap-4">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select value={selectedCategory} onValueChange={(value) => {
+              setSelectedCategory(value);
+              // Trigger filter change on select
+              const params = new URLSearchParams(window.location.search);
+              if (value !== 'all') {
+                params.set('category', value);
+              } else {
+                params.delete('category');
+              }
+              params.delete('page');
+              router.push(`/catalog?${params.toString()}`);
+          }}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Все категории" />
             </SelectTrigger>
@@ -77,19 +119,21 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
           <Carousel
             opts={{
               align: "start",
-              loop: true,
+              loop: products.length > 3,
             }}
             className="w-full"
           >
             <CarouselContent>
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onDoubleClick={() => handleRowDoubleClick(product)}>
                   <ProductCarouselCard product={product} />
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
+            {products.length > 3 && <>
+                <CarouselPrevious />
+                <CarouselNext />
+            </>}
           </Carousel>
         ) : (
           <Card>
@@ -104,7 +148,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product) => (
+                  {products.map((product) => (
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer">
                       <TableCell>{product.article_number}</TableCell>
                       <TableCell>{product.name}</TableCell>
@@ -122,7 +166,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             </ScrollArea>
           </Card>
         )}
-         {filteredProducts.length === 0 && (
+         {products.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
                 <p>Товары не найдены.</p>
                 <p className="text-sm">Попробуйте изменить критерии поиска.</p>
