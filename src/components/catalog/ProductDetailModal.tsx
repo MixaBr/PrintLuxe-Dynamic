@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Autoplay from "embla-carousel-autoplay";
 import type { Product } from '@/lib/definitions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -9,7 +9,6 @@ import Image from 'next/image';
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { incrementProductViewCount } from '@/app/catalog/actions';
 import { ScrollArea } from '../ui/scroll-area';
-import { Card, CardContent } from "@/components/ui/card"
 import {
   Carousel,
   CarouselContent,
@@ -29,8 +28,6 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
 
   useEffect(() => {
     if (isOpen && product) {
-      // We don't need to wait for this to finish.
-      // It can run in the background.
       incrementProductViewCount(product.id);
     }
   }, [isOpen, product]);
@@ -48,10 +45,23 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
 
+  // Safely parse image_urls from Supabase text[] format
+  let additionalImages: string[] = [];
+  if (product.image_urls && typeof product.image_urls === 'string') {
+      // It's a string like '{"url1","url2"}'
+      additionalImages = (product.image_urls as string)
+          .replace(/^{"/, '') // Remove leading {"
+          .replace(/"}$/, '') // Remove trailing "}
+          .split('","'); // Split by ","
+  } else if (Array.isArray(product.image_urls)) {
+      // It might already be an array of strings
+      additionalImages = product.image_urls;
+  }
+  
   const allImages = [
       ...(product.photo_url ? [product.photo_url] : []), 
-      ...(product.image_urls || [])
-    ].filter(url => url); // Ensure no null/empty urls
+      ...additionalImages
+    ].filter(url => url && typeof url === 'string' && url.startsWith('http'));
 
   const hasMultipleImages = allImages.length > 1;
 
@@ -100,11 +110,11 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                 </Carousel>
                ) : (
                 <Image
-                    src={product.photo_url || '/placeholder.png'}
+                    src={allImages[0] || '/placeholder.png'}
                     alt={`Image of ${product.name}`}
                     fill
                     className="object-contain"
-                    onDoubleClick={() => product.photo_url && setLightboxImage(product.photo_url)}
+                    onDoubleClick={() => allImages[0] && setLightboxImage(allImages[0])}
                 />
                )}
             </div>
