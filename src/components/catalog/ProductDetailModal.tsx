@@ -89,7 +89,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                                         src={url}
                                         alt={`Image ${index + 1} of ${product.name}`}
                                         fill
-                                        className="object-cover cursor-pointer"
+                                        className="object-contain cursor-pointer"
                                     />
                                 </div>
                             </CarouselItem>
@@ -103,7 +103,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     src={product.photo_url || '/placeholder.png'}
                     alt={`Image of ${product.name}`}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                     onDoubleClick={() => product.photo_url && setLightboxImage(product.photo_url)}
                 />
                )}
