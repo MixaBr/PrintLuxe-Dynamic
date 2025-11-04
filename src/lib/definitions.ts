@@ -27,6 +27,7 @@ export type Product = {
   compatible_with_models: string | null;
   image_urls: string[] | null;
   is_featured: boolean | null;
+  total_purchases: number | null;
 };
 
 
