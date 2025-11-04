@@ -45,7 +45,20 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
   
-  const allImages: string[] = (Array.isArray(product.image_urls) ? product.image_urls : [product.photo_url]).filter(Boolean) as string[];
+  let allImages: string[] = [];
+  if (typeof product.image_urls === 'string') {
+      // Handle PostgreSQL array string format: {"url1","url2"}
+      allImages = product.image_urls
+          .slice(1, -1) // Remove curly braces
+          .split('","') // Split by ","
+          .map(url => url.replace(/^"|"$/g, '')); // Remove quotes from start/end
+  } else if (Array.isArray(product.image_urls)) {
+      allImages = product.image_urls;
+  }
+  
+  if (allImages.length === 0 && product.photo_url) {
+    allImages.push(product.photo_url);
+  }
 
   const hasMultipleImages = allImages.length > 1;
 
