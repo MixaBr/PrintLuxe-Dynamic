@@ -162,13 +162,39 @@ export async function addOrUpdateAddress(formData: FormData) {
     return { success: 'Адрес успешно сохранен!' };
 }
 
-export async function deleteAddress(addressId: number) {
+export async function deleteAddress(formData: FormData, addressId: number) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
         return { error: 'Пользователь не авторизован' };
     }
+
+    const token = formData.get('g-recaptcha-response') as string;
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+    if (!token) {
+        return { error: 'Пожалуйста, пройдите проверку reCAPTCHA.' };
+    }
+
+    try {
+        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `secret=${secretKey}&response=${token}`,
+        });
+        const recaptchaData = await response.json();
+
+        if (!recaptchaData.success) {
+            return { error: 'Проверка reCAPTCHA не удалась. Попробуйте еще раз.' };
+        }
+    } catch (error) {
+        console.error('reCAPTCHA verification error:', error);
+        return { error: 'Ошибка при проверке reCAPTCHA.' };
+    }
+
 
     const { error } = await supabase.from('addresses').delete().eq('id', addressId);
 

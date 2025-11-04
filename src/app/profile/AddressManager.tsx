@@ -1,8 +1,18 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +38,11 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+    const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
+    const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
 
     const handleFormSubmit = async (formData: FormData) => {
         startTransition(async () => {
@@ -45,37 +58,57 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                     title: 'Успех!',
                     description: result.success,
                 });
-                // In a real app, we'd likely get the updated list from the server
-                // For now, we manually update the state or rely on revalidation.
-                setIsDialogOpen(false);
+                setIsFormDialogOpen(false);
             }
         });
     };
 
-    const handleDelete = (addressId: number) => {
+    const handleDeleteAttempt = (addressId: number) => {
+        setAddressToDelete(addressId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async (formData: FormData) => {
+        if (!addressToDelete) return;
+
         startTransition(async () => {
-            const result = await deleteAddress(addressId);
+            const result = await deleteAddress(formData, addressToDelete);
             if (result.error) {
                 toast({ variant: 'destructive', title: 'Ошибка', description: result.error });
             } else {
                 toast({ title: 'Успех!', description: result.success });
-                setAddresses(addresses.filter(addr => addr.id !== addressId));
+                setAddresses(addresses.filter(addr => addr.id !== addressToDelete));
             }
+            setIsDeleteDialogOpen(false);
+            setAddressToDelete(null);
+            setIsRecaptchaVerified(false);
         });
     };
 
+
     const handleEdit = (address: Address) => {
         setSelectedAddress(address);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
 
     const handleAddNew = () => {
         setSelectedAddress(null);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
+
+    const handleCaptchaVerify = () => {
+        setIsRecaptchaVerified(true);
+    };
+    
+    if (typeof window !== 'undefined') {
+        (window as any).onCaptchaVerifyDelete = handleCaptchaVerify;
+    }
 
     return (
         <>
+             {isDeleteDialogOpen && (
+                <Script src="https://www.google.com/recaptcha/api.js" async defer />
+            )}
             <CardHeader className="flex flex-row items-start justify-between gap-4 py-4">
                <div className="flex items-center gap-4">
                  <Home className="w-8 h-8 text-primary" />
@@ -108,7 +141,7 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                                             <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleEdit(address)} disabled={isPending}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDelete(address.id)} disabled={isPending}>
+                                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDeleteAttempt(address.id)} disabled={isPending}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -123,7 +156,8 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                     </Table>
                 </ScrollArea>
 
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                {/* Edit/Add Dialog */}
+                <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
                     <DialogContent className="sm:max-w-[625px]">
                         <form action={handleFormSubmit}>
                             <DialogHeader>
@@ -190,6 +224,42 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+                    setIsDeleteDialogOpen(open);
+                    if (!open) {
+                        setIsRecaptchaVerified(false);
+                        setAddressToDelete(null);
+                    }
+                }}>
+                    <AlertDialogContent>
+                        <form action={handleDeleteConfirm}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Это действие невозможно отменить. Адрес будет удален навсегда. 
+                                    Пожалуйста, пройдите проверку, чтобы продолжить.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            
+                             <div className="my-4 flex justify-center">
+                                <div
+                                    className="g-recaptcha"
+                                    data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                                    data-callback="onCaptchaVerifyDelete"
+                                ></div>
+                            </div>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isPending}>Отмена</AlertDialogCancel>
+                                <Button type="submit" variant="destructive" disabled={!isRecaptchaVerified || isPending}>
+                                    {isPending ? "Удаление..." : "Удалить"}
+                                </Button>
+                            </AlertDialogFooter>
+                        </form>
+                    </AlertDialogContent>
+                </AlertDialog>
             </CardContent>
         </>
     );
