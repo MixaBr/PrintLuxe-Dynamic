@@ -46,7 +46,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardTitle>
       </CardContent>
       <CardFooter className="p-4 flex justify-between items-center">
-        <p className="text-lg font-semibold">{(product.price || 0).toLocaleString('ru-RU')} ₽</p>
+        <p className="text-lg font-semibold">{(product.price || 0).toLocaleString('ru-RU')} BYN</p>
         <Button size="sm" variant="outline">
           <ShoppingCart className="mr-2 h-4 w-4" />
           В корзину

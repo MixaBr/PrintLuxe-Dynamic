@@ -28,7 +28,7 @@ export default function ProductCarouselCard({ product }: ProductCarouselCardProp
           {product.name}
         </h3>
         <div className="mt-auto flex justify-between items-center">
-            <p className="text-lg font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} ₽</p>
+            <p className="text-lg font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</p>
             <Button size="sm" variant="outline">
                 <ShoppingCart className="h-4 w-4" />
             </Button>
@@ -37,4 +37,3 @@ export default function ProductCarouselCard({ product }: ProductCarouselCardProp
     </div>
   );
 }
-

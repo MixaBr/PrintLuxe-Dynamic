@@ -60,7 +60,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     </TableBody>
                 </Table>
                  <div className="mt-4 flex justify-between items-center">
-                    <div className="text-2xl font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} ₽</div>
+                    <div className="text-2xl font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</div>
                     <Badge>{product.stock_quantity ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
                 </div>
             </div>

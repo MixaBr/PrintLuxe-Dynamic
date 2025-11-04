@@ -8,7 +8,7 @@ export default function ManagerDashboardPage() {
         { title: "Новые заказы", value: "125", icon: <ShoppingCart className="h-4 w-4 text-muted-foreground" /> },
         { title: "Новые клиенты", value: "+34", icon: <Users className="h-4 w-4 text-muted-foreground" /> },
         { title: "Товаров на складе", value: "1,234", icon: <Package className="h-4 w-4 text-muted-foreground" /> },
-        { title: "Выручка за день", value: "50,345 ₽", icon: <DollarSign className="h-4 w-4 text-muted-foreground" /> },
+        { title: "Выручка за день", value: "50,345 BYN", icon: <DollarSign className="h-4 w-4 text-muted-foreground" /> },
     ]
 
     const menuItems = [

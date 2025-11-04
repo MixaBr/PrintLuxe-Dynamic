@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export default function AdminDashboardPage() {
     const stats = [
-        { title: "Общий доход", value: "1,250,345 ₽", icon: <DollarSign className="h-4 w-4 text-muted-foreground" />, change: "+20.1% с прошлого месяца" },
+        { title: "Общий доход", value: "1,250,345 BYN", icon: <DollarSign className="h-4 w-4 text-muted-foreground" />, change: "+20.1% с прошлого месяца" },
         { title: "Новые пользователи", value: "+1,234", icon: <Users className="h-4 w-4 text-muted-foreground" />, change: "+180.1% с прошлого месяца" },
         { title: "Продажи", value: "+12,234", icon: <CreditCard className="h-4 w-4 text-muted-foreground" />, change: "+19% с прошлого месяца" },
         { title: "Всего товаров", value: "8", icon: <Package className="h-4 w-4 text-muted-foreground" />, change: "Актуальный каталог" },

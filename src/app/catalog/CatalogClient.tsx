@@ -108,7 +108,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer">
                       <TableCell>{product.article_number}</TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{(product.price1 || 0).toLocaleString('ru-RU')} ₽</TableCell>
+                      <TableCell>{(product.price1 || 0).toLocaleString('ru-RU')} BYN</TableCell>
                       <TableCell className="text-right">
                          <Button size="sm" variant="outline">
                             <ShoppingCart className="mr-2 h-4 w-4" />

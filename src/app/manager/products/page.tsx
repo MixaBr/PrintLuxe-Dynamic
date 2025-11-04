@@ -71,7 +71,7 @@ export default async function ManagerProductsPage() {
                                         <TableCell>
                                             <Badge variant="outline">{product.category}</Badge>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">{(product.price || 0).toLocaleString('ru-RU')} ₽</TableCell>
+                                        <TableCell className="hidden md:table-cell">{(product.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
