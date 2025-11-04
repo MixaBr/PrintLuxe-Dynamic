@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { incrementProductViewCount } from '@/app/catalog/actions';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -43,9 +44,11 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
-          <DialogDescription>
-            {product.description}
-          </DialogDescription>
+          <ScrollArea className="max-h-32 w-full pr-4">
+            <DialogDescription className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {product.description}
+            </DialogDescription>
+          </ScrollArea>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
