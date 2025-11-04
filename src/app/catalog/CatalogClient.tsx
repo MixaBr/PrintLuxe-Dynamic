@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
-import { createClient } from '@/lib/supabase/client';
+import { createSupabaseBrowserClient as createClient } from '@/lib/supabase/client';
 import { getProductById } from '@/lib/data';
 
 interface CatalogClientProps {
