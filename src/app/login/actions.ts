@@ -35,6 +35,17 @@ export async function signIn(prevState: any, formData: FormData) {
 
   const user = authData.user;
 
+  // Update last login time
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ last_login_at: new Date().toISOString() })
+    .eq('user_id', user.id);
+
+  if (updateError) {
+      // Log the error but don't block the login process
+      console.error('Failed to update last login time:', updateError);
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('status')
