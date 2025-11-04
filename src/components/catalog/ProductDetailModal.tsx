@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import type { Product } from '@/lib/definitions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { incrementProductViewCount } from '@/app/catalog/actions';
 
@@ -13,10 +12,9 @@ interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  isAuthenticated: boolean;
 }
 
-export default function ProductDetailModal({ product, isOpen, onClose, isAuthenticated }: ProductDetailModalProps) {
+export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
   
   useEffect(() => {
     if (isOpen && product) {
@@ -28,7 +26,8 @@ export default function ProductDetailModal({ product, isOpen, onClose, isAuthent
 
   if (!product) return null;
 
-  const price = isAuthenticated ? product.price2 : product.price1;
+  // The component now receives the final price, no logic needed here.
+  const price = product.price;
 
   const details = {
     "Артикул": product.article_number,

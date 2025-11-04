@@ -3,7 +3,7 @@ export type Product = {
   id: string;
   name: string;
   description: string;
-  price: number; // General purpose, can be removed if price1/2/3/4 are sufficient
+  price: number | null; // This will hold the final price for the client
   imageId: string;
   category: string;
 

@@ -4,7 +4,6 @@ import type { Product } from '@/lib/data';
 
 interface ProductCardProps {
   product: Product;
-  isAuthenticated: boolean;
 }
 
 // Helper function to format the product name for proper wrapping.
@@ -15,8 +14,9 @@ const formatNameForWrapping = (name: string) => {
   return name.split('/').join('/​');
 };
 
-export default function ProductCard({ product, isAuthenticated }: ProductCardProps) {
-  const price = isAuthenticated ? product.price2 : product.price1;
+export default function ProductCard({ product }: ProductCardProps) {
+  // The component now receives the final price, no logic needed here.
+  const price = product.price;
 
   const handleAddToCart = () => {
     // This is a placeholder for the actual add to cart logic.
@@ -41,7 +41,7 @@ export default function ProductCard({ product, isAuthenticated }: ProductCardPro
       </h3>
 
       <div className="mt-auto pt-4"> {/* Wrapper to push content to the bottom */}
-        <p className="text-xl font-semibold">{price ? `${price} руб.` : 'Цена по запросу'}</p>
+        <p className="text-xl font-semibold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</p>
         <button
           onClick={handleAddToCart}
           className="mt-4 w-full bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-2 px-4 rounded hover:bg-white/30 transition-colors duration-200"

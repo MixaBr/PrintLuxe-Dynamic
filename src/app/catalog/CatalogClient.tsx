@@ -14,14 +14,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
+import { createClient } from '@/lib/supabase/client';
+import { getProductById } from '@/lib/data';
 
 interface CatalogClientProps {
   products: Product[];
   categories: string[];
-  isAuthenticated: boolean;
 }
 
-export default function CatalogClient({ products, categories, isAuthenticated }: CatalogClientProps) {
+export default function CatalogClient({ products, categories }: CatalogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -62,13 +63,18 @@ export default function CatalogClient({ products, categories, isAuthenticated }:
     });
   };
 
-  const handleRowDoubleClick = (product: Product) => {
-    setSelectedProduct(product);
+  const handleRowDoubleClick = async (product: Product) => {
+    // Since the product object from the list may not have all details
+    // and has a price processed for a specific user,
+    // we re-fetch the full, correctly-priced details on demand.
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const fullProduct = await getProductById(product.id, !!user);
+    setSelectedProduct(fullProduct || product);
   };
 
   const getPrice = (product: Product) => {
-    const price = isAuthenticated ? product.price2 : product.price1;
-    return price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу';
+    return product.price ? `${product.price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу';
   };
 
   return (
@@ -90,14 +96,16 @@ export default function CatalogClient({ products, categories, isAuthenticated }:
           <Select value={selectedCategory} onValueChange={(value) => {
               setSelectedCategory(value);
               // Trigger filter change on select
-              const params = new URLSearchParams(window.location.search);
-              if (value !== 'all') {
-                params.set('category', value);
-              } else {
-                params.delete('category');
-              }
-              params.delete('page');
-              router.push(`/catalog?${params.toString()}`);
+              startTransition(() => {
+                const params = new URLSearchParams(window.location.search);
+                if (value !== 'all') {
+                  params.set('category', value);
+                } else {
+                  params.delete('category');
+                }
+                params.delete('page');
+                router.push(`/catalog?${params.toString()}`);
+              });
           }}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Все категории" />
@@ -132,7 +140,7 @@ export default function CatalogClient({ products, categories, isAuthenticated }:
             <CarouselContent>
               {products.map((product) => (
                 <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onDoubleClick={() => handleRowDoubleClick(product)}>
-                  <ProductCarouselCard product={product} isAuthenticated={isAuthenticated} />
+                  <ProductCarouselCard product={product} />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -184,7 +192,6 @@ export default function CatalogClient({ products, categories, isAuthenticated }:
         product={selectedProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        isAuthenticated={isAuthenticated}
       />
     </>
   );

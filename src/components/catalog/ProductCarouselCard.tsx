@@ -8,11 +8,11 @@ import { ShoppingCart } from 'lucide-react';
 
 interface ProductCarouselCardProps {
   product: Product;
-  isAuthenticated: boolean;
 }
 
-export default function ProductCarouselCard({ product, isAuthenticated }: ProductCarouselCardProps) {
-  const price = isAuthenticated ? product.price2 : product.price1;
+export default function ProductCarouselCard({ product }: ProductCarouselCardProps) {
+  // The component now receives the final price, no logic needed here.
+  const price = product.price;
 
   return (
     <div className="p-1 h-full">

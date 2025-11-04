@@ -9,6 +9,8 @@ interface ProductQueryOptions {
   limit?: number;
 }
 
+// This function now returns products with both prices.
+// The selection logic is moved to the server-component level.
 export async function getAllProducts({ query, category, page = 1, limit = 1000 }: ProductQueryOptions = {}): Promise<Product[]> {
   let supabaseQuery = supabase
     .from('products')
@@ -64,7 +66,8 @@ export async function getProductsCount({ query, category }: { query?: string; ca
 }
 
 
-export async function getFeaturedProducts(ids: number[]): Promise<Product[]> {
+// The function now accepts isAuthenticated to determine the price.
+export async function getFeaturedProducts(ids: number[], isAuthenticated: boolean): Promise<Product[]> {
   if (!ids || ids.length === 0) {
     return [];
   }
@@ -79,10 +82,14 @@ export async function getFeaturedProducts(ids: number[]): Promise<Product[]> {
     return [];
   }
 
-  return data;
+  // Process data on the server to include only the correct price.
+  return data.map(product => ({
+    ...product,
+    price: isAuthenticated ? product.price2 : product.price1,
+  }));
 }
 
-export async function getProductById(id: string): Promise<Product | undefined> {
+export async function getProductById(id: string, isAuthenticated: boolean): Promise<Product | undefined> {
     const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -93,8 +100,15 @@ export async function getProductById(id: string): Promise<Product | undefined> {
     console.error(`Error fetching product with id ${id}:`, error);
     return undefined;
   }
+  
+  if (data) {
+      return {
+          ...data,
+          price: isAuthenticated ? data.price2 : data.price1,
+      }
+  }
 
-  return data;
+  return undefined;
 }
 
 export async function getAppBackground(): Promise<string | null> {
