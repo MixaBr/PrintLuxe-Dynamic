@@ -1,14 +1,34 @@
+
 export type Product = {
   id: string;
   name: string;
   description: string;
-  price: number;
-  price1?: number;
-  price2?: number;
+  price: number; // General purpose, can be removed if price1/2/3/4 are sufficient
   imageId: string;
   category: string;
-  photo_url?: string;
+
+  // Fields from screenshot
+  product_number: string | null;
+  article_number: string | null;
+  photo_url: string | null;
+  stock_quantity: number | null;
+  price1: number | null;
+  price2: number | null;
+  price3: number | null;
+  price4: number | null;
+  added_at: string;
+  updated_at: string;
+  accumulation: number | null;
+  sizeW: number | null;
+  sizeL: number | null;
+  sizeH: number | null;
+  weight: number | null;
+  manufacturer: string | null;
+  compatible_with_models: string | null;
+  image_urls: string[] | null;
+  is_featured: boolean | null;
 };
+
 
 export type User = {
   id: string;

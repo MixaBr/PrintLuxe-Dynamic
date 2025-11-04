@@ -1,3 +1,8 @@
+
+// This file is no longer used for the main catalog page,
+// but is kept in case it's used elsewhere.
+// The new card is ProductCarouselCard.tsx
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/lib/definitions';
