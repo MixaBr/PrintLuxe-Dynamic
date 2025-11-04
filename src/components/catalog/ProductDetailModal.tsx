@@ -1,13 +1,22 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Autoplay from "embla-carousel-autoplay";
 import type { Product } from '@/lib/definitions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { incrementProductViewCount } from '@/app/catalog/actions';
 import { ScrollArea } from '../ui/scroll-area';
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -16,7 +25,8 @@ interface ProductDetailModalProps {
 }
 
 export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
-  
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
   useEffect(() => {
     if (isOpen && product) {
       // We don't need to wait for this to finish.
@@ -27,7 +37,6 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
 
   if (!product) return null;
 
-  // The component now receives the final price, no logic needed here.
   const price = product.price;
 
   const details = {
@@ -38,57 +47,112 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Вес, г": product.weight,
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
-  
+
+  const allImages = [
+      ...(product.photo_url ? [product.photo_url] : []), 
+      ...(product.image_urls || [])
+    ].filter(url => url); // Ensure no null/empty urls
+
+  const hasMultipleImages = allImages.length > 1;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
-          <ScrollArea className="max-h-32 w-full pr-4">
-            <DialogDescription className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {product.description}
-            </DialogDescription>
-          </ScrollArea>
-        </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
+            <ScrollArea className="max-h-32 w-full pr-4">
+              <DialogDescription className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {product.description}
+              </DialogDescription>
+            </ScrollArea>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-                 <Image
+               {hasMultipleImages ? (
+                 <Carousel
+                    plugins={[
+                        Autoplay({
+                            delay: 3000,
+                            stopOnInteraction: true,
+                            stopOnMouseEnter: true,
+                        }),
+                    ]}
+                    opts={{ loop: true }}
+                    className="w-full h-full"
+                >
+                    <CarouselContent className="h-full">
+                        {allImages.map((url, index) => (
+                            <CarouselItem key={index} onDoubleClick={() => setLightboxImage(url)}>
+                                <div className="relative w-full h-full">
+                                    <Image
+                                        src={url}
+                                        alt={`Image ${index + 1} of ${product.name}`}
+                                        fill
+                                        className="object-cover cursor-pointer"
+                                    />
+                                </div>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
+                </Carousel>
+               ) : (
+                <Image
                     src={product.photo_url || '/placeholder.png'}
                     alt={`Image of ${product.name}`}
                     fill
                     className="object-cover"
+                    onDoubleClick={() => product.photo_url && setLightboxImage(product.photo_url)}
                 />
+               )}
             </div>
             <div>
-                <h3 className="font-semibold mb-2">Детали</h3>
-                <Table>
-                    <TableBody>
-                        {Object.entries(details).map(([key, value]) => (
-                            value ? (
-                                <TableRow key={key}>
-                                    <TableCell className="font-medium text-muted-foreground text-xs w-1/3">{key}</TableCell>
-                                    <TableCell className="text-sm">{String(value)}</TableCell>
-                                </TableRow>
-                            ) : null
-                        ))}
-                        {product.compatible_with_models && (
-                            <TableRow>
-                                <TableCell className="font-medium text-muted-foreground text-xs w-1/3 align-top">Совместимость</TableCell>
-                                <TableCell className="text-sm">
-                                  <p className="leading-relaxed break-words whitespace-pre-wrap">
-                                      {product.compatible_with_models.replace(/;/g, '; ')}
-                                  </p>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-                 <div className="mt-4 flex justify-between items-center">
-                    <div className="text-2xl font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</div>
-                </div>
+              <h3 className="font-semibold mb-2">Детали</h3>
+              <Table>
+                <TableBody>
+                  {Object.entries(details).map(([key, value]) => (
+                    value ? (
+                      <TableRow key={key}>
+                        <TableCell className="font-medium text-muted-foreground text-xs w-1/3">{key}</TableCell>
+                        <TableCell className="text-sm">{String(value)}</TableCell>
+                      </TableRow>
+                    ) : null
+                  ))}
+                  {product.compatible_with_models && (
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs w-1/3 align-top">Совместимость</TableCell>
+                      <TableCell className="text-sm">
+                        <p className="leading-relaxed break-words whitespace-pre-wrap">
+                          {product.compatible_with_models.replace(/;/g, '; ')}
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-2xl font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</div>
+              </div>
             </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lightbox Dialog */}
+      <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
+        <DialogContent className="max-w-5xl h-[90vh] bg-transparent border-none shadow-none">
+            {lightboxImage && (
+                 <Image
+                    src={lightboxImage}
+                    alt="Enlarged product view"
+                    fill
+                    className="object-contain"
+                />
+            )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
