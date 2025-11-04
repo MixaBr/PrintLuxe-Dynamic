@@ -31,12 +31,15 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Артикул": product.article_number,
     "Номер продукта": product.product_number,
     "Производитель": product.manufacturer,
-    "Количество на складе": product.stock_quantity,
     "Категория": product.category,
     "Вес, кг": product.weight,
-    "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`,
-    "Совместимость": product.compatible_with_models
+    "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
+  
+  const formattedCompatibility = product.compatible_with_models
+    ? product.compatible_with_models.split(';').map(item => item.trim()).join(';\n')
+    : null;
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -68,11 +71,17 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                                 </TableRow>
                             ) : null
                         ))}
+                        {formattedCompatibility && (
+                            <TableRow>
+                                <TableCell className="font-medium text-muted-foreground text-xs w-1/3">Совместимость</TableCell>
+                                <TableCell className="text-sm whitespace-pre-line">{formattedCompatibility}</TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
                  <div className="mt-4 flex justify-between items-center">
                     <div className="text-2xl font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</div>
-                    <Badge>{product.stock_quantity ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
+                    <Badge>{product.stock_quantity && product.stock_quantity > 0 ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
                 </div>
             </div>
         </div>
