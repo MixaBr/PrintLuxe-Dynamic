@@ -8,9 +8,12 @@ import { ShoppingCart } from 'lucide-react';
 
 interface ProductCarouselCardProps {
   product: Product;
+  isAuthenticated: boolean;
 }
 
-export default function ProductCarouselCard({ product }: ProductCarouselCardProps) {
+export default function ProductCarouselCard({ product, isAuthenticated }: ProductCarouselCardProps) {
+  const price = isAuthenticated ? product.price2 : product.price1;
+
   return (
     <div className="p-1 h-full">
       <div className="border rounded-lg p-4 bg-white/10 backdrop-blur-sm text-white flex flex-col h-full cursor-pointer">
@@ -28,7 +31,7 @@ export default function ProductCarouselCard({ product }: ProductCarouselCardProp
           {product.name}
         </h3>
         <div className="mt-auto flex justify-between items-center">
-            <p className="text-lg font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</p>
+            <p className="text-lg font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</p>
             <Button size="icon" variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/20 hover:text-white">
                 <ShoppingCart className="h-4 w-4" />
             </Button>

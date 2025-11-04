@@ -18,9 +18,10 @@ import ProductDetailModal from '@/components/catalog/ProductDetailModal';
 interface CatalogClientProps {
   products: Product[];
   categories: string[];
+  isAuthenticated: boolean;
 }
 
-export default function CatalogClient({ products, categories }: CatalogClientProps) {
+export default function CatalogClient({ products, categories, isAuthenticated }: CatalogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -63,6 +64,11 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
 
   const handleRowDoubleClick = (product: Product) => {
     setSelectedProduct(product);
+  };
+
+  const getPrice = (product: Product) => {
+    const price = isAuthenticated ? product.price2 : product.price1;
+    return price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу';
   };
 
   return (
@@ -126,7 +132,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             <CarouselContent>
               {products.map((product) => (
                 <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onDoubleClick={() => handleRowDoubleClick(product)}>
-                  <ProductCarouselCard product={product} />
+                  <ProductCarouselCard product={product} isAuthenticated={isAuthenticated} />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -152,7 +158,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer">
                       <TableCell>{product.article_number}</TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{(product.price1 || 0).toLocaleString('ru-RU')} BYN</TableCell>
+                      <TableCell>{getPrice(product)}</TableCell>
                       <TableCell className="text-right">
                          <Button size="sm" variant="outline">
                             <ShoppingCart className="mr-2 h-4 w-4" />
@@ -178,6 +184,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
         product={selectedProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
+        isAuthenticated={isAuthenticated}
       />
     </>
   );

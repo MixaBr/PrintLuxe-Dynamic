@@ -1,7 +1,9 @@
 
+
 import { getAllProducts, getProductsCount } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { createClient } from '@/lib/supabase/server';
 
 interface CatalogPageProps {
   searchParams: {
@@ -21,7 +23,11 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const totalProducts = await getProductsCount({ query, category });
   const totalPages = Math.ceil(totalProducts / productsPerPage);
 
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
+  const allFetchedProducts = await getAllProducts();
+  const categories = [...new Set(allFetchedProducts.map(p => p.category).filter(Boolean))] as string[];
+
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -55,7 +61,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           Ознакомьтесь с полным ассортиментом наших товаров и услуг.
         </p>
       </div>
-      <CatalogClient products={products} categories={categories} />
+      <CatalogClient products={products} categories={categories} isAuthenticated={!!user} />
       <div className="mt-8">
         {renderPagination()}
       </div>

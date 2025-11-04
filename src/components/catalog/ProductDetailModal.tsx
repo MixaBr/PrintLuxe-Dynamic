@@ -13,9 +13,10 @@ interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  isAuthenticated: boolean;
 }
 
-export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
+export default function ProductDetailModal({ product, isOpen, onClose, isAuthenticated }: ProductDetailModalProps) {
   
   useEffect(() => {
     if (isOpen && product) {
@@ -26,6 +27,8 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   }, [isOpen, product]);
 
   if (!product) return null;
+
+  const price = isAuthenticated ? product.price2 : product.price1;
 
   const details = {
     "Артикул": product.article_number,
@@ -68,9 +71,9 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                         ))}
                         {product.compatible_with_models && (
                             <TableRow>
-                                <TableCell className="font-medium text-muted-foreground text-xs w-1/3">Совместимость</TableCell>
+                                <TableCell className="font-medium text-muted-foreground text-xs w-1/3 align-top">Совместимость</TableCell>
                                 <TableCell className="text-sm">
-                                  <p className="leading-relaxed break-words">
+                                  <p className="leading-relaxed break-words whitespace-pre-wrap">
                                       {product.compatible_with_models.replace(/;/g, '; ')}
                                   </p>
                                 </TableCell>
@@ -79,10 +82,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     </TableBody>
                 </Table>
                  <div className="mt-4 flex justify-between items-center">
-                    <div className="text-2xl font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</div>
-                    {product.stock_quantity !== null && product.stock_quantity !== undefined ? (
-                      <Badge>{product.stock_quantity > 0 ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
-                    ) : null}
+                    <div className="text-2xl font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</div>
                 </div>
             </div>
         </div>
@@ -90,4 +90,3 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     </Dialog>
   );
 }
-
