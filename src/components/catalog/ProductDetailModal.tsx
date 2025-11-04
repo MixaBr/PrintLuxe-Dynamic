@@ -34,7 +34,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Номер продукта": product.product_number,
     "Производитель": product.manufacturer,
     "Категория": product.category,
-    "Вес, кг": product.weight,
+    "Вес, граммы": product.weight,
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
   
