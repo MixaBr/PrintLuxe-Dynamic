@@ -36,11 +36,6 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     "Размеры (ШxДxВ), мм": `${product.sizeW || '-'}x${product.sizeL || '-'}x${product.sizeH || '-'}`
   };
   
-  const formattedCompatibility = product.compatible_with_models
-    ? product.compatible_with_models.split(';').map(item => item.trim()).join(';\n')
-    : null;
-
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl">
@@ -71,17 +66,23 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                                 </TableRow>
                             ) : null
                         ))}
-                        {formattedCompatibility && (
+                        {product.compatible_with_models && (
                             <TableRow>
                                 <TableCell className="font-medium text-muted-foreground text-xs w-1/3">Совместимость</TableCell>
-                                <TableCell className="text-sm whitespace-pre-line">{formattedCompatibility}</TableCell>
+                                <TableCell className="text-sm">
+                                  <p className="leading-relaxed break-words">
+                                      {product.compatible_with_models.replace(/;/g, '; ')}
+                                  </p>
+                                </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
                  <div className="mt-4 flex justify-between items-center">
                     <div className="text-2xl font-bold">{(product.price1 || 0).toLocaleString('ru-RU')} BYN</div>
-                    <Badge>{product.stock_quantity && product.stock_quantity > 0 ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
+                    {product.stock_quantity !== null && product.stock_quantity !== undefined ? (
+                      <Badge>{product.stock_quantity > 0 ? `В наличии: ${product.stock_quantity}` : 'Нет в наличии'}</Badge>
+                    ) : null}
                 </div>
             </div>
         </div>
@@ -89,3 +90,4 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     </Dialog>
   );
 }
+
