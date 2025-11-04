@@ -28,6 +28,8 @@ export type Product = {
   image_urls: string[] | null;
   is_featured: boolean | null;
   total_purchases: number | null;
+  views_count: number | null;
+  order_count: number | null;
 };
 
 
@@ -60,3 +62,4 @@ export type Address = {
   updated_at: string;
   address_type: 'delivery' | 'billing' | 'other' | null;
 };
+

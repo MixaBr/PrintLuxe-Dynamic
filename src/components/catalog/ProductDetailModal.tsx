@@ -1,11 +1,13 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import type { Product } from '@/lib/definitions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
+import { incrementProductViewCount } from '@/app/catalog/actions';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -14,6 +16,15 @@ interface ProductDetailModalProps {
 }
 
 export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
+  
+  useEffect(() => {
+    if (isOpen && product) {
+      // We don't need to wait for this to finish.
+      // It can run in the background.
+      incrementProductViewCount(product.id);
+    }
+  }, [isOpen, product]);
+
   if (!product) return null;
 
   const details = {
