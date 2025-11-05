@@ -15,6 +15,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel"
 
 interface ProductDetailModalProps {
@@ -25,12 +26,31 @@ interface ProductDetailModalProps {
 
 export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [api, setApi] = useState<CarouselApi | undefined>();
+  // New state to track hover status
+  const [isHovering, setIsHovering] = useState(false);
 
+  // Increment view count when the main modal opens
   useEffect(() => {
     if (isOpen && product) {
       incrementProductViewCount(product.id);
     }
   }, [isOpen, product]);
+
+  // Centralized effect to control the autoplay
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    // If lightbox is open OR user is hovering, stop autoplay.
+    if (lightboxImage || isHovering) {
+      api.plugins().autoplay?.stop();
+    } else {
+      // Otherwise, play it.
+      api.plugins().autoplay?.play();
+    }
+  }, [api, lightboxImage, isHovering]);
 
   if (!product) return null;
 
@@ -47,11 +67,8 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   
   let allImages: string[] = [];
   if (typeof product.image_urls === 'string') {
-      // Handle PostgreSQL array string format: {"url1","url2"}
       allImages = product.image_urls
-          .slice(1, -1) // Remove curly braces
-          .split('","') // Split by ","
-          .map(url => url.replace(/^"|"$/g, '')); // Remove quotes from start/end
+          .slice(1, -1).split('","').map(url => url.replace(/^"|"$/g, '')); 
   } else if (Array.isArray(product.image_urls)) {
       allImages = product.image_urls;
   }
@@ -75,30 +92,35 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
             </ScrollArea>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+            {/* Add mouse listeners to the container */}
+            <div 
+              className="relative aspect-square bg-muted rounded-lg overflow-hidden"
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
+            >
                {hasMultipleImages ? (
                  <Carousel
+                    setApi={setApi}
                     plugins={[
-                        Autoplay({
-                            delay: 3000,
-                            stopOnInteraction: true,
-                            stopOnMouseEnter: true,
-                        }),
+                      Autoplay({
+                        delay: 3000,
+                        stopOnInteraction: true, // Keep this to stop on manual drag/click
+                        // stopOnMouseEnter is no longer needed, we control it manually
+                      }),
                     ]}
                     opts={{ loop: true }}
                     className="w-full h-full"
                 >
-                    <CarouselContent className="h-full">
+                    <CarouselContent>
                         {allImages.map((url, index) => (
-                            <CarouselItem key={index} onDoubleClick={() => setLightboxImage(url)}>
-                                <div className="relative w-full h-full">
-                                    <Image
-                                        src={url}
-                                        alt={`Image ${index + 1} of ${product.name}`}
-                                        fill
-                                        className="object-contain cursor-pointer"
-                                    />
-                                </div>
+                            <CarouselItem key={index} className="relative aspect-square" onDoubleClick={() => setLightboxImage(url)}>
+                                <Image
+                                    src={url}
+                                    alt={`Image ${index + 1} of ${product.name}`}
+                                    fill
+                                    sizes="(min-width: 1360px) 583px, (min-width: 780px) calc(45.45vw - 33px), calc(100vw - 32px)"
+                                    className="object-contain cursor-pointer"
+                                />
                             </CarouselItem>
                         ))}
                     </CarouselContent>
@@ -110,6 +132,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     src={allImages[0]}
                     alt={`Image of ${product.name}`}
                     fill
+                    sizes="(min-width: 1360px) 583px, (min-width: 780px) calc(45.45vw - 33px), calc(100vw - 32px)"
                     className="object-contain"
                     onDoubleClick={() => allImages[0] && setLightboxImage(allImages[0])}
                 />
@@ -150,14 +173,19 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
       {/* Lightbox Dialog */}
       <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
         <DialogContent className="max-w-5xl h-[90vh] bg-transparent border-none shadow-none">
-            {lightboxImage && (
-                 <Image
-                    src={lightboxImage}
-                    alt="Enlarged product view"
-                    fill
-                    className="object-contain"
-                />
-            )}
+           <DialogHeader>
+              <DialogTitle className="sr-only">{`Увеличенное изображение: ${product.name}`}</DialogTitle>
+              <DialogDescription className="sr-only">Это модальное окно отображает увеличенную версию изображения продукта для детального просмотра.</DialogDescription>
+           </DialogHeader>
+          {lightboxImage && (
+              <Image
+                src={lightboxImage}
+                alt={`Увеличенное изображение ${product.name}`}
+                fill
+                sizes="calc(100vw - 48px)"
+                className="object-contain"
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

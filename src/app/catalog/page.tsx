@@ -1,6 +1,7 @@
 
 
 
+
 import { getAllProducts, getProductsCount } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -63,7 +64,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 md:py-12">
+    <div className="container mx-auto px-4 py-4 md:px-8 md:py-6">
       <div className="text-center mb-8">
         <h1 className="text-4xl md:text-6xl font-bold font-headline text-white">Каталог продукции</h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-white/90">

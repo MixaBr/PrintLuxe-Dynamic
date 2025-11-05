@@ -14,8 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
-import { createSupabaseBrowserClient as createClient } from '@/lib/supabase/client';
-import { getProductById } from '@/lib/data';
+import { getFullProductDetails } from './actions'; // Updated import
 
 interface CatalogClientProps {
   products: Product[];
@@ -64,12 +63,8 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   };
 
   const handleRowDoubleClick = async (product: Product) => {
-    // Since the product object from the list may not have all details
-    // and has a price processed for a specific user,
-    // we re-fetch the full, correctly-priced details on demand.
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const fullProduct = await getProductById(product.id, !!user);
+    // Use the server action to get full product details
+    const fullProduct = await getFullProductDetails(product.id);
     setSelectedProduct(fullProduct || product);
   };
 
