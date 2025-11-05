@@ -27,27 +27,21 @@ interface ProductDetailModalProps {
 export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi | undefined>();
-  // New state to track hover status
   const [isHovering, setIsHovering] = useState(false);
 
-  // Increment view count when the main modal opens
   useEffect(() => {
     if (isOpen && product) {
       incrementProductViewCount(product.id);
     }
   }, [isOpen, product]);
 
-  // Centralized effect to control the autoplay
   useEffect(() => {
     if (!api) {
       return;
     }
-
-    // If lightbox is open OR user is hovering, stop autoplay.
     if (lightboxImage || isHovering) {
       api.plugins().autoplay?.stop();
     } else {
-      // Otherwise, play it.
       api.plugins().autoplay?.play();
     }
   }, [api, lightboxImage, isHovering]);
@@ -82,19 +76,13 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col">
+          <DialogHeader className='p-6'>
             <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
-            <ScrollArea className="max-h-32 w-full pr-4">
-              <DialogDescription className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {product.description}
-              </DialogDescription>
-            </ScrollArea>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            {/* Add mouse listeners to the container */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 flex-1 overflow-y-auto p-6 pt-0">
             <div 
-              className="relative aspect-square bg-muted rounded-lg overflow-hidden"
+              className="md:col-span-2 relative bg-muted rounded-lg overflow-hidden min-h-[300px]"
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
             >
@@ -104,8 +92,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                     plugins={[
                       Autoplay({
                         delay: 3000,
-                        stopOnInteraction: true, // Keep this to stop on manual drag/click
-                        // stopOnMouseEnter is no longer needed, we control it manually
+                        stopOnInteraction: true,
                       }),
                     ]}
                     opts={{ loop: true }}
@@ -138,7 +125,14 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                 />
                )}
             </div>
-            <div>
+            <div className='md:col-span-3'>
+                {product.description && (
+                    <ScrollArea className="max-h-[200px] w-full pr-4 mb-4">
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {product.description}
+                        </p>
+                    </ScrollArea>
+                )}
               <h3 className="font-semibold mb-2">Детали</h3>
               <Table>
                 <TableBody>

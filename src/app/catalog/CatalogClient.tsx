@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -7,14 +6,12 @@ import type { Product } from '@/lib/definitions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, List, ShoppingCart } from 'lucide-react';
+import { LayoutGrid, List, ShoppingCart, X } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
-import { getFullProductDetails } from './actions'; // Updated import
+import { getFullProductDetails } from './actions';
 
 interface CatalogClientProps {
   products: Product[];
@@ -62,8 +59,17 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
     });
   };
 
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    startTransition(() => {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('query');
+      params.delete('page');
+      router.push(`/catalog?${params.toString()}`);
+    });
+  };
+
   const handleRowDoubleClick = async (product: Product) => {
-    // Use the server action to get full product details
     const fullProduct = await getFullProductDetails(product.id);
     setSelectedProduct(fullProduct || product);
   };
@@ -75,14 +81,27 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   return (
     <>
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-grow flex gap-2">
-            <Input
-            placeholder="Поиск по названию или артикулу..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
-            className="flex-grow"
-            />
+        <div className="flex-grow flex items-center gap-2">
+            <div className="relative flex-grow">
+                <Input
+                placeholder="Поиск по названию или артикулу..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
+                className="pr-10"
+                />
+                {searchTerm && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={handleClearSearch}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
             <Button onClick={handleFilterChange} disabled={isPending}>
                 {isPending ? 'Поиск...' : 'Найти'}
             </Button>
@@ -90,7 +109,6 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
         <div className="flex items-center gap-4">
           <Select value={selectedCategory} onValueChange={(value) => {
               setSelectedCategory(value);
-              // Trigger filter change on select
               startTransition(() => {
                 const params = new URLSearchParams(window.location.search);
                 if (value !== 'all') {
@@ -145,35 +163,33 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             </>}
           </Carousel>
         ) : (
-          <Card>
-            <ScrollArea className="h-[60vh]">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>Артикул</TableHead>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Цена</TableHead>
-                    <TableHead className="text-right">Действие</TableHead>
+          <div className="rounded-lg border h-[60vh] overflow-y-auto relative">
+            <table className="w-full text-sm table-fixed">
+              <TableHeader className="sticky top-0 bg-card z-10 border-b">
+                <TableRow>
+                  <TableHead className="w-[20%] text-black">Артикул</TableHead>
+                  <TableHead className="w-[40%] text-black">Название</TableHead>
+                  <TableHead className="w-[20%] text-black">Цена</TableHead>
+                  <TableHead className="w-[20%] text-right text-black">Действие</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
+                    <TableCell className="font-medium truncate">{product.article_number}</TableCell>
+                    <TableCell className="truncate">{product.name}</TableCell>
+                    <TableCell>{getPrice(product)}</TableCell>
+                    <TableCell className="text-right">
+                       <Button size="sm" variant="outline" className="text-black">
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          В корзину
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer">
-                      <TableCell>{product.article_number}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{getPrice(product)}</TableCell>
-                      <TableCell className="text-right">
-                         <Button size="sm" variant="outline">
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            В корзину
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </Card>
+                ))}
+              </TableBody>
+            </table>
+          </div>
         )}
          {products.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
