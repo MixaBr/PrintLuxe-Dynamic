@@ -139,10 +139,10 @@ export default function CartPage() {
                     <Link href="/catalog">Продолжить покупки</Link>
                 </Button>
                 <div className="w-full sm:w-auto flex flex-col sm:items-end gap-2 mb-4 sm:mb-0">
-                   <div className="flex justify-between sm:justify-end items-center gap-4">
-                     <span className="text-lg font-bold">Итого:</span>
-                     <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
-                   </div>
+                    <div className="flex justify-between sm:justify-end items-center gap-4 md:hidden">
+                        <span className="text-lg font-bold">Итого:</span>
+                        <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
+                    </div>
                    <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
                 </div>
             </div>
