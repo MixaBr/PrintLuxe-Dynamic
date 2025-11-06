@@ -42,11 +42,11 @@ export default function CartPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-24">Товар</TableHead>
-                        <TableHead>Название</TableHead>
-                        <TableHead className="text-center">Количество</TableHead>
-                        <TableHead className="text-right">Цена за шт.</TableHead>
-                        <TableHead className="text-right">Сумма</TableHead>
+                        <TableHead className="w-24 text-foreground">Товар</TableHead>
+                        <TableHead className="text-foreground">Название</TableHead>
+                        <TableHead className="text-center text-foreground">Количество</TableHead>
+                        <TableHead className="text-right text-foreground">Цена за шт.</TableHead>
+                        <TableHead className="text-right text-foreground">Сумма</TableHead>
                         <TableHead className="w-12"></TableHead>
                     </TableRow>
                 </TableHeader>
