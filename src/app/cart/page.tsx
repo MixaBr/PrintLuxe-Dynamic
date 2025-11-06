@@ -84,7 +84,10 @@ export default function CartPage() {
                     </TableRow>
                 </TableFooter>
             </Table>
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-between items-center mt-6">
+                <Button variant="outline" asChild>
+                    <Link href="/catalog">Продолжить покупки</Link>
+                </Button>
                 <Button size="lg" className="font-bold">Оформить заказ</Button>
             </div>
         </div>
