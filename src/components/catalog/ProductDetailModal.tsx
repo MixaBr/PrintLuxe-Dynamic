@@ -24,11 +24,10 @@ interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (productId: string) => void;
-  isAddingToCart: boolean;
+  onAddToCart: (product: Product) => void;
 }
 
-export default function ProductDetailModal({ product, isOpen, onClose, onAddToCart, isAddingToCart }: ProductDetailModalProps) {
+export default function ProductDetailModal({ product, isOpen, onClose, onAddToCart }: ProductDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi | undefined>();
   const [isHovering, setIsHovering] = useState(false);
@@ -164,9 +163,9 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
               </Table>
               <div className="mt-4 flex justify-between items-center">
                 <div className="text-2xl font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</div>
-                 <Button onClick={() => onAddToCart(product.id)} disabled={isAddingToCart}>
+                 <Button onClick={() => onAddToCart(product)}>
                   <ShoppingCart className="mr-2 h-4 w-4" />
-                  {isAddingToCart ? 'Добавление...' : 'В корзину'}
+                  В корзину
                 </Button>
               </div>
             </div>

@@ -12,8 +12,8 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/compon
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
 import { getFullProductDetails } from './actions';
-import { addToCart } from '@/app/cart/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useCartStore } from '@/hooks/use-cart-store';
 
 interface CatalogClientProps {
   products: Product[];
@@ -25,7 +25,8 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [isAddingToCart, startCartTransition] = useTransition();
+  
+  const { addToCart } = useCartStore();
 
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('query') || '');
@@ -79,21 +80,11 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
     setSelectedProduct(fullProduct || product);
   };
   
-  const handleAddToCart = (productId: string) => {
-    startCartTransition(async () => {
-      const result = await addToCart(productId);
-      if (result.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: result.error,
-        });
-      } else {
-        toast({
-          title: 'Успех!',
-          description: result.success,
-        });
-      }
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: 'Успех!',
+      description: `Товар "${product.name}" добавлен в корзину.`,
     });
   };
 
@@ -176,7 +167,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             <CarouselContent>
               {products.map((product) => (
                 <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onDoubleClick={() => handleRowDoubleClick(product)}>
-                  <ProductCarouselCard product={product} onAddToCart={handleAddToCart} isAddingToCart={isAddingToCart} />
+                  <ProductCarouselCard product={product} onAddToCart={handleAddToCart} />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -203,9 +194,9 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                     <TableCell className="truncate">{product.name}</TableCell>
                     <TableCell>{getPrice(product)}</TableCell>
                     <TableCell className="text-right">
-                       <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product.id)} disabled={isAddingToCart}>
+                       <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
                           <ShoppingCart className="mr-2 h-4 w-4" />
-                           {isAddingToCart ? 'Добавление...' : 'В корзину'}
+                           В корзину
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -227,7 +218,6 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
-        isAddingToCart={isAddingToCart}
       />
     </>
   );
