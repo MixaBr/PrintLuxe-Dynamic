@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/hooks/use-cart-store';
-import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,22 +96,22 @@ export default function CartPage() {
                     <TableBody>
                         {items.map(item => (
                             <TableRow key={item.id}>
-                                <TableCell className="w-24">
-                                    <div className="relative h-16 w-16 rounded-md overflow-hidden">
+                                <TableCell className="w-24 py-2">
+                                    <div className="relative h-14 w-14 rounded-md overflow-hidden">
                                         <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
                                     </div>
                                 </TableCell>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="w-40">
+                                <TableCell className="font-medium py-2">{item.name}</TableCell>
+                                <TableCell className="w-40 py-2">
                                   <div className="flex items-center justify-center">
                                         <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
                                         <span className="w-12 text-center">{item.quantity}</span>
                                         <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-right w-40">{(item.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
-                                <TableCell className="text-right w-40">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
-                                <TableCell className="w-12">
+                                <TableCell className="text-right w-40 py-2">{(item.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
+                                <TableCell className="text-right w-40 py-2">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
+                                <TableCell className="w-12 py-2">
                                     <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
@@ -121,30 +121,36 @@ export default function CartPage() {
                     </TableBody>
                 </Table>
               </ScrollArea>
-               <div className='flex-shrink-0 border-t'>
-                <Table>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell colSpan={4} className="text-right font-bold text-lg">Итого:</TableCell>
-                            <TableCell className="text-right font-bold text-lg w-40">{total.toLocaleString('ru-RU')} BYN</TableCell>
-                            <TableCell className="w-12"></TableCell>
-                        </TableRow>
-                    </TableFooter>
-                </Table>
-               </div>
             </div>
 
             {/* Common Footer */}
-            <div className="flex flex-col-reverse sm:flex-row justify-between items-center mt-auto p-4 sm:p-6 border-t flex-shrink-0">
-                <Button variant="outline" asChild>
-                    <Link href="/catalog">Продолжить покупки</Link>
-                </Button>
-                <div className="w-full sm:w-auto flex flex-col sm:items-end gap-2 mb-4 sm:mb-0">
-                    <div className="flex justify-between sm:justify-end items-center gap-4 md:hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-auto p-4 sm:p-6 border-t flex-shrink-0">
+                 {/* Mobile total */}
+                 <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-2 mb-4 sm:mb-0 md:hidden">
+                    <div className="flex justify-between items-center gap-4">
                         <span className="text-lg font-bold">Итого:</span>
                         <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
                     </div>
-                   <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
+                </div>
+
+                <div className='flex-grow'>
+                    <Button variant="outline" asChild>
+                        <Link href="/catalog">Продолжить покупки</Link>
+                    </Button>
+                </div>
+
+                {/* Desktop total */}
+                <div className='hidden md:flex items-center gap-6'>
+                    <div className="text-right">
+                        <span className="text-muted-foreground">Итого:</span>
+                        <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
+                    </div>
+                    <Button size="lg" className="font-bold">Оформить заказ</Button>
+                </div>
+
+                {/* Mobile checkout button */}
+                <div className='w-full md:hidden mt-2'>
+                    <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
                 </div>
             </div>
         </div>
