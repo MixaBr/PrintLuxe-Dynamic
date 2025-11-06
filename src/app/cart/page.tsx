@@ -22,8 +22,8 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 md:px-8 md:py-16">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold">Корзина</h1>
+      <div className="text-center mb-8">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Корзина</h1>
       </div>
 
       {items.length === 0 ? (
