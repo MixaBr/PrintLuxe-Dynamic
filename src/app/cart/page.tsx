@@ -77,7 +77,7 @@ export default function CartPage() {
 
             {/* Desktop View */}
             <div className="hidden md:flex flex-col h-full">
-              <div className='flex-shrink-0'>
+              <div className='flex-shrink-0 border-b'>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -124,7 +124,7 @@ export default function CartPage() {
             </div>
 
             {/* Common Footer */}
-            <div className="flex flex-col sm:flex-row justify-between items-center mt-auto p-4 sm:p-6 border-t flex-shrink-0">
+            <div className="flex-shrink-0 mt-auto p-4 sm:p-6 border-t">
                  {/* Mobile total */}
                  <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-2 mb-4 sm:mb-0 md:hidden">
                     <div className="flex justify-between items-center gap-4">
@@ -133,23 +133,29 @@ export default function CartPage() {
                     </div>
                 </div>
 
-                <div className='flex-grow'>
-                    <Button variant="outline" asChild>
-                        <Link href="/catalog">Продолжить покупки</Link>
-                    </Button>
-                </div>
-
-                {/* Desktop total */}
-                <div className='hidden md:flex items-center gap-6'>
-                    <div className="text-right">
-                        <span className="text-muted-foreground">Итого:</span>
-                        <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
+                {/* Desktop total and buttons */}
+                <div className='hidden md:flex justify-between items-center gap-6'>
+                    <div>
+                        <Button variant="outline" asChild>
+                            <Link href="/catalog">Продолжить покупки</Link>
+                        </Button>
                     </div>
-                    <Button size="lg" className="font-bold">Оформить заказ</Button>
+                    <div className="flex items-center gap-6">
+                        <div className="text-right">
+                            <span className="text-muted-foreground">Итого:</span>
+                            <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
+                        </div>
+                        <Button size="lg" className="font-bold">Оформить заказ</Button>
+                    </div>
                 </div>
 
                 {/* Mobile checkout button */}
                 <div className='w-full md:hidden mt-2'>
+                    <div className="flex justify-between items-center w-full mb-4">
+                        <Button variant="outline" asChild>
+                            <Link href="/catalog">Продолжить покупки</Link>
+                        </Button>
+                    </div>
                     <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
                 </div>
             </div>
@@ -158,3 +164,5 @@ export default function CartPage() {
     </div>
   );
 }
+
+    
