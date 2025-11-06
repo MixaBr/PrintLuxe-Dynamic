@@ -17,14 +17,18 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel"
+import { Button } from '../ui/button';
+import { ShoppingCart } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  onAddToCart: (productId: string) => void;
+  isAddingToCart: boolean;
 }
 
-export default function ProductDetailModal({ product, isOpen, onClose }: ProductDetailModalProps) {
+export default function ProductDetailModal({ product, isOpen, onClose, onAddToCart, isAddingToCart }: ProductDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi | undefined>();
   const [isHovering, setIsHovering] = useState(false);
@@ -61,8 +65,10 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
   
   let allImages: string[] = [];
   if (typeof product.image_urls === 'string') {
-      allImages = product.image_urls
-          .slice(1, -1).split('","').map(url => url.replace(/^"|"$/g, '')); 
+    allImages = product.image_urls
+      .slice(1, -1) // Remove { and }
+      .split('","') // Split by ","
+      .map(url => url.replace(/^"|"$/g, '')); // Remove surrounding quotes from each URL
   } else if (Array.isArray(product.image_urls)) {
       allImages = product.image_urls;
   }
@@ -158,6 +164,10 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
               </Table>
               <div className="mt-4 flex justify-between items-center">
                 <div className="text-2xl font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</div>
+                 <Button onClick={() => onAddToCart(product.id)} disabled={isAddingToCart}>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  {isAddingToCart ? 'Добавление...' : 'В корзину'}
+                </Button>
               </div>
             </div>
           </div>
