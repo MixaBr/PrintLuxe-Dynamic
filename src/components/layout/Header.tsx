@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useCartStore } from '@/hooks/use-cart-store';
 
 type NavLinkItem = {
   href: string;
@@ -39,6 +41,17 @@ const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админ
 export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Need to ensure the component is mounted before reading from the store
+  // to avoid hydration mismatch errors.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const items = useCartStore((state) => state.items);
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+
 
   const navLinks = useMemo(() => {
     const links = [...baseLinks];
@@ -145,10 +158,15 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               </DropdownMenuContent>
             </DropdownMenu>
            )}
-          <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
+          <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors">
             <Link href="/cart">
               <ShoppingCart className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
               <span className="sr-only">Корзина</span>
+              {isMounted && totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                  {totalItems}
+                </span>
+              )}
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
