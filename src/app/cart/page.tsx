@@ -120,7 +120,7 @@ export default function CartPage() {
                     </TableBody>
                 </Table>
               </ScrollArea>
-               <div className='flex-shrink-0'>
+               <div className='flex-shrink-0 border-t'>
                 <Table>
                     <TableFooter>
                         <TableRow>
