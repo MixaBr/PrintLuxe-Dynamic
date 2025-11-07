@@ -1,5 +1,14 @@
 {
-  "apphosting": {
-    "source": "."
+  "hosting": {
+    "site": "remontprinterovorder",
+    "rewrites": [
+      {
+        "source": "**",
+        "apphosting": {
+          "backendId": "dinamic",
+          "region": "europe-west4"
+        }
+      }
+    ]
   }
 }
