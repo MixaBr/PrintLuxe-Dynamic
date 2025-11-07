@@ -198,7 +198,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                   {products.map((product) => (
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
                       <TableCell className="font-medium truncate w-[20%]">{product.article_number}</TableCell>
-                      <TableCell className="truncate text-center w-[40%]">{product.name}</TableCell>
+                      <TableCell className="truncate text-left w-[40%]">{product.name}</TableCell>
                       <TableCell className="text-right w-[20%]">{getPrice(product)}</TableCell>
                       <TableCell className="text-center w-[20%]">
                          <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
