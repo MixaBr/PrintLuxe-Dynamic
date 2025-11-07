@@ -2,7 +2,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import Link from 'next/link'; // Added Link import
+import Link from 'next/link'; 
 import Slide from '@/components/layout/Slide';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { HomePageData } from '@/lib/slide-data';
@@ -63,6 +63,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
   return (
     <div className="relative h-full">
       <div ref={scrollContainerRef} className="snap-y snap-mandatory h-full overflow-y-scroll no-scrollbar">
+
         {/* Slide 1 - Hero */}
         <div ref={slide1Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
@@ -74,8 +75,14 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 </>
               ) : (
                 <>
-                  <h1 className="text-4xl md:text-6xl font-bold font-headline">{homePageData?.hero?.title}</h1>
-                  <p className="mt-4 text-lg md:text-xl">{homePageData?.hero?.subtitle}</p>
+                  <h1 className="text-4xl md:text-6xl font-bold font-headline">
+                    Надежный сервис<br />для вашей техники
+                  </h1>
+                  <p className="mt-4 text-lg md:text-xl">
+                    Профессиональный ремонт,<br />
+                    обслуживание и качественные запчасти<br />
+                    для бесперебойной работы вашего офиса
+                  </p>
                 </>
               )}
             </div>
@@ -83,49 +90,43 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </div>
 
         {/* Slide 2 - Featured Parts */}
-        <div ref={slide2Ref} className="h-full w-full flex-shrink-0 snap-start">
-          <Slide>
-            <div className="flex flex-col items-center text-center text-white w-full max-w-6xl mx-auto h-full px-4 py-8 md:py-16">
-                <div>
-                    <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.featured?.title}</h2>
-                    <p className="mt-4 text-lg md:text-xl">{homePageData?.featured?.subtitle}</p>
-                    {featuredProducts?.length > 0 ? (
-                        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {featuredProducts.map(product => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="mt-8">Рекомендуемые товары скоро появятся.</p>
-                    )}
-                </div>
-                <div className="mt-auto">
-                    <Link href="/catalog" className="mt-8 inline-block bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-3 px-8 rounded hover:bg-white/30 transition-colors duration-200 text-lg">
-                        В каталог
-                    </Link>
-                </div>
-            </div>
-          </Slide>
+        <div ref={slide2Ref} className="h-full w-full flex-shrink-0 snap-start flex flex-col justify-center py-8">
+          <div className="flex flex-col items-center text-center text-white w-full max-w-6xl mx-auto px-4">
+              <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.featured?.title}</h2>
+              <p className="mt-2 text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.featured?.subtitle}</p>
+              {featuredProducts?.length > 0 ? (
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {featuredProducts.map(product => (
+                          <ProductCard key={product.id} product={product} />
+                      ))}
+                  </div>
+              ) : (
+                  <p className="mt-4">Рекомендуемые товары скоро появятся.</p>
+              )}
+              <div className="mt-6">
+                  <Link href="/catalog" className="inline-block bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-3 px-8 rounded hover:bg-white/30 transition-colors duration-200 text-lg">
+                      Перейти в каталог
+                  </Link>
+              </div>
+          </div>
         </div>
 
         {/* Slide 3 - Services */}
-        <div ref={slide3Ref} className="h-full w-full flex-shrink-0 snap-start">
-          <Slide>
-            <div className="text-center text-white w-full max-w-4xl mx-auto">
-                <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.services?.title}</h2>
-                <p className="mt-4 text-lg md:text-xl">{homePageData?.services?.subtitle}</p>
-                {(homePageData?.services?.list || []).length > 0 && (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                        {(homePageData.services.list || []).map(service => (
-                            <div key={service.title} className="bg-white/10 p-6 rounded-lg">
-                                <h3 className="font-bold text-xl">{service.title}</h3>
-                                <p className="mt-2 opacity-80">{service.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-          </Slide>
+        <div ref={slide3Ref} className="h-full w-full flex-shrink-0 snap-start flex items-center justify-center">
+          <div className="text-center text-white w-full max-w-5xl mx-auto px-4">
+              <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.services?.title}</h2>
+              <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.services?.subtitle}</p>
+              {(homePageData?.services?.list || []).length > 0 && (
+                  <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                      {(homePageData.services.list || []).map(service => (
+                          <div key={service.title} className="bg-white/10 p-6 rounded-lg backdrop-blur-sm text-center">
+                              <h3 className="font-bold text-xl">{service.title}</h3>
+                              <p className="mt-2 opacity-80 text-base">{service.description}</p>
+                          </div>
+                      ))}
+                  </div>
+              )}
+          </div>
         </div>
 
         {/* Slide 4 - Benefits */}
@@ -135,9 +136,9 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.benefits?.title}</h2>
                 <p className="mt-4 text-lg md:text-xl">{homePageData?.benefits?.subtitle}</p>
                 {(homePageData?.benefits?.list || []).length > 0 && (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         {(homePageData.benefits.list || []).map(benefit => (
-                            <div key={benefit.title} className="bg-white/10 p-6 rounded-lg">
+                            <div key={benefit.title} className="bg-white/10 p-6 rounded-lg text-center">
                                 <h3 className="font-bold text-xl">{benefit.title}</h3>
                                 <p className="mt-2 opacity-80">{benefit.description}</p>
                             </div>
