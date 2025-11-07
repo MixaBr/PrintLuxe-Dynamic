@@ -183,11 +183,11 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             <div className="flex-shrink-0 border-b">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[20%] text-white">Артикул</TableHead>
-                    <TableHead className="w-[40%] text-white text-center">Название</TableHead>
-                    <TableHead className="w-[20%] text-white text-center">Цена</TableHead>
-                    <TableHead className="w-[20%] text-center text-white">Действие</TableHead>
+                  <TableRow className="bg-white hover:bg-white/90">
+                    <TableHead className="w-[20%] text-black">Артикул</TableHead>
+                    <TableHead className="w-[40%] text-black text-center">Название</TableHead>
+                    <TableHead className="w-[20%] text-black text-center">Цена</TableHead>
+                    <TableHead className="w-[20%] text-center text-black">Действие</TableHead>
                   </TableRow>
                 </TableHeader>
               </Table>
