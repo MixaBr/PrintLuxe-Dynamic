@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormState } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { signIn, signUp } from './actions';
@@ -28,6 +28,8 @@ export default function LoginPage() {
   const [isArchived, setIsArchived] = useState(false);
   const [activeTab, setActiveTab] = useState("signin"); // 'signin' or 'signup'
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
+  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (signInState?.error === 'ACCOUNT_ARCHIVED') {
@@ -40,11 +42,22 @@ export default function LoginPage() {
   useEffect(() => {
     if (signUpState?.success) {
       setActiveTab("signin");
-      setIsRecaptchaVerified(false); // Reset for next registration
+      setIsRecaptchaVerified(false); 
     } else if (signUpState?.error) {
       console.error("Sign Up Error:", signUpState.error);
     }
   }, [signUpState]);
+
+  useEffect(() => {
+    if (activeTab === 'signup' && isRecaptchaReady && recaptchaRef.current) {
+      if (recaptchaRef.current.innerHTML === '') {
+        (window as any).grecaptcha.render(recaptchaRef.current, {
+          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+          callback: () => setIsRecaptchaVerified(true),
+        });
+      }
+    }
+  }, [activeTab, isRecaptchaReady]);
 
   const handleOkClick = () => {
     setIsArchived(false);
@@ -61,14 +74,6 @@ export default function LoginPage() {
       return "Регистрация прошла успешно! Теперь вы можете войти.";
   }
 
-  const handleCaptchaVerify = () => {
-    setIsRecaptchaVerified(true);
-  };
-  
-  if (typeof window !== 'undefined') {
-    (window as any).onCaptchaVerify = handleCaptchaVerify;
-  }
-
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setIsRecaptchaVerified(false);
@@ -76,9 +81,12 @@ export default function LoginPage() {
 
   return (
     <>
-      {activeTab === 'signup' && (
-        <Script src="https://www.google.com/recaptcha/api.js" async defer />
-      )}
+      <Script 
+        src="https://www.google.com/recaptcha/api.js?render=explicit" 
+        async 
+        defer 
+        onLoad={() => setIsRecaptchaReady(true)}
+      />
       <div className="flex items-center justify-center min-h-full">
         <Card className={cn(
             "w-full max-w-md mx-4",
@@ -126,11 +134,7 @@ export default function LoginPage() {
                   </div>
 
                   <div className="my-4 flex justify-center">
-                      <div
-                          className="g-recaptcha"
-                          data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                          data-callback="onCaptchaVerify"
-                      ></div>
+                      <div ref={recaptchaRef}></div>
                   </div>
 
                   {getErrorMessage(signUpState) && (
