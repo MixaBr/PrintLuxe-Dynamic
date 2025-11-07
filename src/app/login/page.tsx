@@ -1,9 +1,8 @@
 'use client'
 
 import { useFormState } from 'react-dom';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
 import { signIn, signUp } from './actions';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget'; // Import the new component
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,8 +28,6 @@ export default function LoginPage() {
   const [isArchived, setIsArchived] = useState(false);
   const [activeTab, setActiveTab] = useState("signin"); // 'signin' or 'signup'
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
-  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
-  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (signInState?.error === 'ACCOUNT_ARCHIVED') {
@@ -48,17 +46,6 @@ export default function LoginPage() {
     }
   }, [signUpState]);
 
-  useEffect(() => {
-    if (activeTab === 'signup' && isRecaptchaReady && recaptchaRef.current) {
-      if (recaptchaRef.current.innerHTML === '') {
-        (window as any).grecaptcha.render(recaptchaRef.current, {
-          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
-          callback: () => setIsRecaptchaVerified(true),
-        });
-      }
-    }
-  }, [activeTab, isRecaptchaReady]);
-
   const handleOkClick = () => {
     setIsArchived(false);
     router.push('/contact');
@@ -76,93 +63,86 @@ export default function LoginPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    setIsRecaptchaVerified(false);
+    setIsRecaptchaVerified(false); // Reset verification on tab change
   }
 
   return (
-    <>
-      <Script 
-        src="https://www.google.com/recaptcha/api.js?render=explicit" 
-        async 
-        defer 
-        onLoad={() => setIsRecaptchaReady(true)}
-      />
-      <div className="flex items-center justify-center min-h-full">
-        <Card className={cn(
-            "w-full max-w-md mx-4",
-            "bg-card/80 backdrop-blur-sm border-white/20"
-        )}>
-          <CardHeader>
-            <div className="flex justify-around mb-4 border-b">
-              <Button variant={activeTab === 'signin' ? "default" : "ghost"} onClick={() => handleTabChange('signin')} className="flex-1 rounded-none">Вход</Button>
-              <Button variant={activeTab === 'signup' ? "default" : "ghost"} onClick={() => handleTabChange('signup')} className="flex-1 rounded-none">Регистрация</Button>
-            </div>
-            <CardTitle className="text-2xl font-bold text-center">{activeTab === 'signin' ? 'Войти в аккаунт' : 'Создать аккаунт'}</CardTitle>
-            <CardDescription className="text-center">
-              {activeTab === 'signin' ? 'Введите свои данные для входа' : 'Заполните форму для регистрации'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activeTab === 'signin' ? (
-              <form action={signInAction} className="space-y-4">
+    <div className="flex items-center justify-center min-h-full">
+      <Card className={cn(
+          "w-full max-w-md mx-4",
+          "bg-card/80 backdrop-blur-sm border-white/20"
+      )}>
+        <CardHeader>
+          <div className="flex justify-around mb-4 border-b">
+            <Button variant={activeTab === 'signin' ? "default" : "ghost"} onClick={() => handleTabChange('signin')} className="flex-1 rounded-none">Вход</Button>
+            <Button variant={activeTab === 'signup' ? "default" : "ghost"} onClick={() => handleTabChange('signup')} className="flex-1 rounded-none">Регистрация</Button>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">{activeTab === 'signin' ? 'Войти в аккаунт' : 'Создать аккаунт'}</CardTitle>
+          <CardDescription className="text-center">
+            {activeTab === 'signin' ? 'Введите свои данные для входа' : 'Заполните форму для регистрации'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activeTab === 'signin' ? (
+            <form action={signInAction} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль</Label>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              {getErrorMessage(signInState) && (
+                <p className="text-sm font-medium text-destructive">{getErrorMessage(signInState)}</p>
+              )}
+              <Button type="submit" className="w-full">Войти</Button>
+            </form>
+          ) : (
+            <form action={signUpAction} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                    <Label htmlFor="name">Имя</Label>
+                    <Input id="name" name="name" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Пароль</Label>
-                  <Input id="password" name="password" type="password" required />
+                    <Label htmlFor="email-signup">Email</Label>
+                    <Input id="email-signup" name="email" type="email" placeholder="m@example.com" required />
                 </div>
-                {getErrorMessage(signInState) && (
-                  <p className="text-sm font-medium text-destructive">{getErrorMessage(signInState)}</p>
+                <div className="space-y-2">
+                    <Label htmlFor="password-signup">Пароль</Label>
+                    <Input id="password-signup" name="password" type="password" required />
+                </div>
+
+                <div className="my-4 flex justify-center">
+                    {/* Use the new, simplified component */}
+                    <RecaptchaWidget onVerified={setIsRecaptchaVerified} />
+                </div>
+
+                {getErrorMessage(signUpState) && (
+                    <p className="text-sm font-medium text-destructive">{getErrorMessage(signUpState)}</p>
                 )}
-                <Button type="submit" className="w-full">Войти</Button>
-              </form>
-            ) : (
-              <form action={signUpAction} className="space-y-4">
-                  <div className="space-y-2">
-                      <Label htmlFor="name">Имя</Label>
-                      <Input id="name" name="name" required />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="email-signup">Email</Label>
-                      <Input id="email-signup" name="email" type="email" placeholder="m@example.com" required />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="password-signup">Пароль</Label>
-                      <Input id="password-signup" name="password" type="password" required />
-                  </div>
+                {getSuccessMessage(signUpState) && (
+                    <p className="text-sm font-medium text-green-600">{getSuccessMessage(signUpState)}</p>
+                )}
+                <Button type="submit" className="w-full" disabled={!isRecaptchaVerified}>Зарегистрироваться</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
 
-                  <div className="my-4 flex justify-center">
-                      <div ref={recaptchaRef}></div>
-                  </div>
-
-                  {getErrorMessage(signUpState) && (
-                      <p className="text-sm font-medium text-destructive">{getErrorMessage(signUpState)}</p>
-                  )}
-                  {getSuccessMessage(signUpState) && (
-                      <p className="text-sm font-medium text-green-600">{getSuccessMessage(signUpState)}</p>
-                  )}
-                  <Button type="submit" className="w-full" disabled={!isRecaptchaVerified}>Зарегистрироваться</Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-
-        <AlertDialog open={isArchived} onOpenChange={setIsArchived}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Аккаунт заблокирован</AlertDialogTitle>
-              <AlertDialogDescription>
-                  Ваш аккаунт помечен для удаления. Вы не можете его больше использовать. Если Вы все же хотите восстановить доступ к аккаунту, свяжитесь с нами любым доступным способом.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={handleOkClick}>OK</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </>
+      <AlertDialog open={isArchived} onOpenChange={setIsArchived}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Аккаунт заблокирован</AlertDialogTitle>
+            <AlertDialogDescription>
+                Ваш аккаунт помечен для удаления. Вы не можете его больше использовать. Если Вы все же хотите восстановить доступ к аккаунту, свяжитесь с нами любым доступным способом.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleOkClick}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
