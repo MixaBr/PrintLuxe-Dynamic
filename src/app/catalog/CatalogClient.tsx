@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, List, ShoppingCart, X } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import ProductCarouselCard from '@/components/catalog/ProductCarouselCard';
 import ProductDetailModal from '@/components/catalog/ProductDetailModal';
 import { getFullProductDetails } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useCartStore } from '@/hooks/use-cart-store';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CatalogClientProps {
   products: Product[];
@@ -177,32 +178,38 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             </>}
           </Carousel>
         ) : (
-          <div className="rounded-lg border h-[60vh] overflow-y-auto relative">
-            <table className="w-full text-sm table-fixed">
-              <TableHeader className="sticky top-0 bg-card z-10 border-b">
-                <TableRow>
-                  <TableHead className="w-[20%] text-black">Артикул</TableHead>
-                  <TableHead className="w-[40%] text-black">Название</TableHead>
-                  <TableHead className="w-[20%] text-black">Цена</TableHead>
-                  <TableHead className="w-[20%] text-right text-black">Действие</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
-                    <TableCell className="font-medium truncate">{product.article_number}</TableCell>
-                    <TableCell className="truncate">{product.name}</TableCell>
-                    <TableCell>{getPrice(product)}</TableCell>
-                    <TableCell className="text-right">
-                       <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                           В корзину
-                      </Button>
-                    </TableCell>
+          <div className="rounded-lg border h-[60vh] flex flex-col">
+            <div className="flex-shrink-0 border-b">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[20%] text-black">Артикул</TableHead>
+                    <TableHead className="w-[40%] text-black">Название</TableHead>
+                    <TableHead className="w-[20%] text-black">Цена</TableHead>
+                    <TableHead className="w-[20%] text-right text-black">Действие</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </table>
+                </TableHeader>
+              </Table>
+            </div>
+            <ScrollArea className="flex-grow">
+              <Table>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
+                      <TableCell className="font-medium truncate">{product.article_number}</TableCell>
+                      <TableCell className="truncate">{product.name}</TableCell>
+                      <TableCell>{getPrice(product)}</TableCell>
+                      <TableCell className="text-right">
+                         <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                             В корзину
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </div>
         )}
          {products.length === 0 && (
