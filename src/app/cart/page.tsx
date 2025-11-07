@@ -24,8 +24,8 @@ export default function CartPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8">
-        <div className="text-center mb-8">
+    <div className="container mx-auto px-4 py-8 md:px-8 h-full flex flex-col">
+        <div className="text-center mb-8 flex-shrink-0">
             <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Корзина</h1>
         </div>
 
@@ -41,7 +41,7 @@ export default function CartPage() {
             </Button>
             </div>
         ) : (
-            <div className="bg-card rounded-lg shadow-sm flex flex-col max-h-[75vh]">
+            <div className="bg-card rounded-lg shadow-sm flex flex-col flex-grow min-h-0">
                 {/* Mobile View */}
                 <div className="md:hidden flex-grow min-h-0">
                     <ScrollArea className="h-full p-4">
@@ -97,6 +97,7 @@ export default function CartPage() {
                     </div>
                     <ScrollArea className="flex-grow">
                         <Table>
+                            {/* The header is defined outside scroll area, so we can omit it here */}
                             <TableBody>
                                 {items.map(item => (
                                     <TableRow key={item.id}>
