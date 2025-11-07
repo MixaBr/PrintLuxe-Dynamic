@@ -5,3 +5,35 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# Make secrets from Secret Manager available as environment variables.
+# Note: these secrets should also be defined in .env.local for local development.
+secretEnvironmentVariables:
+  - key: ASSISTANT_API_KEY
+    secret: ASSISTANT_API_KEY
+  - key: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    secret: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+  - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - key: NEXT_PUBLIC_SUPABASE_URL
+    secret: NEXT_PUBLIC_SUPABASE_URL
+  - key: ORDER_NOTIFICATION_EMAIL
+    secret: ORDER_NOTIFICATION_EMAIL
+  - key: RECAPTCHA_SECRET_KEY
+    secret: RECAPTCHA_SECRET_KEY
+  - key: RECAPTCHA_SITE_KEY
+    secret: RECAPTCHA_SITE_KEY
+  - key: SMTP_FROM
+    secret: SMTP_FROM
+  - key: SMTP_HOST
+    secret: SMTP_HOST
+  - key: SMTP_PASS
+    secret: SMTP_PASS
+  - key: SMTP_PORT
+    secret: SMTP_PORT
+  - key: SMTP_TO
+    secret: SMTP_TO
+  - key: SMTP_USER
+    secret: SMTP_USER
+  - key: SUPABASE_SERVICE_ROLE_KEY
+    secret: SUPABASE_SERVICE_ROLE_KEY
