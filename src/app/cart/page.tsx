@@ -43,36 +43,40 @@ export default function CartPage() {
         ) : (
             <div className="bg-card rounded-lg shadow-sm flex flex-col max-h-[75vh]">
                 {/* Mobile View */}
-                <div className="md:hidden p-4 space-y-4 overflow-y-auto">
-                {items.map(item => (
-                    <Card key={item.id} className="overflow-hidden">
-                    <CardContent className="p-4 flex gap-4">
-                        <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
-                        <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                <div className="md:hidden flex-grow min-h-0">
+                    <ScrollArea className="h-full p-4">
+                        <div className="space-y-4">
+                        {items.map(item => (
+                            <Card key={item.id} className="overflow-hidden">
+                            <CardContent className="p-4 flex gap-4">
+                                <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
+                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                                </div>
+                                <div className="flex-grow flex flex-col">
+                                <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
+                                <div className="flex items-center justify-between my-2">
+                                    <span className="text-sm text-muted-foreground">Кол-во:</span>
+                                    <div className="flex items-center">
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
+                                    <span className="w-8 text-center text-sm">{item.quantity}</span>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Сумма:</span>
+                                    <span className="font-semibold">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
+                                </div>
+                                <div className="mt-auto flex justify-end">
+                                    <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                                </div>
+                            </CardContent>
+                            </Card>
+                        ))}
                         </div>
-                        <div className="flex-grow flex flex-col">
-                        <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
-                        <div className="flex items-center justify-between my-2">
-                            <span className="text-sm text-muted-foreground">Кол-во:</span>
-                            <div className="flex items-center">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
-                            <span className="w-8 text-center text-sm">{item.quantity}</span>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Сумма:</span>
-                            <span className="font-semibold">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
-                        </div>
-                        <div className="mt-auto flex justify-end">
-                            <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                        </div>
-                        </div>
-                    </CardContent>
-                    </Card>
-                ))}
+                    </ScrollArea>
                 </div>
 
                 {/* Desktop View */}
