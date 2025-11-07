@@ -4,8 +4,8 @@
     "rewrites": [
       {
         "source": "**",
-        "apphosting": {
-          "backendId": "dinamic",
+        "run": {
+          "serviceId": "dinamic",
           "region": "europe-west4"
         }
       }
