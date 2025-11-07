@@ -99,7 +99,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">
                   <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                     <Wrench className="h-6 w-6 text-white" />
-                    <span className="font-headline text-xl font-bold">PrintLuxe</span>
+                    <span className="font-headline text-4xl md:text-5xl font-bold">PrintLux</span>
                   </Link>
                 </div>
                 <nav className="flex flex-col gap-6 p-4">
@@ -116,7 +116,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <Link href="/" className="flex items-center gap-2">
             <Wrench className="h-7 w-7 text-white" />
-            <span className="font-headline text-2xl font-bold text-white">PrintLuxe</span>
+            <span className="font-headline text-4xl md:text-5xl font-bold text-white">PrintLux</span>
           </Link>
         </div>
 

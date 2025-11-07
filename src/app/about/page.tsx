@@ -14,7 +14,7 @@ export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-12 md:px-8 md:py-16">
       <div className="text-center">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold">О компании PrintLuxe</h1>
+        <h1 className="font-headline text-4xl md:text-5xl font-bold">О компании PrintLux</h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
           Ваш надежный партнер в мире полиграфии, где качество сочетается с инновациями.
         </p>
@@ -24,7 +24,7 @@ export default function AboutPage() {
         <div className="prose prose-lg max-w-none text-foreground">
           <h2 className="font-headline text-2xl md:text-3xl font-semibold">Наша история</h2>
           <p>
-            Компания PrintLuxe была основана в 2010 году группой энтузиастов, объединенных страстью к печатному делу. Мы начинали с небольшого цеха и одной печатной машины, но с самого начала нашей главной целью было предоставление услуг высочайшего качества.
+            Компания PrintLux была основана в 2010 году группой энтузиастов, объединенных страстью к печатному делу. Мы начинали с небольшого цеха и одной печатной машины, но с самого начала нашей главной целью было предоставление услуг высочайшего качества.
           </p>
           <p>
             За годы работы мы выросли в одного из лидеров рынка, расширив парк оборудования и собрав команду настоящих профессионалов. Сегодня мы гордимся тем, что можем предложить нашим клиентам полный спектр полиграфических услуг — от разработки дизайна до доставки готовой продукции.

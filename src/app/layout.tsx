@@ -6,7 +6,7 @@ import { getAppBackground } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
-  title: 'PrintLuxe Dynamic',
+  title: 'PrintLux Dynamic',
   description: 'Качественные услуги печати и дизайна',
 };
 
