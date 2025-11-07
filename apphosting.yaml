@@ -8,32 +8,46 @@ runConfig:
 
 # Make secrets from Secret Manager available as environment variables.
 # Note: these secrets should also be defined in .env.local for local development.
-secretEnvironmentVariables:
-  - key: ASSISTANT_API_KEY
+env:
+  - variable: ASSISTANT_API_KEY
     secret: ASSISTANT_API_KEY
-  - key: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
     secret: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-  - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
     secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - key: NEXT_PUBLIC_SUPABASE_URL
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_SUPABASE_URL
     secret: NEXT_PUBLIC_SUPABASE_URL
-  - key: ORDER_NOTIFICATION_EMAIL
+    availability: [BUILD, RUNTIME]
+  - variable: ORDER_NOTIFICATION_EMAIL
     secret: ORDER_NOTIFICATION_EMAIL
-  - key: RECAPTCHA_SECRET_KEY
+    availability: [BUILD, RUNTIME]
+  - variable: RECAPTCHA_SECRET_KEY
     secret: RECAPTCHA_SECRET_KEY
-  - key: RECAPTCHA_SITE_KEY
+    availability: [BUILD, RUNTIME]
+  - variable: RECAPTCHA_SITE_KEY
     secret: RECAPTCHA_SITE_KEY
-  - key: SMTP_FROM
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_FROM
     secret: SMTP_FROM
-  - key: SMTP_HOST
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_HOST
     secret: SMTP_HOST
-  - key: SMTP_PASS
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_PASS
     secret: SMTP_PASS
-  - key: SMTP_PORT
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_PORT
     secret: SMTP_PORT
-  - key: SMTP_TO
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_TO
     secret: SMTP_TO
-  - key: SMTP_USER
+    availability: [BUILD, RUNTIME]
+  - variable: SMTP_USER
     secret: SMTP_USER
-  - key: SUPABASE_SERVICE_ROLE_KEY
+    availability: [BUILD, RUNTIME]
+  - variable: SUPABASE_SERVICE_ROLE_KEY
     secret: SUPABASE_SERVICE_ROLE_KEY
+    availability: [BUILD, RUNTIME]
