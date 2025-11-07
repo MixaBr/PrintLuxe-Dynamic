@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -183,10 +184,10 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[20%] text-black">Артикул</TableHead>
-                    <TableHead className="w-[40%] text-black">Название</TableHead>
-                    <TableHead className="w-[20%] text-black">Цена</TableHead>
-                    <TableHead className="w-[20%] text-right text-black">Действие</TableHead>
+                    <TableHead className="w-[20%] text-white">Артикул</TableHead>
+                    <TableHead className="w-[40%] text-white text-center">Название</TableHead>
+                    <TableHead className="w-[20%] text-white text-center">Цена</TableHead>
+                    <TableHead className="w-[20%] text-center text-white">Действие</TableHead>
                   </TableRow>
                 </TableHeader>
               </Table>
@@ -198,8 +199,8 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
                       <TableCell className="font-medium truncate">{product.article_number}</TableCell>
                       <TableCell className="truncate">{product.name}</TableCell>
-                      <TableCell>{getPrice(product)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-center">{getPrice(product)}</TableCell>
+                      <TableCell className="text-center">
                          <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
                             <ShoppingCart className="mr-2 h-4 w-4" />
                              В корзину
