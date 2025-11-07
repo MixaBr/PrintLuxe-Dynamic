@@ -24,145 +24,143 @@ export default function CartPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 h-full">
-        <div className="relative h-full flex flex-col">
-            <div className="text-center mb-8 flex-shrink-0">
-                <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Корзина</h1>
-            </div>
-
-            {items.length === 0 ? (
-                <div className="text-center bg-card p-12 rounded-lg shadow-sm">
-                <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground" />
-                <h2 className="mt-6 text-2xl font-semibold">Ваша корзина пуста</h2>
-                <p className="mt-2 text-muted-foreground">
-                    Похоже, вы еще ничего не добавили. Начните покупки, чтобы увидеть товары здесь.
-                </p>
-                <Button asChild className="mt-6 font-bold">
-                    <Link href="/catalog">Перейти в каталог</Link>
-                </Button>
-                </div>
-            ) : (
-                <div className="bg-card rounded-lg shadow-sm flex flex-col flex-grow min-h-0">
-                    {/* Mobile View */}
-                    <div className="md:hidden p-4 space-y-4 overflow-y-auto">
-                    {items.map(item => (
-                        <Card key={item.id} className="overflow-hidden">
-                        <CardContent className="p-4 flex gap-4">
-                            <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
-                            <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
-                            </div>
-                            <div className="flex-grow flex flex-col">
-                            <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
-                            <div className="flex items-center justify-between my-2">
-                                <span className="text-sm text-muted-foreground">Кол-во:</span>
-                                <div className="flex items-center">
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
-                                <span className="w-8 text-center text-sm">{item.quantity}</span>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Сумма:</span>
-                                <span className="font-semibold">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
-                            </div>
-                            <div className="mt-auto flex justify-end">
-                                <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </div>
-                            </div>
-                        </CardContent>
-                        </Card>
-                    ))}
-                    </div>
-
-                    {/* Desktop View */}
-                    <div className="hidden md:flex flex-col h-full">
-                        <div className='flex-shrink-0 border-b'>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-24 text-foreground">Товар</TableHead>
-                                        <TableHead className="text-foreground">Название</TableHead>
-                                        <TableHead className="text-center text-foreground w-40">Количество</TableHead>
-                                        <TableHead className="text-right text-foreground w-40">Цена за шт.</TableHead>
-                                        <TableHead className="text-right text-foreground w-40">Сумма</TableHead>
-                                        <TableHead className="w-12"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                            </Table>
-                        </div>
-                        <ScrollArea className="flex-grow">
-                            <Table>
-                                <TableBody>
-                                    {items.map(item => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="w-24 py-2">
-                                                <div className="relative h-14 w-14 rounded-md overflow-hidden">
-                                                    <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-medium py-2">{item.name}</TableCell>
-                                            <TableCell className="w-40 py-2">
-                                            <div className="flex items-center justify-center">
-                                                    <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
-                                                    <span className="w-12 text-center">{item.quantity}</span>
-                                                    <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
-                                            </div>
-                                            </TableCell>
-                                            <TableCell className="text-right w-40 py-2">{(item.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
-                                            <TableCell className="text-right w-40 py-2">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
-                                            <TableCell className="w-12 py-2">
-                                                <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </div>
-
-                    {/* Common Footer */}
-                    <div className="flex-shrink-0 mt-auto p-4 sm:p-6 border-t">
-                        {/* Mobile total */}
-                        <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-2 mb-4 sm:mb-0 md:hidden">
-                            <div className="flex justify-between items-center gap-4">
-                                <span className="text-lg font-bold">Итого:</span>
-                                <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
-                            </div>
-                        </div>
-
-                        {/* Desktop total and buttons */}
-                        <div className='hidden md:flex justify-between items-center gap-6'>
-                            <div>
-                                <Button variant="outline" asChild>
-                                    <Link href="/catalog">Продолжить покупки</Link>
-                                </Button>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                    <span className="text-muted-foreground">Итого:</span>
-                                    <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
-                                </div>
-                                <Button size="lg" className="font-bold">Оформить заказ</Button>
-                            </div>
-                        </div>
-
-                        {/* Mobile checkout button */}
-                        <div className='w-full md:hidden mt-2'>
-                            <div className="flex justify-between items-center w-full mb-4">
-                                <Button variant="outline" asChild>
-                                    <Link href="/catalog">Продолжить покупки</Link>
-                                </Button>
-                            </div>
-                            <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+    <div className="container mx-auto px-4 py-8 md:px-8">
+        <div className="text-center mb-8">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Корзина</h1>
         </div>
+
+        {items.length === 0 ? (
+            <div className="text-center bg-card p-12 rounded-lg shadow-sm">
+            <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground" />
+            <h2 className="mt-6 text-2xl font-semibold">Ваша корзина пуста</h2>
+            <p className="mt-2 text-muted-foreground">
+                Похоже, вы еще ничего не добавили. Начните покупки, чтобы увидеть товары здесь.
+            </p>
+            <Button asChild className="mt-6 font-bold">
+                <Link href="/catalog">Перейти в каталог</Link>
+            </Button>
+            </div>
+        ) : (
+            <div className="bg-card rounded-lg shadow-sm flex flex-col max-h-[75vh]">
+                {/* Mobile View */}
+                <div className="md:hidden p-4 space-y-4 overflow-y-auto">
+                {items.map(item => (
+                    <Card key={item.id} className="overflow-hidden">
+                    <CardContent className="p-4 flex gap-4">
+                        <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
+                        <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                        </div>
+                        <div className="flex-grow flex flex-col">
+                        <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
+                        <div className="flex items-center justify-between my-2">
+                            <span className="text-sm text-muted-foreground">Кол-во:</span>
+                            <div className="flex items-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
+                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Сумма:</span>
+                            <span className="font-semibold">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
+                        </div>
+                        <div className="mt-auto flex justify-end">
+                            <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                        </div>
+                    </CardContent>
+                    </Card>
+                ))}
+                </div>
+
+                {/* Desktop View */}
+                <div className="hidden md:flex flex-col flex-grow min-h-0">
+                    <div className='flex-shrink-0 border-b'>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-24 text-foreground">Товар</TableHead>
+                                    <TableHead className="text-foreground">Название</TableHead>
+                                    <TableHead className="text-center text-foreground w-40">Количество</TableHead>
+                                    <TableHead className="text-right text-foreground w-40">Цена за шт.</TableHead>
+                                    <TableHead className="text-right text-foreground w-40">Сумма</TableHead>
+                                    <TableHead className="w-12"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                        </Table>
+                    </div>
+                    <ScrollArea className="flex-grow">
+                        <Table>
+                            <TableBody>
+                                {items.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="w-24 py-2">
+                                            <div className="relative h-14 w-14 rounded-md overflow-hidden">
+                                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-medium py-2">{item.name}</TableCell>
+                                        <TableCell className="w-40 py-2">
+                                        <div className="flex items-center justify-center">
+                                                <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
+                                                <span className="w-12 text-center">{item.quantity}</span>
+                                                <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
+                                        </div>
+                                        </TableCell>
+                                        <TableCell className="text-right w-40 py-2">{(item.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
+                                        <TableCell className="text-right w-40 py-2">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
+                                        <TableCell className="w-12 py-2">
+                                            <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </div>
+
+                {/* Common Footer */}
+                <div className="flex-shrink-0 mt-auto p-4 sm:p-6 border-t">
+                    {/* Mobile total */}
+                    <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-2 mb-4 sm:mb-0 md:hidden">
+                        <div className="flex justify-between items-center gap-4">
+                            <span className="text-lg font-bold">Итого:</span>
+                            <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
+                        </div>
+                    </div>
+
+                    {/* Desktop total and buttons */}
+                    <div className='hidden md:flex justify-between items-center gap-6'>
+                        <div>
+                            <Button variant="outline" asChild>
+                                <Link href="/catalog">Продолжить покупки</Link>
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-right">
+                                <span className="text-muted-foreground">Итого:</span>
+                                <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
+                            </div>
+                            <Button size="lg" className="font-bold">Оформить заказ</Button>
+                        </div>
+                    </div>
+
+                    {/* Mobile checkout button */}
+                    <div className='w-full md:hidden mt-2'>
+                        <div className="flex justify-between items-center w-full mb-4">
+                            <Button variant="outline" asChild>
+                                <Link href="/catalog">Продолжить покупки</Link>
+                            </Button>
+                        </div>
+                        <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 }
