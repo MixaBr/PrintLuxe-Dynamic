@@ -87,7 +87,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         <div>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-white/20">
+              <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12">
                 <Menu className="h-8 w-8 text-white" strokeWidth={3} />
                 <span className="sr-only">Открыть меню</span>
               </Button>
@@ -98,7 +98,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">
                   <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Wrench className="h-6 w-6 text-white" />
+                    <Wrench className="h-8 w-8 text-white" />
                     <span className="font-headline text-4xl md:text-5xl font-bold">PrintLux</span>
                   </Link>
                 </div>
@@ -115,7 +115,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         {/* Logo (Center) */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <Link href="/" className="flex items-center gap-2">
-            <Wrench className="h-7 w-7 text-white" />
+            <Wrench className="h-8 w-8 text-white" />
             <span className="font-headline text-4xl md:text-5xl font-bold text-white">PrintLux</span>
           </Link>
         </div>
@@ -125,8 +125,8 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
            {showDropdown && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors">
-                   <Briefcase className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+                <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
+                   <Briefcase className="h-8 w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
                    <span className="sr-only">Панели</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -158,9 +158,9 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               </DropdownMenuContent>
             </DropdownMenu>
            )}
-          <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors">
+          <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
             <Link href="/cart">
-              <ShoppingCart className="h-6 w-6 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+              <ShoppingCart className="h-8 w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
               <span className="sr-only">Корзина</span>
               {isMounted && totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
@@ -169,11 +169,11 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors">
+          <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
             <Link href={isAuthenticated ? "/profile" : "/login"}>
               <User 
                 className={cn(
-                  "h-6 w-6 group-hover:text-blue-900 transition-colors",
+                  "h-8 w-8 group-hover:text-blue-900 transition-colors",
                   isAuthenticated ? "text-destructive" : "text-white"
                 )} 
                 strokeWidth={3} 
