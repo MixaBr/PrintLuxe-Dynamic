@@ -1,6 +1,7 @@
 
 import { supabase } from './supabaseClient';
 import type { Product } from './definitions';
+export type { Product } from './definitions';
 
 interface ProductQueryOptions {
   query?: string;

@@ -63,8 +63,8 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
   };
   
   let allImages: string[] = [];
-  if (typeof product.image_urls === 'string') {
-    allImages = product.image_urls
+    if (typeof product.image_urls === 'string') {
+    allImages = (product.image_urls as string)
       .slice(1, -1) // Remove { and }
       .split('","') // Split by ","
       .map(url => url.replace(/^"|"$/g, '')); // Remove surrounding quotes from each URL

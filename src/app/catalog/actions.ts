@@ -19,7 +19,7 @@ export async function getFullProductDetails(productId: string): Promise<Product 
   // passing the user's authenticated status to calculate the correct price.
   const product = await getProductById(productId, !!user);
   
-  return product;
+  return product || null;
 }
 
 /**
