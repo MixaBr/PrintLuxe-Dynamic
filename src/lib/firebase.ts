@@ -2,8 +2,9 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAhKtmT3gq1qV_Cmn49EcIi4SpBkWPieZ4",
+  apiKey: "AIzaSyAhKtmT3gq1qV_Cmn49EcIi4SpBkWPIeZ4",
   authDomain: "remontprinterovorder.firebaseapp.com",
   projectId: "remontprinterovorder",
   storageBucket: "remontprinterovorder.firebasestorage.app",
