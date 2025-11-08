@@ -4,7 +4,8 @@ import { Header } from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
 import { getAppBackground } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
-import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider'; // Import the provider
+import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider';
+import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider'; // Import the new provider
 
 export const metadata: Metadata = {
   title: 'PrintLux Dynamic',
@@ -46,22 +47,24 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         />
       </head>
       <body className="font-body antialiased h-screen w-screen overflow-hidden">
-        <FirebaseAnalyticsProvider> {/* Wrap your components with the provider */}
-          {backgroundUrl && (
-            <video
-              className="fixed -z-10 w-full h-full object-cover"
-              src={backgroundUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-            />
-          )}
-          <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
-            <Header isAuthenticated={!!user} userRole={userRole} />
-            <main className="h-full overflow-y-auto">{children}</main>
-          </div>
-          <Toaster />
+        <FirebaseAnalyticsProvider>
+          <RecaptchaProvider> {/* Wrap with RecaptchaProvider */}
+            {backgroundUrl && (
+              <video
+                className="fixed -z-10 w-full h-full object-cover"
+                src={backgroundUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+            )}
+            <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
+              <Header isAuthenticated={!!user} userRole={userRole} />
+              <main className="h-full overflow-y-auto">{children}</main>
+            </div>
+            <Toaster />
+          </RecaptchaProvider>
         </FirebaseAnalyticsProvider>
       </body>
     </html>
