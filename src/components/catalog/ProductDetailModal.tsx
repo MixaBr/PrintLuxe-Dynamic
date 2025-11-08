@@ -189,6 +189,15 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
                 className="object-contain"
             />
           )}
+           <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 text-white bg-black rounded-full p-2"
+            aria-label="Закрыть увеличенное изображение"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </DialogContent>
       </Dialog>
     </>
