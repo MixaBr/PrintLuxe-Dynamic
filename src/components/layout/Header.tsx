@@ -42,8 +42,6 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Need to ensure the component is mounted before reading from the store
-  // to avoid hydration mismatch errors.
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
@@ -81,10 +79,10 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-transparent shadow-sm">
-      <div className="container relative mx-auto flex h-16 items-center justify-between px-4 md:px-8">
+      <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4 md:px-8">
         
         {/* Sandwich Menu (Left) */}
-        <div>
+        <div className="justify-self-start">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12">
@@ -113,7 +111,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         </div>
 
         {/* Logo (Center) */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div className="justify-self-center">
           <Link href="/" className="flex items-center gap-2">
             <Wrench className="h-8 w-8 text-white" />
             <span className="font-headline text-4xl md:text-5xl font-bold text-white">PrintLux</span>
@@ -121,12 +119,12 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         </div>
 
         {/* Icons (Right) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-self-end gap-1 sm:gap-2">
            {showDropdown && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
-                   <Briefcase className="h-8 w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+                <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors h-10 w-10 sm:h-12 sm:w-12">
+                   <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
                    <span className="sr-only">Панели</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -158,9 +156,9 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               </DropdownMenuContent>
             </DropdownMenu>
            )}
-          <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
+          <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors h-10 w-10 sm:h-12 sm:w-12">
             <Link href="/cart">
-              <ShoppingCart className="h-8 w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+              <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
               <span className="sr-only">Корзина</span>
               {isMounted && totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
@@ -169,11 +167,11 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors h-12 w-12">
+          <Button variant="ghost" size="icon" asChild className="group rounded-full hover:bg-white/90 transition-colors h-10 w-10 sm:h-12 sm:w-12">
             <Link href={isAuthenticated ? "/profile" : "/login"}>
               <User 
                 className={cn(
-                  "h-8 w-8 group-hover:text-blue-900 transition-colors",
+                  "h-6 w-6 sm:h-8 sm:w-8 group-hover:text-blue-900 transition-colors",
                   isAuthenticated ? "text-destructive" : "text-white"
                 )} 
                 strokeWidth={3} 
