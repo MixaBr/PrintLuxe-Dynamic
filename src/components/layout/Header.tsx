@@ -99,7 +99,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">
                   <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                     <Wrench className="h-8 w-8 text-white" />
-                    <span className="font-headline text-4xl md:text-5xl font-bold">PrintLux</span>
+                    <span className="font-headline text-2xl font-bold">PrintLux</span>
                   </Link>
                 </div>
                 <nav className="flex flex-col gap-6 p-4">

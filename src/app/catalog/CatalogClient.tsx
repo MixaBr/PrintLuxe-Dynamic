@@ -122,7 +122,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                 {isPending ? 'Поиск...' : 'Найти'}
             </Button>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <Select value={selectedCategory} onValueChange={(value) => {
               setSelectedCategory(value);
               startTransition(() => {
@@ -136,7 +136,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                 router.push(`/catalog?${params.toString()}`);
               });
           }}>
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Все категории" />
             </SelectTrigger>
             <SelectContent>
@@ -168,7 +168,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
           >
             <CarouselContent>
               {products.map((product) => (
-                <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onDoubleClick={() => handleRowDoubleClick(product)}>
+                <CarouselItem key={product.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5" onDoubleClick={() => handleRowDoubleClick(product)}>
                   <ProductCarouselCard product={product} onAddToCart={handleAddToCart} />
                 </CarouselItem>
               ))}
@@ -184,10 +184,10 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
               <Table>
                 <TableHeader>
                   <TableRow className="bg-white hover:bg-white/90">
-                    <TableHead className="w-[20%] text-black">Артикул</TableHead>
-                    <TableHead className="w-[40%] text-black text-center">Название</TableHead>
-                    <TableHead className="w-[20%] text-black text-right">Цена</TableHead>
-                    <TableHead className="w-[20%] text-black text-center">Действие</TableHead>
+                    <TableHead className="w-[40%] text-black">Название</TableHead>
+                    <TableHead className="hidden md:table-cell w-[20%] text-black text-center">Артикул</TableHead>
+                    <TableHead className="w-[30%] text-black text-right">Цена</TableHead>
+                    <TableHead className="w-[30%] text-black text-center">Действие</TableHead>
                   </TableRow>
                 </TableHeader>
               </Table>
@@ -197,13 +197,13 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
                 <TableBody>
                   {products.map((product) => (
                     <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
-                      <TableCell className="font-medium truncate w-[20%]">{product.article_number}</TableCell>
-                      <TableCell className="truncate text-left w-[40%]">{product.name}</TableCell>
-                      <TableCell className="text-right w-[20%]">{getPrice(product)}</TableCell>
-                      <TableCell className="text-center w-[20%]">
+                      <TableCell className="font-medium truncate w-[40%]">{product.name}</TableCell>
+                      <TableCell className="hidden md:table-cell truncate text-center w-[20%]">{product.article_number}</TableCell>
+                      <TableCell className="text-right w-[30%]">{getPrice(product)}</TableCell>
+                      <TableCell className="text-center w-[30%]">
                          <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
                             <ShoppingCart className="mr-2 h-4 w-4" />
-                             В корзину
+                             <span className="hidden sm:inline">В корзину</span>
                         </Button>
                       </TableCell>
                     </TableRow>

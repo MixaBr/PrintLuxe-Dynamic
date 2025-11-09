@@ -67,18 +67,18 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         {/* Slide 1 - Hero */}
         <div ref={slide1Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
-            <div className="text-center text-white">
+            <div className="text-center text-white px-4">
               {homePageData?.error ? (
                 <>
-                  <h1 className="text-4xl md:text-6xl font-bold font-headline text-red-500">Ошибка загрузки</h1>
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-headline text-red-500">Ошибка загрузки</h1>
                   <p className="mt-4 text-lg md:text-xl">{homePageData.error}</p>
                 </>
               ) : (
                 <>
-                  <h1 className="text-4xl md:text-6xl font-bold font-headline">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-headline">
                     Надежный сервис<br />для вашей техники
                   </h1>
-                  <p className="mt-4 text-lg md:text-xl">
+                  <p className="mt-4 text-base sm:text-lg md:text-xl">
                     Профессиональный ремонт,<br />
                     обслуживание и качественные запчасти<br />
                     для бесперебойной работы вашего офиса
@@ -90,12 +90,12 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </div>
 
         {/* Slide 2 - Featured Parts */}
-        <div ref={slide2Ref} className="h-full w-full flex-shrink-0 snap-start flex flex-col justify-center py-8">
-          <div className="flex flex-col items-center text-center text-white w-full max-w-6xl mx-auto px-4">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.featured?.title}</h2>
-              <p className="mt-2 text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.featured?.subtitle}</p>
+        <div ref={slide2Ref} className="h-full w-full flex-shrink-0 snap-start flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center text-center text-white w-full max-w-7xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-headline">{homePageData?.featured?.title}</h2>
+              <p className="mt-2 text-base sm:text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.featured?.subtitle}</p>
               {featuredProducts?.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                       {featuredProducts.map(product => (
                           <ProductCard key={product.id} product={product} />
                       ))}
@@ -103,7 +103,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
               ) : (
                   <p className="mt-4">Рекомендуемые товары скоро появятся.</p>
               )}
-              <div className="mt-6">
+              <div className="mt-8">
                   <Link href="/catalog" className="inline-block bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-3 px-8 rounded hover:bg-white/30 transition-colors duration-200 text-lg">
                       Перейти в каталог
                   </Link>
@@ -112,12 +112,12 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </div>
 
         {/* Slide 3 - Services */}
-        <div ref={slide3Ref} className="h-full w-full flex-shrink-0 snap-start flex items-center justify-center">
-          <div className="text-center text-white w-full max-w-5xl mx-auto px-4">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.services?.title}</h2>
-              <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.services?.subtitle}</p>
+        <div ref={slide3Ref} className="h-full w-full flex-shrink-0 snap-start flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-white w-full max-w-5xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-headline">{homePageData?.services?.title}</h2>
+              <p className="mt-4 text-base sm:text-lg md:text-xl max-w-3xl mx-auto">{homePageData?.services?.subtitle}</p>
               {(homePageData?.services?.list || []).length > 0 && (
-                  <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                  <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                       {(homePageData.services.list || []).map(service => (
                           <div key={service.title} className="bg-white/10 p-6 rounded-lg backdrop-blur-sm text-center">
                               <h3 className="font-bold text-xl">{service.title}</h3>
@@ -132,11 +132,11 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         {/* Slide 4 - Benefits */}
         <div ref={slide4Ref} className="h-full w-full flex-shrink-0 snap-start">
           <Slide>
-            <div className="text-center text-white w-full max-w-4xl mx-auto">
-                <h2 className="text-3xl md:text-5xl font-bold font-headline">{homePageData?.benefits?.title}</h2>
-                <p className="mt-4 text-lg md:text-xl">{homePageData?.benefits?.subtitle}</p>
+            <div className="text-center text-white w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-headline">{homePageData?.benefits?.title}</h2>
+                <p className="mt-4 text-base sm:text-lg md:text-xl">{homePageData?.benefits?.subtitle}</p>
                 {(homePageData?.benefits?.list || []).length > 0 && (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
                         {(homePageData.benefits.list || []).map(benefit => (
                             <div key={benefit.title} className="bg-white/10 p-6 rounded-lg text-center">
                                 <h3 className="font-bold text-xl">{benefit.title}</h3>
@@ -152,7 +152,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
       </div>
 
       {/* Fixed Navigation Buttons */}
-      <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 flex flex-col space-y-4 z-20">
+      <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col space-y-4 z-20">
         {visibleSlide > 0 && (
           <button
             onClick={() => scrollToSlide(visibleSlide - 1)}
