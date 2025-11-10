@@ -1,10 +1,59 @@
+
+'use client';
+
+import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { submitContactForm, type ContactFormState } from './actions';
+
+const initialState: ContactFormState = {
+  message: '',
+  status: 'idle',
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" size="lg" className="w-full font-bold text-lg" disabled={pending}>
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          Отправка...
+        </>
+      ) : (
+        'Отправить'
+      )}
+    </Button>
+  );
+}
+
 
 export default function ContactPage() {
+  const [state, formAction] = useFormState(submitContactForm, initialState);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      toast({
+        title: "Успех!",
+        description: state.message,
+      });
+      // Optionally reset form here if needed, but Server Actions don't reset automatically
+    } else if (state.status === 'error' && state.message && !state.errors) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: state.message,
+      });
+    }
+  }, [state, toast]);
+
   return (
     <div className="text-white">
       {/* Hero Section */}
@@ -60,24 +109,25 @@ export default function ContactPage() {
                 <CardTitle className="font-headline text-2xl sm:text-3xl">Отправить сообщение</CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-6">
+                <form action={formAction} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label htmlFor="name" className="font-medium text-white/90">Ваше имя</label>
-                      <Input id="name" placeholder="Иван Иванов" className="bg-white/5 border-white/20 placeholder:text-white/50" />
+                      <Input id="name" name="name" placeholder="Иван Иванов" className="bg-white/5 border-white/20 placeholder:text-white/50" />
+                      {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="email" className="font-medium text-white/90">Email</label>
-                      <Input id="email" type="email" placeholder="example@email.com" className="bg-white/5 border-white/20 placeholder:text-white/50"/>
+                      <Input id="email" name="email" type="email" placeholder="example@email.com" className="bg-white/5 border-white/20 placeholder:text-white/50"/>
+                       {state.errors?.email && <p className="text-sm text-destructive">{state.errors.email[0]}</p>}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="message" className="font-medium text-white/90">Сообщение</label>
-                    <Textarea id="message" placeholder="Ваш вопрос или предложение..." rows={6} className="bg-white/5 border-white/20 placeholder:text-white/50"/>
+                    <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={6} className="bg-white/5 border-white/20 placeholder:text-white/50"/>
+                    {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
                   </div>
-                  <Button type="submit" size="lg" className="w-full font-bold text-lg bg-white/80 text-black hover:bg-white">
-                    Отправить
-                  </Button>
+                  <SubmitButton />
                 </form>
               </CardContent>
             </Card>
