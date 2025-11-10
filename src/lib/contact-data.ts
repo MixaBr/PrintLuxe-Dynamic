@@ -32,16 +32,16 @@ export async function getContactPageData(): Promise<ContactPageData> {
     .from('settings')
     .select('key, value')
     .in('key', [
-        'contact_main_title', 
-        'contact_main_subtitle', 
+        'contcat_title', // Key from the user's screenshot
+        'contcat_subtitls', // Key from the user's screenshot
         'contact_info_title', 
         'contact_form_title',
         'pickup_address',
         'contact_phone_1', 
         'contact_phone_2', 
         'contact_email_main', 
-        'telegram_link', // Correct key for Telegram
-        'viber_link',    // Correct key for Viber
+        'telegram_link',
+        'viber_link',
         'contact_map_embed_url'
     ]);
 
@@ -63,16 +63,16 @@ export async function getContactPageData(): Promise<ContactPageData> {
 
   // Map the full keys to the desired simple property names.
   const finalData: Partial<ContactPageData> = {
-      main_title: settingsData.contact_main_title,
-      main_subtitle: settingsData.contact_main_subtitle,
+      main_title: settingsData.contcat_title,
+      main_subtitle: settingsData.contcat_subtitls,
       info_title: settingsData.contact_info_title,
       form_title: settingsData.contact_form_title,
       address: settingsData.pickup_address,
       phone_1: settingsData.contact_phone_1,
       phone_2: settingsData.contact_phone_2,
       email_main: settingsData.contact_email_main,
-      telegram_link: settingsData.telegram_link, // Correctly map this
-      viber_link: settingsData.viber_link,       // And this
+      telegram_link: settingsData.telegram_link,
+      viber_link: settingsData.viber_link,
       map_embed_url: settingsData.contact_map_embed_url,
   }
 
