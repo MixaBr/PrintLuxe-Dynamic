@@ -16,6 +16,7 @@ import { getFullProductDetails } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useCartStore } from '@/hooks/use-cart-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CatalogClientProps {
   products: Product[];
@@ -27,6 +28,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const isMobile = useIsMobile();
   
   const { addToCart } = useCartStore();
 
@@ -35,6 +37,12 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [viewMode, setViewMode] = useState<'carousel' | 'table'>('carousel');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('carousel');
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -150,15 +158,17 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
             <Button variant={viewMode === 'carousel' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('carousel')}>
               <LayoutGrid className="h-4 w-4" />
             </Button>
-            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
-              <List className="h-4 w-4" />
-            </Button>
+            {!isMobile && (
+              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('table')}>
+                <List className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       <div>
-        {viewMode === 'carousel' ? (
+        {viewMode === 'carousel' || isMobile ? (
           <Carousel
             opts={{
               align: "start",
