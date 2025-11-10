@@ -36,12 +36,12 @@ export async function getContactPageData(): Promise<ContactPageData> {
         'contact_main_subtitle', 
         'contact_info_title', 
         'contact_form_title',
-        'pickup_address',
+        'pickup_address', // Correct key for the address
         'contact_phone_1', 
         'contact_phone_2', 
         'contact_email_main', 
-        'contact_telegram_link',
-        'contact_viber_link',
+        'contact_telegram_link', // Correct key for Telegram
+        'contact_viber_link',    // Correct key for Viber
         'contact_map_embed_url'
     ]);
 
@@ -55,25 +55,27 @@ export async function getContactPageData(): Promise<ContactPageData> {
   }
 
   const settingsData = data.reduce<any>((acc, { key, value }) => {
-    const cleanedKey = key.startsWith('contact_') ? key.substring(8) : key;
+    // We don't need to clean the key anymore if we fetch the full keys.
+    // This was the source of the bug.
     if (value) {
-        acc[cleanedKey] = value;
+        acc[key] = value;
     }
     return acc;
   }, {});
 
+  // Map the full keys to the desired simple property names.
   const finalData: Partial<ContactPageData> = {
-      main_title: settingsData.main_title,
-      main_subtitle: settingsData.main_subtitle,
-      info_title: settingsData.info_title,
-      form_title: settingsData.form_title,
-      address: settingsData.pickup_address,
-      phone_1: settingsData.phone_1,
-      phone_2: settingsData.phone_2,
-      email_main: settingsData.email_main,
-      telegram_link: settingsData.telegram_link,
-      viber_link: settingsData.viber_link,
-      map_embed_url: settingsData.map_embed_url,
+      main_title: settingsData.contact_main_title,
+      main_subtitle: settingsData.contact_main_subtitle,
+      info_title: settingsData.contact_info_title,
+      form_title: settingsData.contact_form_title,
+      address: settingsData.pickup_address, // Use the correct key here
+      phone_1: settingsData.contact_phone_1,
+      phone_2: settingsData.contact_phone_2,
+      email_main: settingsData.contact_email_main,
+      telegram_link: settingsData.contact_telegram_link, // Correctly map this
+      viber_link: settingsData.contact_viber_link,       // And this
+      map_embed_url: settingsData.contact_map_embed_url,
   }
 
   return { ...defaultData, ...finalData };
