@@ -23,12 +23,11 @@ const defaultData: Partial<ContactPageData> = {
     main_subtitle: "Мы всегда рады помочь вам. Задайте вопрос или сделайте заказ.",
     info_title: "Контактная информация",
     form_title: "Отправить сообщение",
-    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2245.38533819864!2d37.6155613159307!3d55.75222098055453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46b54a50b315e573%3A0xa66eb1a3c1b5a57b!2sRed%20Square!5e0!3m2!1sen!2sru!4v1622033321487!5m2!1sen!2sru"
+    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2350.852182285878!2d27.59253407722746!3d53.90022897247345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46dbcfae3146097d%3A0xb48b5785536551b8!2z0L_RgNC-0YHQvy4g0JzQsNC90YjQuNC90LAsIDgvMSwg0JzQuNC90YHQug!5e0!3m2!1sru!2sby!4v1720528224536!5m2!1sru!2sby"
 }
 
 export async function getContactPageData(): Promise<ContactPageData> {
   const supabase = createClient();
-  // Fetch a broader range of keys, including the new ones
   const { data, error } = await supabase
     .from('settings')
     .select('key, value')
@@ -37,12 +36,12 @@ export async function getContactPageData(): Promise<ContactPageData> {
         'contact_main_subtitle', 
         'contact_info_title', 
         'contact_form_title',
-        'pickup_address', // Use the correct key for the address
+        'pickup_address',
         'contact_phone_1', 
         'contact_phone_2', 
         'contact_email_main', 
-        'contact_telegram_link', // New key
-        'contact_viber_link',    // New key
+        'contact_telegram_link',
+        'contact_viber_link',
         'contact_map_embed_url'
     ]);
 
@@ -55,7 +54,6 @@ export async function getContactPageData(): Promise<ContactPageData> {
     return { ...defaultData, error: 'Данные для страницы "Контакты" не найдены.' } as ContactPageData;
   }
 
-  // Reduce data into a structured object, cleaning keys
   const settingsData = data.reduce<any>((acc, { key, value }) => {
     const cleanedKey = key.startsWith('contact_') ? key.substring(8) : key;
     if (value) {
@@ -64,13 +62,12 @@ export async function getContactPageData(): Promise<ContactPageData> {
     return acc;
   }, {});
 
-  // Explicitly map pickup_address to address
   const finalData: Partial<ContactPageData> = {
       main_title: settingsData.main_title,
       main_subtitle: settingsData.main_subtitle,
       info_title: settingsData.info_title,
       form_title: settingsData.form_title,
-      address: settingsData.pickup_address, // Map pickup_address to the address field
+      address: settingsData.pickup_address,
       phone_1: settingsData.phone_1,
       phone_2: settingsData.phone_2,
       email_main: settingsData.email_main,
@@ -79,6 +76,5 @@ export async function getContactPageData(): Promise<ContactPageData> {
       map_embed_url: settingsData.map_embed_url,
   }
 
-  // Merge fetched data with defaults to ensure all fields are present
   return { ...defaultData, ...finalData };
 }
