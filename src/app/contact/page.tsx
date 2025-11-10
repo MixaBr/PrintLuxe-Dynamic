@@ -66,45 +66,59 @@ export default function ContactPage() {
 
       {/* Contact Form and Info Section */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
-          {/* Contact Info */}
-          <div className="lg:col-span-1 space-y-8">
+          {/* Left Column: Contact Info & Map */}
+          <div className="space-y-8">
             <h2 className="font-headline text-2xl sm:text-3xl font-semibold mb-6">Контактная информация</h2>
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-primary" />
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Наш адрес</h3>
+                    <p className="text-white/70">123456, г. Москва, ул. Центральная, д. 1, офис 101</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Наш адрес</h3>
-                  <p className="text-white/70">123456, г. Москва, ул. Центральная, д. 1, офис 101</p>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Телефон</h3>
+                    <p className="text-white/70">+7 (495) 123-45-67</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-primary" />
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Email</h3>
+                    <p className="text-white/70">contact@printlux.com</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Телефон</h3>
-                  <p className="text-white/70">+7 (495) 123-45-67</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Email</h3>
-                  <p className="text-white/70">contact@printlux.com</p>
-                </div>
-              </div>
+            </div>
+
+            {/* Google Maps Embed */}
+            <div className="aspect-video w-full mt-8">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2245.38533819864!2d37.6155613159307!3d55.75222098055453!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46b54a50b315e573%3A0xa66eb1a3c1b5a57b!2sRed%20Square!5e0!3m2!1sen!2sru!4v1622033321487!5m2!1sen!2sru"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="rounded-lg shadow-lg"
+                ></iframe>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg">
+          {/* Right Column: Contact Form */}
+          <div className="flex items-center">
+            <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl sm:text-3xl">Отправить сообщение</CardTitle>
               </CardHeader>
