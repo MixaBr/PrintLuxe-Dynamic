@@ -14,7 +14,10 @@ export interface ContactPageData {
   email_main?: string;
   telegram_link?: string;
   viber_link?: string;
-  map_embed_url?: string;
+  map_lat?: number;
+  map_lng?: number;
+  map_zoom?: number;
+  map_marker_text?: string;
   error?: string;
 }
 
@@ -23,7 +26,8 @@ const defaultData: Partial<ContactPageData> = {
     main_subtitle: "Мы всегда рады помочь вам. Задайте вопрос или сделайте заказ.",
     info_title: "Контактная информация",
     form_title: "Отправить сообщение",
-    map_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2350.852182285878!2d27.59253407722746!3d53.90022897247345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46dbcfae3146097d%3A0xb48b5785536551b8!2z0L_RgNC-0YHQvy4g0JzQsNC90YjQuNC90LAsIDgvMSwg0JzQuNC90YHQug!5e0!3m2!1sru!2sby!4v1720528224536!5m2!1sru!2sby"
+    map_zoom: 17, // Default zoom
+    map_marker_text: "Наш офис"
 }
 
 export async function getContactPageData(): Promise<ContactPageData> {
@@ -32,8 +36,8 @@ export async function getContactPageData(): Promise<ContactPageData> {
     .from('settings')
     .select('key, value')
     .in('key', [
-        'contcat_title', // Key from the user's screenshot
-        'contcat_subtitls', // Key from the user's screenshot
+        'contcat_title',
+        'contcat_subtitls',
         'contact_info_title', 
         'contact_form_title',
         'pickup_address',
@@ -42,7 +46,10 @@ export async function getContactPageData(): Promise<ContactPageData> {
         'contact_email_main', 
         'telegram_link',
         'viber_link',
-        'contact_map_embed_url'
+        'map_lat',
+        'map_lng',
+        'map_zoom',
+        'map_marker_text'
     ]);
 
   if (error) {
@@ -61,7 +68,6 @@ export async function getContactPageData(): Promise<ContactPageData> {
     return acc;
   }, {});
 
-  // Map the full keys to the desired simple property names.
   const finalData: Partial<ContactPageData> = {
       main_title: settingsData.contcat_title,
       main_subtitle: settingsData.contcat_subtitls,
@@ -73,7 +79,10 @@ export async function getContactPageData(): Promise<ContactPageData> {
       email_main: settingsData.contact_email_main,
       telegram_link: settingsData.telegram_link,
       viber_link: settingsData.viber_link,
-      map_embed_url: settingsData.contact_map_embed_url,
+      map_lat: settingsData.map_lat ? parseFloat(settingsData.map_lat) : undefined,
+      map_lng: settingsData.map_lng ? parseFloat(settingsData.map_lng) : undefined,
+      map_zoom: settingsData.map_zoom ? parseInt(settingsData.map_zoom, 10) : undefined,
+      map_marker_text: settingsData.map_marker_text
   }
 
   return { ...defaultData, ...finalData };

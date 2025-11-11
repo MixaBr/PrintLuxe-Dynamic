@@ -1,81 +1,119 @@
-
 'use server';
 
 import { z } from 'zod';
-import { sendMail } from '@/lib/mail';
+// import { Resend } from 'resend'; // Заглушка: временно отключаем Resend
 
-const contactSchema = z.object({
+const contactFormSchema = z.object({
   name: z.string().min(2, { message: 'Имя должно содержать не менее 2 символов.' }),
   email: z.string().email({ message: 'Неверный формат email.' }),
   message: z.string().min(10, { message: 'Сообщение должно содержать не менее 10 символов.' }),
 });
 
-export type ContactFormState = {
+export interface ContactFormState {
   message: string;
-  status: 'success' | 'error' | 'idle';
+  status: 'idle' | 'success' | 'error';
   errors?: {
     name?: string[];
     email?: string[];
     message?: string[];
   };
-};
+}
 
-export async function submitContactForm(
-  prevState: ContactFormState,
-  formData: FormData
-): Promise<ContactFormState> {
-  const validatedFields = contactSchema.safeParse({
+export async function submitContactForm(prevState: ContactFormState, formData: FormData): Promise<ContactFormState> {
+  // const resend = new Resend(process.env.RESEND_API_KEY);
+  // const toEmail = process.env.CONTACT_FORM_TO_EMAIL;
+  // const fromEmail = process.env.CONTACT_FORM_FROM_EMAIL;
+
+  const rawFormData = {
     name: formData.get('name'),
     email: formData.get('email'),
     message: formData.get('message'),
-  });
+  };
+
+  const validatedFields = contactFormSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
     return {
+      message: 'Обнаружены ошибки валидации.',
       status: 'error',
-      message: 'Пожалуйста, исправьте ошибки в форме.',
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
-
-  const { name, email, message } = validatedFields.data;
   
-  const from = process.env.SMTP_FROM || 'default-from@example.com';
-  const to = process.env.SMTP_TO || 'default-to@example.com';
+  const token = formData.get('g-recaptcha-response') as string;
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
-  const subject = `Новое сообщение с сайта от ${name}`;
-  const textBody = `
-    Имя: ${name}
-    Email: ${email}
-    Сообщение:
-    ${message}
-  `;
-  const htmlBody = `
-    <h3>Новое сообщение с контактной формы</h3>
-    <p><strong>Имя:</strong> ${name}</p>
-    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-    <hr>
-    <p><strong>Сообщение:</strong></p>
-    <p>${message.replace(/\n/g, '<br>')}</p>
-  `;
+  if (!token) {
+      return { 
+          message: 'Пожалуйста, пройдите проверку reCAPTCHA.',
+          status: 'error'
+      };
+  }
 
-  const result = await sendMail({
-    from: `"PrintLux Contact Form" <${from}>`,
-    to: to,
-    subject: subject,
-    text: textBody,
-    html: htmlBody,
-  });
+  try {
+      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `secret=${secretKey}&response=${token}`,
+      });
+      const recaptchaData = await response.json();
 
-  if (result.success) {
-    return {
+      if (!recaptchaData.success) {
+           return { 
+              message: 'Проверка reCAPTCHA не удалась. Попробуйте еще раз.',
+              status: 'error'
+          };
+      }
+  } catch (error) {
+      console.error('reCAPTCHA verification error:', error);
+      return { 
+          message: 'Ошибка при проверке reCAPTCHA.',
+          status: 'error'
+      };
+  }
+
+  // --- ЗАГЛУШКА --- 
+  // Временно отключаем отправку email и возвращаем успех
+  console.log("--- FORM SUBMISSION (STUB) ---");
+  console.log("Name:", validatedFields.data.name);
+  console.log("Email:", validatedFields.data.email);
+  console.log("Message:", validatedFields.data.message);
+  
+  return {
+      message: 'Ваше сообщение успешно отправлено! (Заглушка)',
       status: 'success',
-      message: 'Ваше сообщение успешно отправлено! Мы скоро с вами свяжемся.',
-    };
-  } else {
+  };
+  // --- КОНЕЦ ЗАГЛУШКИ ---
+
+  /*
+  // Оригинальный код отправки
+  try {
+    if (!toEmail || !fromEmail) {
+        throw new Error("Email environment variables are not set.")
+    }
+
+    const { name, email, message } = validatedFields.data;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: toEmail,
+      subject: `Новое сообщение с сайта от ${name}`,
+      reply_to: email,
+      html: `<p>Имя: ${name}</p><p>Email: ${email}</p><p>Сообщение: ${message}</p>`,
+    });
+
     return {
+      message: 'Ваше сообщение успешно отправлено!',
+      status: 'success',
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      message: 'Не удалось отправить сообщение. Пожалуйста, попробуйте еще раз.',
       status: 'error',
-      message: `Произошла ошибка при отправке: ${result.error}`,
     };
   }
+  */
 }

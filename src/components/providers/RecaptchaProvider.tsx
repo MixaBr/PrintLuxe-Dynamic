@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import { RecaptchaContext } from '@/context/RecaptchaContext';
 
@@ -8,21 +8,35 @@ interface RecaptchaProviderProps {
     children: React.ReactNode;
 }
 
+// Объявляем тип для window, чтобы TypeScript не ругался
+declare global {
+    interface Window {
+        onRecaptchaLoadCallback: () => void;
+    }
+}
+
 export const RecaptchaProvider: React.FC<RecaptchaProviderProps> = ({ children }) => {
     const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
+
+    useEffect(() => {
+        // Назначаем глобальную функцию, которую вызовет скрипт reCAPTCHA
+        window.onRecaptchaLoadCallback = () => {
+            console.log('reCAPTCHA API is fully loaded and ready.');
+            setIsRecaptchaReady(true);
+        };
+
+        // Очистка при размонтировании компонента
+        return () => {
+            // @ts-ignore
+            delete window.onRecaptchaLoadCallback;
+        };
+    }, []);
 
     return (
         <RecaptchaContext.Provider value={{ isRecaptchaReady }}>
             <Script 
                 id="recaptcha-script-loader"
-                src="https://www.google.com/recaptcha/api.js?render=explicit"
-                onLoad={() => {
-                    console.log('reCAPTCHA script has been loaded.');
-                    setIsRecaptchaReady(true);
-                }}
-                onError={(e) => {
-                    console.error('Failed to load reCAPTCHA script:', e);
-                }}
+                src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoadCallback&render=explicit"
                 async 
                 defer 
             />
