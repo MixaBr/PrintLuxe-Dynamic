@@ -20,18 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
 
-const ViberIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props} fill="currentColor"><title>Viber</title><path d="M15.409 24c-1.846 0-3.34-1.493-3.34-3.34v-3.326c0-1.846 1.494-3.34 3.34-3.34h3.326c1.847 0 3.34 1.494 3.34 3.34v3.326c0 1.847-1.493 3.34-3.34 3.34h-3.326zm-1.89-3.34c0 .99.803 1.794 1.795 1.794h3.326c.99 0 1.794-.803 1.794-1.794v-3.326c0-.99-.803-1.794-1.794-1.794h-3.326c-.99 0-1.794.803-1.794 1.794v3.326h-.001zm-3.83-12.787c.215.42.33.88.33 1.37v.006c0 2.21-1.79 4-4 4s-4-1.79-4-4c0-2.21 1.79-4 4-4 .49 0 .95.085 1.37.245V0H.18A.18.18 0 0 0 0 .18v23.64c0 .099.08.18.18.18H8.88V9.126c.39.095.8.15 1.21.15.26 0 .52-.02.77-.06zm-4.11-6.195c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2z"/></svg>
-);
-
-const TelegramIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <path d="M48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0C37.2548 0 48 10.7452 48 24Z" fill="#2AABEE"/>
-        <path d="M34.4299 14.8C33.7299 14.73 32.8499 14.9 32.4999 15.01L13.8899 22.39C12.3499 23.01 12.3599 23.95 13.5099 24.31L18.4299 25.82L21.0199 35.3C21.3699 36.64 22.2199 36.93 23.1499 36.23L26.9699 33.15L31.7599 37.03C32.9699 37.84 33.7599 37.49 34.0599 36.08L37.8199 18.02C38.1999 16.2 37.1299 15.3 36.1299 15.35L34.4299 14.8Z" fill="white"/>
-        <path d="M18.89 31.06L21.01 25.81L32.41 17.51C33.11 17.06 32.56 16.71 31.96 17.1L20.21 24.61" fill="#C8DAEA"/>
-    </svg>
-);
-
 const initialState: ContactFormState = {
   message: '',
   status: 'idle',
@@ -174,13 +162,13 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                             <div className="flex items-center gap-3 mt-1">
                                 {contactData.telegram_link && (
                                     <Link href={contactData.telegram_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
-                                        <TelegramIcon className="w-10 h-10" />
+                                        <Send className="w-10 h-10" />
                                         <span className="sr-only">Telegram</span>
                                     </Link>
                                 )}
                                 {contactData.viber_link && (
                                     <Link href={contactData.viber_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
-                                        <ViberIcon className="w-10 h-10 text-white" />
+                                        <Phone className="w-10 h-10" />
                                         <span className="sr-only">Viber</span>
                                     </Link>
                                 )}
