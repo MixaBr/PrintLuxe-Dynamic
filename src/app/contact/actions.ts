@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-// import { Resend } from 'resend'; // Заглушка: временно отключаем Resend
+import { sendMail } from '@/lib/mail';
 
 const contactFormSchema = z.object({
   name: z.string().min(2, { message: 'Имя должно содержать не менее 2 символов.' }),
@@ -20,9 +20,6 @@ export interface ContactFormState {
 }
 
 export async function submitContactForm(prevState: ContactFormState, formData: FormData): Promise<ContactFormState> {
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // const toEmail = process.env.CONTACT_FORM_TO_EMAIL;
-  // const fromEmail = process.env.CONTACT_FORM_FROM_EMAIL;
 
   const rawFormData = {
     name: formData.get('name'),
@@ -74,34 +71,14 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
       };
   }
 
-  // --- ЗАГЛУШКА --- 
-  // Временно отключаем отправку email и возвращаем успех
-  console.log("--- FORM SUBMISSION (STUB) ---");
-  console.log("Name:", validatedFields.data.name);
-  console.log("Email:", validatedFields.data.email);
-  console.log("Message:", validatedFields.data.message);
-  
-  return {
-      message: 'Ваше сообщение успешно отправлено! (Заглушка)',
-      status: 'success',
-  };
-  // --- КОНЕЦ ЗАГЛУШКИ ---
-
-  /*
-  // Оригинальный код отправки
   try {
-    if (!toEmail || !fromEmail) {
-        throw new Error("Email environment variables are not set.")
-    }
-
     const { name, email, message } = validatedFields.data;
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: toEmail,
+    await sendMail({
+      to: process.env.SMTP_TO as string,
       subject: `Новое сообщение с сайта от ${name}`,
-      reply_to: email,
       html: `<p>Имя: ${name}</p><p>Email: ${email}</p><p>Сообщение: ${message}</p>`,
+      replyTo: email,
     });
 
     return {
@@ -115,5 +92,4 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
       status: 'error',
     };
   }
-  */
 }
