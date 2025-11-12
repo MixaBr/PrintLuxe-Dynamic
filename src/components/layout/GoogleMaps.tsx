@@ -2,7 +2,7 @@
 'use client'
 
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactElement, useEffect, useRef } from "react";
 
 // Define the component props
 interface GoogleMapsProps {
@@ -12,8 +12,16 @@ interface GoogleMapsProps {
     markerText?: string;
 }
 
+interface MapComponentProps {
+    lat: number;
+    lng: number;
+    zoom: number;
+    mapId: string;
+    markerText: string;
+}
+
 // The final, clean, and working Map Component
-const MapComponent = ({ lat, lng, zoom, mapId, markerText }) => {
+const MapComponent = ({ lat, lng, zoom, mapId, markerText }: MapComponentProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -79,7 +87,7 @@ const MapComponent = ({ lat, lng, zoom, mapId, markerText }) => {
 export default function GoogleMaps({ lat, lng, zoom = 17, markerText = "Наш офис" }: GoogleMapsProps) {
     const MAP_ID = 'REMONT_PRINTERA';
 
-    const render = (status: Status): ReactNode => {
+    const render = (status: Status): ReactElement => {
         switch (status) {
             case Status.LOADING:
                 return <p>Загрузка карты...</p>;
@@ -95,6 +103,8 @@ export default function GoogleMaps({ lat, lng, zoom = 17, markerText = "Наш �
                         markerText={markerText}
                    />
                 );
+            default:
+                return <p>Загрузка карты...</p>;
         }
     };
 
