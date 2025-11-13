@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget'; // Import the new component
+import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,23 +26,54 @@ export default function LoginPage() {
   const [signUpState, signUpAction] = useFormState(signUp, null);
 
   const [isArchived, setIsArchived] = useState(false);
-  const [activeTab, setActiveTab] = useState("signin"); // 'signin' or 'signup'
+  const [modalState, setModalState] = useState<{ open: boolean; title: string; description: string; }>({ open: false, title: '', description: '' });
+
+  const [activeTab, setActiveTab] = useState("signin");
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
 
   useEffect(() => {
-    if (signInState?.error === 'ACCOUNT_ARCHIVED') {
+    if (signInState && 'error' in signInState && signInState.error === 'ACCOUNT_ARCHIVED') {
       setIsArchived(true);
-    } else if (signInState?.error) {
-        console.error("Sign In Error:", signInState.error);
+    } else if (signInState && 'error' in signInState && signInState.error) {
+      console.error("Sign In Error:", signInState.error);
     }
   }, [signInState]);
 
   useEffect(() => {
-    if (signUpState?.success) {
-      setActiveTab("signin");
-      setIsRecaptchaVerified(false); 
-    } else if (signUpState?.error) {
-      console.error("Sign Up Error:", signUpState.error);
+    if (!signUpState) return;
+
+    if ('success' in signUpState && signUpState.success) {
+      setModalState({
+        open: true,
+        title: "Регистрация почти завершена",
+        description: "Мы отправили вам письмо на указанный почтовый ящик. Пожалуйста, перейдите по ссылке в письме, чтобы подтвердить вашу регистрацию."
+      });
+    } else if ('error' in signUpState && signUpState.error) {
+        const errorValue = signUpState.error;
+        let errorMessage: string;
+
+        if (typeof errorValue === 'string') {
+            errorMessage = errorValue;
+        } else if (errorValue && typeof errorValue === 'object' && 'message' in errorValue) {
+            errorMessage = String((errorValue as { message: unknown }).message);
+        } else {
+            errorMessage = JSON.stringify(errorValue);
+        }
+
+        let description = "Произошла неизвестная ошибка. Попробуйте снова.";
+        if (errorMessage.includes("уже существует, но не подтвержден")) {
+            description = "Пользователь с таким email уже зарегистрирован, но его почта не подтверждена. Мы отправили повторное письмо с подтверждением на ваш email. Пожалуйста, проверьте почту.";
+        } else if (errorMessage.includes("уже существует")) {
+            description = "Пользователь с таким email уже существует. Пожалуйста, войдите в свой аккаунт.";
+        } else if (errorMessage.includes("Validation error") || errorMessage.includes("is invalid")) {
+            description = "Убедитесь, что вы ввели правильный email и пароль длиной не менее 6 символов.";
+        }
+
+        setModalState({
+            open: true,
+            title: "Ошибка регистрации",
+            description: description,
+        });
     }
   }, [signUpState]);
 
@@ -51,19 +82,58 @@ export default function LoginPage() {
     router.push('/contact');
   };
 
-  const getErrorMessage = (state: any) => {
-      if (!state?.error || state.error === 'ACCOUNT_ARCHIVED') return null;
-      return state.error;
-  }
+  const handleModalClose = () => {
+    setModalState({ open: false, title: '', description: '' });
+    let shouldSwitch = false;
 
-  const getSuccessMessage = (state: any) => {
-      if (!state?.success) return null;
-      return "Регистрация прошла успешно! Теперь вы можете войти.";
-  }
+    if (signUpState && 'success' in signUpState && signUpState.success) {
+        shouldSwitch = true;
+    } else if (signUpState && 'error' in signUpState && signUpState.error) {
+        const errorValue = signUpState.error;
+        let errorMessage: string;
+
+        if (typeof errorValue === 'string') {
+            errorMessage = errorValue;
+        } else if (errorValue && typeof errorValue === 'object' && 'message' in errorValue) {
+            errorMessage = String((errorValue as { message: unknown }).message);
+        } else {
+            errorMessage = JSON.stringify(errorValue);
+        }
+        
+        if (errorMessage.includes("уже существует")) {
+            shouldSwitch = true;
+        }
+    }
+
+    if (shouldSwitch) {
+      setActiveTab("signin");
+    }
+    setIsRecaptchaVerified(false);
+  };
+
+ const getErrorMessage = (state: { error?: any } | null): string | null => {
+    if (!state || !('error' in state) || !state.error || state.error === 'ACCOUNT_ARCHIVED') return null;
+
+    const errorValue = state.error;
+
+    if (typeof errorValue === 'string') {
+        return errorValue;
+    }
+
+    if (Array.isArray(errorValue)) {
+        return errorValue.map(e => e.message).join(', ');
+    }
+
+    if (typeof errorValue === 'object' && errorValue !== null && 'message' in errorValue) {
+        return String(errorValue.message);
+    }
+
+    return JSON.stringify(errorValue);
+}
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    setIsRecaptchaVerified(false); // Reset verification on tab change
+    setIsRecaptchaVerified(false);
   }
 
   return (
@@ -114,15 +184,10 @@ export default function LoginPage() {
                 </div>
 
                 <div className="my-4 flex justify-center">
-                    {/* Use the new, simplified component */}
                     <RecaptchaWidget onVerified={setIsRecaptchaVerified} />
                 </div>
-
-                {getErrorMessage(signUpState) && (
+                 {getErrorMessage(signUpState) && (
                     <p className="text-sm font-medium text-destructive">{getErrorMessage(signUpState)}</p>
-                )}
-                {getSuccessMessage(signUpState) && (
-                    <p className="text-sm font-medium text-green-600">{getSuccessMessage(signUpState)}</p>
                 )}
                 <Button type="submit" className="w-full" disabled={!isRecaptchaVerified}>Зарегистрироваться</Button>
             </form>
@@ -140,6 +205,20 @@ export default function LoginPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleOkClick}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={modalState.open} onOpenChange={(open) => !open && handleModalClose()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{modalState.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {modalState.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleModalClose}>Я понял</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
