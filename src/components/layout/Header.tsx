@@ -90,7 +90,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                 <span className="sr-only">Открыть меню</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="bg-gray-900 bg-opacity-90 text-white backdrop-blur-sm">
+            <SheetContent side="left" className="bg-[rgba(0,0,0,0.6)] text-white backdrop-blur-sm">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
               <div className="flex flex-col h-full">

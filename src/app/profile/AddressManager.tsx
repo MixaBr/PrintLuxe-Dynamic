@@ -138,7 +138,7 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                                             {`${address.postal_code || ''}, ${address.country || ''}, г. ${address.city || ''}, ул. ${address.street || ''}, д. ${address.building || ''}${address.housing ? `, корп. ${address.housing}` : ''}${address.apartment ? `, кв. ${address.apartment}` : ''}`}
                                         </TableCell>
                                         <TableCell className="space-x-1">
-                                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleEdit(address)} disabled={isPending}>
+                                            <Button size="icon" className="h-7 w-7 bg-white text-black hover:bg-primary hover:text-white" onClick={() => handleEdit(address)} disabled={isPending}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                             <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDeleteAttempt(address.id)} disabled={isPending}>

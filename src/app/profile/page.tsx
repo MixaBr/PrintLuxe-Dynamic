@@ -107,14 +107,14 @@ export default async function ProfilePage() {
 
       {/* Main Profile Content */}
       <form action={updateProfile}>
-        <Card>
+        <Card className="bg-black/50 text-white border-none">
           <CardHeader className="py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <UserCircle className="w-10 h-10 text-primary" />
                 <div>
                   <CardTitle className="font-headline text-2xl">Профиль пользователя</CardTitle>
-                  <CardDescription>Ваша личная и контактная информация</CardDescription>
+                  <CardDescription className="text-gray-300">Ваша личная и контактная информация</CardDescription>
                 </div>
               </div>
               <Button type="submit">
@@ -129,21 +129,21 @@ export default async function ProfilePage() {
                   <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><User className="w-5 h-5" />Личная информация</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <label htmlFor="first_name" className="text-xs font-medium text-muted-foreground">Имя</label>
-                          <Input id="first_name" name="first_name" defaultValue={profile?.first_name || ''} className="h-9 text-sm" />
+                          <label htmlFor="first_name" className="text-xs font-medium text-gray-300">Имя</label>
+                          <Input id="first_name" name="first_name" defaultValue={profile?.first_name || ''} className="h-9 text-sm bg-white/10 border-white/20 text-white" />
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="last_name" className="text-xs font-medium text-muted-foreground">Фамилия</label>
-                          <Input id="last_name" name="last_name" defaultValue={profile?.last_name || ''} className="h-9 text-sm" />
+                          <label htmlFor="last_name" className="text-xs font-medium text-gray-300">Фамилия</label>
+                          <Input id="last_name" name="last_name" defaultValue={profile?.last_name || ''} className="h-9 text-sm bg-white/10 border-white/20 text-white" />
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="birth_date" className="text-xs font-medium text-muted-foreground">Дата рождения</label>
-                          <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDate(profile?.birth_date)} className="h-9 text-sm" />
+                          <label htmlFor="birth_date" className="text-xs font-medium text-gray-300">Дата рождения</label>
+                          <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDate(profile?.birth_date)} className="h-9 text-sm bg-white/10 border-white/20 text-white" />
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="gender" className="text-xs font-medium text-muted-foreground">Пол</label>
+                          <label htmlFor="gender" className="text-xs font-medium text-gray-300">Пол</label>
                           <Select name="gender" defaultValue={profile?.gender || 'not_selected'}>
-                            <SelectTrigger id="gender" className="h-9 text-sm">
+                            <SelectTrigger id="gender" className="h-9 text-sm bg-white/10 border-white/20 text-white">
                                 <SelectValue placeholder="Не выбрано" />
                             </SelectTrigger>
                             <SelectContent>
@@ -162,22 +162,22 @@ export default async function ProfilePage() {
                   <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><Mail className="w-5 h-5" />Контактные данные</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Email</p>
+                          <p className="text-xs font-medium text-gray-300">Email</p>
                           <p className="text-sm">{user.email}</p>
                       </div>
                       <div className="space-y-1">
-                          <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">Телефон</label>
-                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm"/>
-                           <p className="text-xs text-muted-foreground">В формате E.164</p>
+                          <label htmlFor="phone" className="text-xs font-medium text-gray-300">Телефон</label>
+                          <Input id="phone" name="phone" defaultValue={profile?.phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm bg-white/10 border-white/20 text-white"/>
+                           <p className="text-xs text-gray-300">В формате E.164</p>
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="telegram_link" className="text-xs font-medium text-muted-foreground">Telegram</label>
-                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} placeholder="@username" className="h-9 text-sm" />
+                          <label htmlFor="telegram_link" className="text-xs font-medium text-gray-300">Telegram</label>
+                          <Input id="telegram_link" name="telegram_link" defaultValue={profile?.telegram_link || ''} placeholder="@username" className="h-9 text-sm bg-white/10 border-white/20 text-white" />
                       </div>
                        <div className="space-y-1">
-                          <label htmlFor="viber_phone" className="text-xs font-medium text-muted-foreground">Viber</label>
-                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm"/>
-                          <p className="text-xs text-muted-foreground">В формате E.164</p>
+                          <label htmlFor="viber_phone" className="text-xs font-medium text-gray-300">Viber</label>
+                          <Input id="viber_phone" name="viber_phone" defaultValue={profile?.viber_phone || ''} placeholder="Например, +375291234567" className="h-9 text-sm bg-white/10 border-white/20 text-white"/>
+                          <p className="text-xs text-gray-300">В формате E.164</p>
                       </div>
                   </div>
               </div>
@@ -187,19 +187,19 @@ export default async function ProfilePage() {
                   <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><BarChart2 className="w-5 h-5" />Статистика и статус</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Роль</p>
+                          <p className="text-xs font-medium text-gray-300">Роль</p>
                           <p className="capitalize text-sm">{role}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Статус</p>
+                          <p className="text-xs font-medium text-gray-300">Статус</p>
                           <p className="capitalize text-sm">{profile?.status || 'active'}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Всего покупок</p>
+                          <p className="text-xs font-medium text-gray-300">Всего покупок</p>
                           <p className="text-sm">{profile?.total_purchases || 0}</p>
                       </div>
                       <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Последний вход</p>
+                          <p className="text-xs font-medium text-gray-300">Последний вход</p>
                           <p className="text-sm">{formatLoginTime(profile?.last_login_at)}</p>
                       </div>
                   </div>
@@ -208,7 +208,7 @@ export default async function ProfilePage() {
         </Card>
       </form>
        {/* Addresses Block */}
-      <Card>
+      <Card className="bg-black/50 text-white border-none">
         <AddressManager initialAddresses={addresses} />
       </Card>
     </div>
