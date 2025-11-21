@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -36,8 +37,8 @@ const addressTypeMap: { [key: string]: string } = {
 
 export default function AddressManager({ initialAddresses }: AddressManagerProps) {
     const { toast } = useToast();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
-    const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
@@ -59,6 +60,7 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                     description: result.success,
                 });
                 setIsFormDialogOpen(false);
+                router.refresh();
             }
         });
     };
@@ -77,14 +79,13 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                 toast({ variant: 'destructive', title: 'Ошибка', description: result.error });
             } else {
                 toast({ title: 'Успех!', description: result.success });
-                setAddresses(addresses.filter(addr => addr.id !== addressToDelete));
+                router.refresh();
             }
             setIsDeleteDialogOpen(false);
             setAddressToDelete(null);
             setIsRecaptchaVerified(false);
         });
     };
-
 
     const handleEdit = (address: Address) => {
         setSelectedAddress(address);
@@ -120,41 +121,49 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                <Button size="sm" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Добавить адрес</Button>
             </CardHeader>
             <CardContent className="pt-0 pb-4">
-                <ScrollArea className="h-52 w-full rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Тип</TableHead>
-                                <TableHead>Адрес</TableHead>
-                                <TableHead className="w-[100px]">Действия</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {addresses.length > 0 ? (
-                                addresses.map((address) => (
-                                    <TableRow key={address.id}>
-                                        <TableCell className="text-xs">{addressTypeMap[address.address_type || 'other'] || 'Не указан'}</TableCell>
-                                        <TableCell className="text-xs">
-                                            {`${address.postal_code || ''}, ${address.country || ''}, г. ${address.city || ''}, ул. ${address.street || ''}, д. ${address.building || ''}${address.housing ? `, корп. ${address.housing}` : ''}${address.apartment ? `, кв. ${address.apartment}` : ''}`}
-                                        </TableCell>
-                                        <TableCell className="space-x-1">
-                                            <Button size="icon" className="h-7 w-7 bg-white text-black hover:bg-primary hover:text-white" onClick={() => handleEdit(address)} disabled={isPending}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDeleteAttempt(address.id)} disabled={isPending}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center h-24">У вас пока нет сохраненных адресов.</TableCell>
+                <div className="h-52 w-full rounded-md border flex flex-col">
+                    <div className="flex-shrink-0 border-b">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-transparent hover:bg-transparent">
+                                    <TableHead className="w-[15%] text-white">Тип</TableHead>
+                                    <TableHead className="w-[65%] text-white">Адрес</TableHead>
+                                    <TableHead className="w-[20%] text-white text-right">Действия</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
+                            </TableHeader>
+                        </Table>
+                    </div>
+                    <ScrollArea className="flex-grow">
+                        <Table>
+                            <TableBody>
+                                {initialAddresses.length > 0 ? (
+                                    initialAddresses.map((address) => (
+                                        <TableRow key={address.id} className="border-white/10">
+                                            <TableCell className="text-xs w-[15%]">{addressTypeMap[address.address_type || 'other'] || 'Не указан'}</TableCell>
+                                            <TableCell className="text-xs w-[65%]">
+                                                {`${address.postal_code || ''}, ${address.country || ''}, г. ${address.city || ''}, ул. ${address.street || ''}, д. ${address.building || ''}${address.housing ? `, корп. ${address.housing}` : ''}${address.apartment ? `, кв. ${address.apartment}` : ''}`}
+                                            </TableCell>
+                                            <TableCell className="w-[20%]">
+                                                <div className="flex justify-end space-x-1">
+                                                    <Button size="icon" className="h-7 w-7 bg-white text-black hover:bg-primary hover:text-white" onClick={() => handleEdit(address)} disabled={isPending}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => handleDeleteAttempt(address.id)} disabled={isPending}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow className="border-transparent">
+                                        <TableCell colSpan={3} className="text-center h-24">У вас пока нет сохраненных адресов.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </div>
 
                 {/* Edit/Add Dialog */}
                 <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
