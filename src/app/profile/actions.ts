@@ -61,39 +61,13 @@ export async function updateProfile(formData: FormData) {
   redirect('/profile?success=' + encodeURIComponent('Профиль успешно обновлен!'));
 }
 
-export async function deleteAccount(formData: FormData) {
+export async function deleteAccount() {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return redirect('/login');
-  }
-
-  const token = formData.get('g-recaptcha-response') as string;
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-  if (!token) {
-      return redirect('/profile?error=' + encodeURIComponent('Пожалуйста, пройдите проверку reCAPTCHA.'));
-  }
-
-  // Verify reCAPTCHA token
-  try {
-      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: `secret=${secretKey}&response=${token}`,
-      });
-      const recaptchaData = await response.json();
-
-      if (!recaptchaData.success) {
-          return redirect('/profile?error=' + encodeURIComponent('Проверка reCAPTCHA не удалась. Попробуйте еще раз.'));
-      }
-  } catch (error) {
-      console.error('reCAPTCHA verification error:', error);
-      return redirect('/profile?error=' + encodeURIComponent('Ошибка при проверке reCAPTCHA.'));
   }
 
   // Update profile status to 'archived'
@@ -162,39 +136,13 @@ export async function addOrUpdateAddress(formData: FormData) {
     return { success: 'Адрес успешно сохранен!' };
 }
 
-export async function deleteAddress(formData: FormData, addressId: number) {
+export async function deleteAddress(addressId: number) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
         return { error: 'Пользователь не авторизован' };
     }
-
-    const token = formData.get('g-recaptcha-response') as string;
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-    if (!token) {
-        return { error: 'Пожалуйста, пройдите проверку reCAPTCHA.' };
-    }
-
-    try {
-        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `secret=${secretKey}&response=${token}`,
-        });
-        const recaptchaData = await response.json();
-
-        if (!recaptchaData.success) {
-            return { error: 'Проверка reCAPTCHA не удалась. Попробуйте еще раз.' };
-        }
-    } catch (error) {
-        console.error('reCAPTCHA verification error:', error);
-        return { error: 'Ошибка при проверке reCAPTCHA.' };
-    }
-
 
     const { error } = await supabase.from('addresses').delete().eq('id', addressId);
 

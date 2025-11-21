@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProfile } from "./actions";
-import { DeleteAccountButton } from "./DeleteAccountButton";
+import DeleteAccountButton from "./DeleteAccountButton";
 import AddressManager from "./AddressManager";
 import type { Address } from "@/lib/definitions";
 

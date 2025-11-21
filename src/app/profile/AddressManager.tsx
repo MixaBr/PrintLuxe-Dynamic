@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import {
@@ -43,7 +42,6 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
     const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
-    const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
 
     const handleFormSubmit = async (formData: FormData) => {
         startTransition(async () => {
@@ -70,11 +68,11 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
         setIsDeleteDialogOpen(true);
     };
 
-    const handleDeleteConfirm = async (formData: FormData) => {
+    const handleDeleteConfirm = async () => {
         if (!addressToDelete) return;
 
         startTransition(async () => {
-            const result = await deleteAddress(formData, addressToDelete);
+            const result = await deleteAddress(addressToDelete);
             if (result.error) {
                 toast({ variant: 'destructive', title: 'Ошибка', description: result.error });
             } else {
@@ -83,7 +81,6 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
             }
             setIsDeleteDialogOpen(false);
             setAddressToDelete(null);
-            setIsRecaptchaVerified(false);
         });
     };
 
@@ -97,19 +94,8 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
         setIsFormDialogOpen(true);
     };
 
-    const handleCaptchaVerify = () => {
-        setIsRecaptchaVerified(true);
-    };
-    
-    if (typeof window !== 'undefined') {
-        (window as any).onCaptchaVerifyDelete = handleCaptchaVerify;
-    }
-
     return (
         <>
-             {isDeleteDialogOpen && (
-                <Script src="https://www.google.com/recaptcha/api.js" async defer />
-            )}
             <CardHeader className="flex flex-row items-start justify-between gap-4 py-4">
                <div className="flex items-center gap-4">
                  <Home className="w-8 h-8 text-primary" />
@@ -235,38 +221,20 @@ export default function AddressManager({ initialAddresses }: AddressManagerProps
                 </Dialog>
 
                 {/* Delete Confirmation Dialog */}
-                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
-                    setIsDeleteDialogOpen(open);
-                    if (!open) {
-                        setIsRecaptchaVerified(false);
-                        setAddressToDelete(null);
-                    }
-                }}>
+                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogContent>
-                        <form action={handleDeleteConfirm}>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Это действие невозможно отменить. Адрес будет удален навсегда. 
-                                    Пожалуйста, пройдите проверку, чтобы продолжить.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            
-                             <div className="my-4 flex justify-center">
-                                <div
-                                    className="g-recaptcha"
-                                    data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                                    data-callback="onCaptchaVerifyDelete"
-                                ></div>
-                            </div>
-
-                            <AlertDialogFooter>
-                                <AlertDialogCancel disabled={isPending}>Отмена</AlertDialogCancel>
-                                <Button type="submit" variant="destructive" disabled={!isRecaptchaVerified || isPending}>
-                                    {isPending ? "Удаление..." : "Удалить"}
-                                </Button>
-                            </AlertDialogFooter>
-                        </form>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Это действие невозможно отменить. Адрес будет удален навсегда.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isPending}>Отмена</AlertDialogCancel>
+                            <Button onClick={handleDeleteConfirm} variant="destructive" disabled={isPending}>
+                                {isPending ? "Удаление..." : "Удалить"}
+                            </Button>
+                        </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
             </CardContent>
