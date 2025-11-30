@@ -86,3 +86,19 @@
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--card)); /* White background for the track */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground)); /* Grey for the thumb */
+  border-radius: 10px;
+  border: 3px solid hsl(var(--card)); /* Padding around thumb */
+}

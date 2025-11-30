@@ -88,7 +88,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   const { map_lat, map_lng, map_zoom, map_marker_text } = contactData;
 
   return (
-    <ScrollArea className="h-full">
+    <div className="h-full overflow-y-auto">
         <div className="text-white p-4 md:p-8">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 text-center">
                 <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-bold text-white">{contactData.main_title}</h1>
@@ -230,7 +230,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
 
             </div>
         </div>
-    </ScrollArea>
+    </div>
   );
 }
 
