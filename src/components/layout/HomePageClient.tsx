@@ -35,7 +35,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
   };
 
   return (
-    <div className="container mx-auto h-full">
+    <div className="container mx-auto px-4 md:px-8 h-full">
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full pt-4">
         
         {/* Sidebar - hidden on mobile */}
@@ -44,7 +44,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </aside>
 
         {/* Main Content */}
-        <div className="col-span-1 md:col-span-3 lg:col-span-4 flex flex-col">
+        <div className="md:col-span-3 lg:col-span-4 flex flex-col">
             {homePageData?.error ? (
                  <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
