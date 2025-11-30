@@ -102,15 +102,17 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         'контакты': '/contact',
     };
   
-    const targetPage = availablePages[cleanedSearchTerm];
-  
-    if (targetPage) {
+    // Find the first key that is included in the search term
+    const foundPageKey = Object.keys(availablePages).find(key => cleanedSearchTerm.includes(key));
+
+    if (foundPageKey) {
+        const targetPage = availablePages[foundPageKey];
         router.push(targetPage);
     } else {
-        // Если страница не найдена, можно просто сбросить поиск или показать уведомление
+        // If no page is found, just log it and do nothing, or show a notification
         console.log(`Страница по запросу "${searchTerm}" не найдена.`);
-        // В данном случае просто переходим в каталог с этим запросом, как запасной вариант.
-        router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
+        // Optionally, you could redirect to a general search page or the catalog as a fallback
+        // router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
     }
 
     if(isMobileMenuOpen) setIsMobileMenuOpen(false);
