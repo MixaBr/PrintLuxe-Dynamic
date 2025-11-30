@@ -22,6 +22,11 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
     getContactPageData().then(setContactData);
   }, []);
 
+  const handleAddToCart = (product: Product) => {
+    // Placeholder function for now
+    console.log(`Added ${product.name} to cart`);
+  };
+
   return (
     <div className="container mx-auto h-full">
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full pt-4">
@@ -42,25 +47,27 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 <div className="w-full">
                     <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">Витрина популярных позиций каталога</h2>
                     {featuredProducts?.length > 0 ? (
-                       <Carousel
-                            opts={{ align: "start", loop: featuredProducts.length > 4 }}
-                            plugins={[
-                                Autoplay({
-                                  delay: 5000,
-                                }),
-                            ]}
-                            className="w-full"
-                        >
-                            <CarouselContent className="-ml-2">
-                                {featuredProducts.map((product) => (
-                                <CarouselItem key={product.id} className="pl-2 basis-full sm:basis-1/2 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                                    <ProductCarouselCard product={product} onAddToCart={() => {}} />
-                                </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            <CarouselPrevious className="left-[-50px]" />
-                            <CarouselNext className="right-[-50px]" />
-                        </Carousel>
+                       <div className="relative w-full px-12">
+                         <Carousel
+                              opts={{ align: "start", loop: featuredProducts.length > 4 }}
+                              plugins={[
+                                  Autoplay({
+                                    delay: 5000,
+                                  }),
+                              ]}
+                              className="w-full"
+                          >
+                              <CarouselContent className="-ml-2">
+                                  {featuredProducts.map((product) => (
+                                  <CarouselItem key={product.id} className="pl-2 basis-full sm:basis-1/2 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                                      <ProductCarouselCard product={product} onAddToCart={handleAddToCart} />
+                                  </CarouselItem>
+                                  ))}
+                              </CarouselContent>
+                          </Carousel>
+                          <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
+                          <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+                       </div>
                     ) : (
                          <div className="flex items-center justify-center h-64 bg-black/20 rounded-lg">
                             <p className="text-white/70">Рекомендуемые товары скоро появятся.</p>
