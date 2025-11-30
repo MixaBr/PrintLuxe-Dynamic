@@ -32,7 +32,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </aside>
 
         {/* Main Content */}
-        <div className="md:col-span-3 lg:col-span-4 flex flex-col items-center">
+        <div className="md:col-span-3 lg:col-span-4 flex flex-col">
             {homePageData?.error ? (
                  <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
@@ -40,6 +40,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                  </div>
             ) : (
                 <div className="w-full">
+                    <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">Витрина популярных позиций каталога</h2>
                     {featuredProducts?.length > 0 ? (
                         <Carousel
                             opts={{ align: "start", loop: featuredProducts.length > 4 }}
