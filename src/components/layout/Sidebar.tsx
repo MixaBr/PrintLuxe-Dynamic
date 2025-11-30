@@ -81,8 +81,8 @@ export function Sidebar({ contactData }: SidebarProps) {
                     <div className="flex items-center gap-2">
                          <Phone className="h-4 w-4 flex-shrink-0" />
                          <div>
-                            {contactData.phone_1 && <a href={`tel:${contactData.phone_1.replace(/\s/g, '')}`} className="hover:text-primary no-underline">{contactData.phone_1}</a>}
-                            {contactData.phone_2 && <span className="block">{contactData.phone_2}</span>}
+                            {contactData.phone_1 && <a href={`tel:${contactData.phone_1.replace(/[\s()-]/g, '')}`} className="hover:underline">{contactData.phone_1}</a>}
+                            {contactData.phone_2 && <a href={`tel:${contactData.phone_2.replace(/[\s()-]/g, '')}`} className="block hover:underline">{contactData.phone_2}</a>}
                          </div>
                     </div>
                 )}
