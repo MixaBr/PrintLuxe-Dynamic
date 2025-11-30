@@ -92,9 +92,28 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!searchTerm.trim()) return;
-    router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
-     if(isMobileMenuOpen) setIsMobileMenuOpen(false);
+    const cleanedSearchTerm = searchTerm.trim().toLowerCase();
+    if (!cleanedSearchTerm) return;
+  
+    const availablePages: { [key: string]: string } = {
+        'главная': '/',
+        'каталог': '/catalog',
+        'о нас': '/about',
+        'контакты': '/contact',
+    };
+  
+    const targetPage = availablePages[cleanedSearchTerm];
+  
+    if (targetPage) {
+        router.push(targetPage);
+    } else {
+        // Если страница не найдена, можно просто сбросить поиск или показать уведомление
+        console.log(`Страница по запросу "${searchTerm}" не найдена.`);
+        // В данном случае просто переходим в каталог с этим запросом, как запасной вариант.
+        router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
+    }
+
+    if(isMobileMenuOpen) setIsMobileMenuOpen(false);
   };
 
   return (
@@ -228,3 +247,5 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
     </header>
   );
 }
+
+    
