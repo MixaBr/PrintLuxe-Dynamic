@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wrench, ShoppingCart, User, Menu, Briefcase, AdminIcon as WrenchAdmin, Search } from 'lucide-react';
+import { Wrench, ShoppingCart, User, Menu, Briefcase, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -198,7 +197,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/admin">
-                        <WrenchAdmin className="mr-2 h-4 w-4" />
+                        <Wrench className="mr-2 h-4 w-4" />
                         <span>Панель админа</span>
                       </Link>
                     </DropdownMenuItem>
@@ -249,5 +248,3 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
     </header>
   );
 }
-
-    
