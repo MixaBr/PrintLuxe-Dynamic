@@ -54,7 +54,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 <div className="w-full">
                     <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">Витрина популярных позиций каталога</h2>
                     {featuredProducts?.length > 0 ? (
-                       <div className="relative px-8">
+                       <div className="flex w-full items-center justify-center">
                          <Carousel
                             opts={{ align: "start", loop: featuredProducts.length > 4 }}
                             plugins={[
@@ -62,17 +62,19 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                                   delay: 5000,
                                 }),
                             ]}
-                            className="w-full"
+                            className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl xl:max-w-none"
                         >
                             <CarouselContent className="-ml-2">
                                 {featuredProducts.map((product) => (
-                                <CarouselItem key={product.id} className="pl-2 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                                <CarouselItem key={product.id} className="pl-2 basis-full sm:basis-1/2 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                                     <ProductCarouselCard product={product} onAddToCart={handleAddToCart} />
                                 </CarouselItem>
                                 ))}
                             </CarouselContent>
-                            <CarouselPrevious className="absolute left-[-1rem] top-1/2 -translate-y-1/2" />
-                            <CarouselNext className="absolute right-[-1rem] top-1/2 -translate-y-1/2" />
+                            <div className="xl:hidden">
+                                <CarouselPrevious className="absolute left-[-1.5rem] top-1/2 -translate-y-1/2" />
+                                <CarouselNext className="absolute right-[-1.5rem] top-1/2 -translate-y-1/2" />
+                            </div>
                        </Carousel>
                        </div>
                     ) : (
