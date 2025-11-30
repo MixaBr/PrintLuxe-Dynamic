@@ -1,27 +1,31 @@
 
 import Image from 'next/image';
 import type { Product } from '@/lib/data';
+import { useCartStore } from '@/hooks/use-cart-store';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '../ui/button';
 
 interface ProductCardProps {
   product: Product;
 }
 
-// Helper function to format the product name for proper wrapping.
-// It inserts a zero-width space after each slash, creating a line break opportunity.
 const formatNameForWrapping = (name: string) => {
   if (!name) return '';
-  // Using .join() is slightly more performant than .replace() with a global regex for this case.
   return name.split('/').join('/​');
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // The component now receives the final price, no logic needed here.
+  const { addToCart } = useCartStore();
+  const { toast } = useToast();
+  
   const price = product.price;
 
   const handleAddToCart = () => {
-    // This is a placeholder for the actual add to cart logic.
-    console.log(`Adding product ${product.id} (${product.name}) to cart.`);
-    alert(`Товар "${product.name}" добавлен в корзину! (Заглушка)`);
+    addToCart(product);
+    toast({
+      title: 'Успех!',
+      description: `Товар "${product.name}" добавлен в корзину.`,
+    });
   };
 
   return (
@@ -35,19 +39,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           className="object-cover transition-transform duration-300 hover:scale-110"
         />
       </div>
-      {/* The name is now formatted to allow breaks after slashes. */}
-      <h3 className="font-bold text-lg" title={product.name}>
+      <h3 className="font-bold text-lg flex-grow" title={product.name}>
         {formatNameForWrapping(product.name)}
       </h3>
 
-      <div className="mt-auto pt-4"> {/* Wrapper to push content to the bottom */}
+      <div className="mt-auto pt-4">
         <p className="text-xl font-semibold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</p>
-        <button
+        <Button
           onClick={handleAddToCart}
           className="mt-4 w-full bg-white/20 border border-white/30 backdrop-blur-sm text-white font-bold py-2 px-4 rounded hover:bg-white/30 transition-colors duration-200"
         >
-          Купить
-        </button>
+          В корзину
+        </Button>
       </div>
     </div>
   );

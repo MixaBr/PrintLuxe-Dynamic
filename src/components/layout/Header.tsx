@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wrench, ShoppingCart, User, Menu, Briefcase, Wrench as AdminIcon } from 'lucide-react';
+import { Wrench, ShoppingCart, User, Menu, Briefcase, Wrench as AdminIcon, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -21,6 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useCartStore } from '@/hooks/use-cart-store';
+import { Input } from '../ui/input';
+import { useRouter } from 'next/navigation';
+
 
 type NavLinkItem = {
   href: string;
@@ -40,7 +43,9 @@ const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админ
 
 export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -77,45 +82,65 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
     </Link>
   );
 
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-transparent shadow-sm">
-      <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4 md:px-8">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-4">
         
-        {/* Sandwich Menu (Left) */}
-        <div className="justify-self-start">
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12">
-                <Menu className="h-8 w-8 text-white" strokeWidth={3} />
-                <span className="sr-only">Открыть меню</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="bg-[rgba(0,0,0,0.6)] text-white backdrop-blur-sm">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                  <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Wrench className="h-8 w-8 text-white" />
-                    <span className="font-headline text-2xl font-bold">PrintLux</span>
-                  </Link>
-                </div>
-                <nav className="flex flex-col gap-6 p-4">
-                  {navLinks.map((link) => (
-                    <NavLink key={link.href} {...link} />
-                  ))}
-                </nav>
-              </div>
-            </SheetContent>
-          </Sheet>
+        {/* Logo and Sandwich for mobile */}
+        <div className="flex items-center gap-2">
+            <div className="md:hidden">
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                    <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12">
+                        <Menu className="h-8 w-8 text-white" strokeWidth={3} />
+                        <span className="sr-only">Открыть меню</span>
+                    </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="bg-[rgba(0,0,0,0.6)] text-white backdrop-blur-sm w-[250px]">
+                        <SheetTitle className="sr-only">Menu</SheetTitle>
+                        <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
+                         <div className="flex flex-col h-full">
+                            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                                <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Wrench className="h-8 w-8 text-white" />
+                                    <span className="font-headline text-2xl font-bold">PrintLux</span>
+                                </Link>
+                            </div>
+                            <nav className="flex flex-col gap-6 p-4">
+                            {navLinks.map((link) => (
+                                <NavLink key={link.href} {...link} />
+                            ))}
+                            </nav>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            </div>
+            <Link href="/" className="flex items-center gap-2">
+                <Wrench className="h-8 w-8 text-white" />
+                <span className="font-headline text-2xl md:text-3xl font-bold text-white">PrintLux</span>
+            </Link>
         </div>
 
-        {/* Logo (Center) */}
-        <div className="justify-self-center">
-          <Link href="/" className="flex items-center gap-2">
-            <Wrench className="h-8 w-8 text-white" />
-            <span className="font-headline text-4xl md:text-5xl font-bold text-white">PrintLux</span>
-          </Link>
+
+        {/* Search Bar */}
+        <div className="hidden md:flex flex-1 max-w-lg">
+            <form onSubmit={handleSearch} className="w-full relative">
+                <Input 
+                    placeholder="Поиск по каталогу..."
+                    className="h-10 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white hover:bg-white/30">
+                    <Search className="h-5 w-5"/>
+                </Button>
+            </form>
         </div>
 
         {/* Icons (Right) */}
@@ -124,7 +149,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="group rounded-full hover:bg-white/90 transition-colors h-10 w-10 sm:h-12 sm:w-12">
-                   <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+                   <Briefcase className="h-6 w-6 sm:h-7 sm:w-7 text-white group-hover:text-blue-900 transition-colors" strokeWidth={2.5} />
                    <span className="sr-only">Панели</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -158,7 +183,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
            )}
           <Button variant="ghost" size="icon" asChild className="relative group rounded-full hover:bg-white/90 transition-colors h-10 w-10 sm:h-12 sm:w-12">
             <Link href="/cart">
-              <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:text-blue-900 transition-colors" strokeWidth={3} />
+              <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 text-white group-hover:text-blue-900 transition-colors" strokeWidth={2.5} />
               <span className="sr-only">Корзина</span>
               {isMounted && totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
@@ -171,10 +196,10 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
             <Link href={isAuthenticated ? "/profile" : "/login"}>
               <User 
                 className={cn(
-                  "h-6 w-6 sm:h-8 sm:w-8 group-hover:text-blue-900 transition-colors",
+                  "h-6 w-6 sm:h-7 sm:w-7 group-hover:text-blue-900 transition-colors",
                   isAuthenticated ? "text-destructive" : "text-white"
                 )} 
-                strokeWidth={3} 
+                strokeWidth={2.5} 
               />
               <span className="sr-only">Профиль</span>
             </Link>
