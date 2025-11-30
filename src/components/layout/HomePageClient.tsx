@@ -13,6 +13,8 @@ import { useCartStore } from '@/hooks/use-cart-store';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { ScrollArea } from '../ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface HomePageClientProps {
   homePageData: HomePageData;
@@ -89,6 +91,22 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                     )}
 
                     <h2 className="text-2xl font-bold font-headline text-white text-center mt-8">Новости</h2>
+                    <div className="mt-4">
+                        <Card className="bg-black/20 border border-white/10 text-white h-96">
+                            <CardContent className="p-0 h-full">
+                                <ScrollArea className="h-full">
+                                    <div className="p-4 space-y-4">
+                                        {[...Array(10)].map((_, i) => (
+                                            <div key={i} className="p-3 bg-white/5 rounded-md">
+                                                <p className="font-semibold text-sm">Новость #{i + 1}</p>
+                                                <p className="text-xs text-white/70">Краткое описание для новости, которое может занимать пару строк.</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             )}
         </main>
