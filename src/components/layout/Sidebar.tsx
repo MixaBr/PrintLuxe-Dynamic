@@ -4,7 +4,7 @@
 import type { ContactPageData } from '@/lib/contact-data';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import { ChevronRight, Mail, Phone } from 'lucide-react';
+import { ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -61,7 +61,12 @@ export function Sidebar({ contactData }: SidebarProps) {
             <h3 className="text-lg font-bold mb-4">Контакты</h3>
             <div className="space-y-3 text-sm">
                 {contactData.address && (
-                     <p className="text-white/80">{contactData.address}</p>
+                     <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
+                        <Link href="/contact" className="hover:text-primary transition-colors duration-200">
+                            {contactData.address}
+                        </Link>
+                    </div>
                 )}
                 {(contactData.phone_1 || contactData.phone_2) && (
                     <div className="flex items-center gap-2">
