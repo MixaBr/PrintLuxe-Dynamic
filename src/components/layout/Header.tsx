@@ -137,7 +137,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         <div className="hidden md:flex flex-1 max-w-lg">
             <form onSubmit={handleSearch} className="w-full relative">
                 <Input 
-                    placeholder="Поиск по каталогу..."
+                    placeholder="Поиск по приложению..."
                     className="h-10 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -215,7 +215,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
        <div className="md:hidden px-4 pb-4">
             <form onSubmit={handleSearch} className="w-full relative">
                 <Input 
-                    placeholder="Поиск по каталогу..."
+                    placeholder="Поиск по приложению..."
                     className="h-10 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
