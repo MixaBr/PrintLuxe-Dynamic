@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
+import { ScrollArea } from '../ui/scroll-area';
 
 const initialState: ContactFormState = {
   message: '',
@@ -87,146 +88,150 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   const { map_lat, map_lng, map_zoom, map_marker_text } = contactData;
 
   return (
-    <div className="text-white">
-       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 text-center">
-        <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-bold text-white">{contactData.main_title}</h1>
-        <p className="mt-3 max-w-3xl mx-auto text-base sm:text-lg text-gray-300">
-          {contactData.main_subtitle}
-        </p>
-      </div>
+    <ScrollArea className="h-full">
+        <div className="text-white p-4 md:p-8">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 text-center">
+                <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-bold text-white">{contactData.main_title}</h1>
+                <p className="mt-3 max-w-3xl mx-auto text-base sm:text-lg text-gray-300">
+                {contactData.main_subtitle}
+                </p>
+            </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-        
-        <div className="mb-6">
-            <h2 className="font-headline text-2xl sm:text-3xl font-semibold mb-5 text-white text-center">{contactData.info_title}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-y-6 gap-x-8 items-start">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
                 
-                <div className="md:col-span-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${map_lat},${map_lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-start gap-4 group cursor-pointer"
-                        >
-                          <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors duration-300">
-                            <MapPin className="w-7 h-7 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg text-white">Наш адрес</h3>
-                            <p className="text-gray-300 group-hover:text-white transition-colors duration-300 text-sm">{contactData.address}</p>
-                          </div>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Кликните, чтобы проложить маршрут</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="mb-6">
+                    <h2 className="font-headline text-2xl sm:text-3xl font-semibold mb-5 text-white text-center">{contactData.info_title}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-y-6 gap-x-8 items-start">
+                        
+                        <div className="md:col-span-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${map_lat},${map_lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-start gap-4 group cursor-pointer"
+                                >
+                                <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors duration-300">
+                                    <MapPin className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg text-white">Наш адрес</h3>
+                                    <p className="text-gray-300 group-hover:text-white transition-colors duration-300 text-sm">{contactData.address}</p>
+                                </div>
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Кликните, чтобы проложить маршрут</p>
+                            </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        </div>
+
+                        {(contactData.phone_1 || contactData.phone_2) && (
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                                    <Phone className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg text-white">Телефон</h3>
+                                    {contactData.phone_1 && <p className="text-gray-300 text-sm">{contactData.phone_1}</p>}
+                                    {contactData.phone_2 && <p className="text-gray-300 text-sm">{contactData.phone_2}</p>}
+                                </div>
+                            </div>
+                        )}
+
+                        {contactData.email_main && (
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                                    <Mail className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg text-white">Email</h3>
+                                    <a href={`mailto:${contactData.email_main}`} className="text-gray-300 hover:text-white transition text-sm">{contactData.email_main}</a>
+                                </div>
+                            </div>
+                        )}
+
+                        {(contactData.telegram_link || contactData.viber_link) && (
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                                    <Send className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-lg text-white">Мессенджеры</h3>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        {contactData.telegram_link && (
+                                            <Link href={contactData.telegram_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
+                                                <Send className="w-10 h-10" />
+                                                <span className="sr-only">Telegram</span>
+                                            </Link>
+                                        )}
+                                        {contactData.viber_link && (
+                                            <Link href={contactData.viber_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
+                                                <Phone className="w-10 h-10" />
+                                                <span className="sr-only">Viber</span>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {(contactData.phone_1 || contactData.phone_2) && (
-                    <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                            <Phone className="w-7 h-7 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg text-white">Телефон</h3>
-                            {contactData.phone_1 && <p className="text-gray-300 text-sm">{contactData.phone_1}</p>}
-                            {contactData.phone_2 && <p className="text-gray-300 text-sm">{contactData.phone_2}</p>}
-                        </div>
-                    </div>
-                )}
-
-                {contactData.email_main && (
-                    <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                            <Mail className="w-7 h-7 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg text-white">Email</h3>
-                            <a href={`mailto:${contactData.email_main}`} className="text-gray-300 hover:text-white transition text-sm">{contactData.email_main}</a>
-                        </div>
-                    </div>
-                )}
-
-                 {(contactData.telegram_link || contactData.viber_link) && (
-                    <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                            <Send className="w-7 h-7 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg text-white">Мессенджеры</h3>
-                            <div className="flex items-center gap-3 mt-1">
-                                {contactData.telegram_link && (
-                                    <Link href={contactData.telegram_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
-                                        <Send className="w-10 h-10" />
-                                        <span className="sr-only">Telegram</span>
-                                    </Link>
-                                )}
-                                {contactData.viber_link && (
-                                    <Link href={contactData.viber_link} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">
-                                        <Phone className="w-10 h-10" />
-                                        <span className="sr-only">Viber</span>
-                                    </Link>
-                                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:items-stretch">
+                    <div className="flex flex-col space-y-4">
+                        <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Мы на карте</h2>
+                        {map_lat && map_lng && (
+                            <div className="flex-grow w-full rounded-lg shadow-lg overflow-hidden min-h-[400px]">
+                                <GoogleMaps lat={map_lat} lng={map_lng} zoom={map_zoom} markerText={map_marker_text} />
                             </div>
-                        </div>
+                        )}
                     </div>
-                 )}
+
+                    <div className="flex flex-col space-y-4">
+                        <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Напишите нам</h2>
+                        <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full h-full flex flex-col">
+                            <CardContent className="pt-6 flex-grow flex flex-col">
+                                <form ref={formRef} action={formAction} className="space-y-4 flex-grow flex flex-col">
+                                    <div className="flex-grow space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                            <label htmlFor="name" className="font-medium text-gray-200">Ваше имя</label>
+                                            <Input id="name" name="name" placeholder="Иван Иванов" className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required />
+                                            {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
+                                            </div>
+                                            <div className="space-y-2">
+                                            <label htmlFor="email" className="font-medium text-gray-200">Email</label>
+                                            <Input id="email" name="email" type="email" placeholder="example@email.com" className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
+                                            {state.errors?.email && <p className="text-sm text-destructive">{state.errors.email[0]}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label htmlFor="message" className="font-medium text-gray-200">Сообщение</label>
+                                            <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={4} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
+                                            {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-auto pt-4 space-y-4">
+                                        <div className="flex justify-center">
+                                            <RecaptchaWidget key={recaptchaKey} onVerified={setIsRecaptchaVerified} />
+                                        </div>
+                                        <SubmitButton isRecaptchaVerified={isRecaptchaVerified} />
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+
             </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:items-stretch">
-            <div className="flex flex-col space-y-4">
-                <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Мы на карте</h2>
-                {map_lat && map_lng && (
-                    <div className="flex-grow w-full rounded-lg shadow-lg overflow-hidden min-h-[400px]">
-                        <GoogleMaps lat={map_lat} lng={map_lng} zoom={map_zoom} markerText={map_marker_text} />
-                    </div>
-                )}
-            </div>
-
-            <div className="flex flex-col space-y-4">
-                 <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Напишите нам</h2>
-                <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full h-full flex flex-col">
-                    <CardContent className="pt-6 flex-grow flex flex-col">
-                        <form ref={formRef} action={formAction} className="space-y-4 flex-grow flex flex-col">
-                            <div className="flex-grow space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                    <label htmlFor="name" className="font-medium text-gray-200">Ваше имя</label>
-                                    <Input id="name" name="name" placeholder="Иван Иванов" className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required />
-                                    {state.errors?.name && <p className="text-sm text-destructive">{state.errors.name[0]}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                    <label htmlFor="email" className="font-medium text-gray-200">Email</label>
-                                    <Input id="email" name="email" type="email" placeholder="example@email.com" className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
-                                    {state.errors?.email && <p className="text-sm text-destructive">{state.errors.email[0]}</p>}
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label htmlFor="message" className="font-medium text-gray-200">Сообщение</label>
-                                    <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={4} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
-                                    {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
-                                </div>
-                            </div>
-
-                            <div className="mt-auto pt-4 space-y-4">
-                                <div className="flex justify-center">
-                                    <RecaptchaWidget key={recaptchaKey} onVerified={setIsRecaptchaVerified} />
-                                </div>
-                                <SubmitButton isRecaptchaVerified={isRecaptchaVerified} />
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-
-      </div>
-    </div>
+    </ScrollArea>
   );
 }
+
+    
