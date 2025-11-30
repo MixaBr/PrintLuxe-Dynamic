@@ -63,7 +63,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                 {contactData.address && (
                      <div className="flex items-start gap-2">
                         <MapPin className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
-                        <Link href="/contact" className="hover:text-primary transition-colors duration-200 no-underline">
+                        <Link href="/contact" className="transition-colors duration-200 hover:underline">
                             {contactData.address}
                         </Link>
                     </div>
