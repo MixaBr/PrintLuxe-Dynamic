@@ -11,6 +11,8 @@ import { useState, useEffect } from 'react';
 import Autoplay from "embla-carousel-autoplay";
 import { useCartStore } from '@/hooks/use-cart-store';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 interface HomePageClientProps {
   homePageData: HomePageData;
@@ -44,7 +46,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
         </aside>
 
         {/* Main Content */}
-        <div className="md:col-span-3 lg:col-span-4 flex flex-col container mx-auto px-4 md:px-8">
+        <main className="md:col-span-3 lg:col-span-4 flex flex-col px-4 md:px-8">
             {homePageData?.error ? (
                  <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
@@ -54,7 +56,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 <div className="w-full">
                     <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">Витрина популярных позиций каталога</h2>
                     {featuredProducts?.length > 0 ? (
-                       <div className="flex w-full items-center justify-center">
+                       <div className="flex w-full flex-col items-center justify-center">
                          <Carousel
                             opts={{ align: "start", loop: featuredProducts.length > 4 }}
                             plugins={[
@@ -76,6 +78,9 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                                 <CarouselNext className="absolute right-[-1.5rem] top-1/2 -translate-y-1/2" />
                             </div>
                        </Carousel>
+                        <Button asChild variant="link" className="mt-4 text-white">
+                            <Link href="/catalog">Посмотреть в каталоге подробней</Link>
+                        </Button>
                        </div>
                     ) : (
                          <div className="flex items-center justify-center h-64 bg-black/20 rounded-lg">
@@ -84,7 +89,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                     )}
                 </div>
             )}
-        </div>
+        </main>
       </div>
     </div>
   );
