@@ -73,7 +73,7 @@ export function Sidebar({ contactData }: SidebarProps) {
             <div className="space-y-3 text-sm">
                 {contactData.address && (
                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 mt-1 flex-shrink-0 text-white" />
                         <Link href="/contact" className="transition-colors duration-200 hover:underline">
                             {contactData.address}
                         </Link>
@@ -81,7 +81,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                 )}
                 {(contactData.phone_1 || contactData.phone_2) && (
                     <div className="flex items-center gap-2">
-                         <Phone className="h-4 w-4 flex-shrink-0" />
+                         <Phone className="h-4 w-4 flex-shrink-0 text-white" />
                          <div>
                             {contactData.phone_1 && (
                                 isMobile ? (
@@ -110,8 +110,8 @@ export function Sidebar({ contactData }: SidebarProps) {
                 )}
                 {contactData.email_main && (
                      <div className="flex items-center gap-2">
-                         <Mail className="h-4 w-4 flex-shrink-0" />
-                         <a href={`mailto:${contactData.email_main}`} className="hover:text-primary break-all no-underline">{contactData.email_main}</a>
+                         <Mail className="h-4 w-4 flex-shrink-0 text-white" />
+                         <a href={`mailto:${contactData.email_main}`} className="break-all hover:underline">{contactData.email_main}</a>
                     </div>
                 )}
             </div>
