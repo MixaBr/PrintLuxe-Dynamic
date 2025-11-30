@@ -14,7 +14,11 @@ export default async function Home() {
 
   // Fetch the actual product data based on the IDs,
   // providing the auth status so the server can prepare the correct price.
-  const featuredProducts = await getFeaturedProducts(homePageData.featured.ids, isAuthenticated);
+  const featuredProductsData = await getFeaturedProducts(homePageData.featured.ids, isAuthenticated);
+
+  // FIX: Replace description with name to avoid serialization issues with '$'
+  const featuredProducts = featuredProductsData.map(p => ({ ...p, description: p.name }));
+
 
   return <HomePageClient homePageData={homePageData} featuredProducts={featuredProducts} />;
 }
