@@ -38,7 +38,7 @@ export function Sidebar({ contactData }: SidebarProps) {
         <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
             <Collapsible open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between text-lg font-bold">
+                    <Button variant="ghost" className="w-full justify-between text-lg font-bold hover:bg-white/30 focus-visible:bg-white/30">
                         Меню
                         <ChevronRight className={`h-5 w-5 transition-transform ${isMenuOpen ? 'rotate-90' : ''}`} />
                     </Button>
