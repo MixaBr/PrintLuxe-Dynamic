@@ -38,10 +38,10 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
 
   return (
     <div className="h-full">
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full">
         
         {/* Sidebar - hidden on mobile */}
-        <aside className="hidden md:block md:col-span-1 lg:col-span-1">
+        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0">
            {contactData && <Sidebar contactData={contactData} />}
         </aside>
 
@@ -87,6 +87,8 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                             <p className="text-white/70">Рекомендуемые товары скоро появятся.</p>
                          </div>
                     )}
+
+                    <h2 className="text-2xl font-bold font-headline text-white text-center mt-8">Новости</h2>
                 </div>
             )}
         </main>
