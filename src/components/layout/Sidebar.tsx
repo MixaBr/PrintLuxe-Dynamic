@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type NavLinkItem = {
   href: string;
@@ -31,6 +32,7 @@ interface SidebarProps {
 
 export function Sidebar({ contactData }: SidebarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const isMobile = useIsMobile();
 
   return (
     <div className="space-y-6">
@@ -81,8 +83,28 @@ export function Sidebar({ contactData }: SidebarProps) {
                     <div className="flex items-center gap-2">
                          <Phone className="h-4 w-4 flex-shrink-0" />
                          <div>
-                            {contactData.phone_1 && <a href={`tel:${contactData.phone_1.replace(/[\s()-]/g, '')}`} className="hover:underline">{contactData.phone_1}</a>}
-                            {contactData.phone_2 && <a href={`tel:${contactData.phone_2.replace(/[\s()-]/g, '')}`} className="block hover:underline">{contactData.phone_2}</a>}
+                            {contactData.phone_1 && (
+                                isMobile ? (
+                                    <a href={`tel:${contactData.phone_1.replace(/[\s()-]/g, '')}`} className="block text-white hover:underline">
+                                        {contactData.phone_1}
+                                    </a>
+                                ) : (
+                                    <span className="block text-white cursor-default hover:underline">
+                                        {contactData.phone_1}
+                                    </span>
+                                )
+                            )}
+                            {contactData.phone_2 && (
+                                isMobile ? (
+                                    <a href={`tel:${contactData.phone_2.replace(/[\s()-]/g, '')}`} className="block text-white hover:underline">
+                                        {contactData.phone_2}
+                                    </a>
+                                ) : (
+                                    <span className="block text-white cursor-default hover:underline">
+                                        {contactData.phone_2}
+                                    </span>
+                                )
+                            )}
                          </div>
                     </div>
                 )}
