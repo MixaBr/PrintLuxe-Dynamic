@@ -11,6 +11,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 type NavLinkItem = {
   href: string;
@@ -45,7 +46,15 @@ export function Sidebar({ contactData }: SidebarProps) {
                 <CollapsibleContent>
                     <nav className="mt-4 flex flex-col gap-2">
                         {navLinks.map(link => (
-                            <Button key={link.href} variant="ghost" asChild className="justify-start">
+                            <Button 
+                              key={link.href} 
+                              variant="ghost" 
+                              asChild 
+                              className={cn(
+                                "justify-start",
+                                "hover:bg-white/30 focus-visible:bg-white/30"
+                              )}
+                            >
                                 <Link href={link.href}>
                                     {link.label}
                                 </Link>
