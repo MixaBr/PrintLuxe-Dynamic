@@ -56,7 +56,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
           ) : (
               <div className="w-full">
                   <div className="text-center mb-8">
-                    <h1 className="text-4xl md:text-6xl font-bold font-headline text-white">{homePageData.hero.title}</h1>
+                    <h1 className="text-3xl md:text-5xl font-bold font-headline text-white">{homePageData.hero.title}</h1>
                     <p className="mt-2 max-w-2xl mx-auto text-lg md:text-xl text-white/90">
                       {homePageData.hero.subtitle}
                     </p>
