@@ -14,6 +14,7 @@ export interface ContactPageData {
   email_main?: string;
   telegram_link?: string;
   viber_link?: string;
+  working_hours?: string;
   map_lat?: number;
   map_lng?: number;
   map_zoom?: number;
@@ -46,6 +47,7 @@ export async function getContactPageData(): Promise<ContactPageData> {
         'contact_email_main', 
         'telegram_link',
         'viber_link',
+        'contact_working_hours',
         'map_lat',
         'map_lng',
         'map_zoom',
@@ -79,6 +81,7 @@ export async function getContactPageData(): Promise<ContactPageData> {
       email_main: settingsData.contact_email_main,
       telegram_link: settingsData.telegram_link,
       viber_link: settingsData.viber_link,
+      working_hours: settingsData.contact_working_hours,
       map_lat: settingsData.map_lat ? parseFloat(settingsData.map_lat) : undefined,
       map_lng: settingsData.map_lng ? parseFloat(settingsData.map_lng) : undefined,
       map_zoom: settingsData.map_zoom ? parseInt(settingsData.map_zoom, 10) : undefined,
