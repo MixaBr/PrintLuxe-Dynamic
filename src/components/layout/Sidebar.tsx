@@ -35,7 +35,7 @@ export function Sidebar({ contactData }: SidebarProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full w-full gap-6">
         {/* Menu Section */}
         <div className="flex-shrink-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
             <Collapsible open={isMenuOpen} onOpenChange={setIsMenuOpen}>
