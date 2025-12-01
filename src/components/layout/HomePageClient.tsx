@@ -55,6 +55,12 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                </div>
           ) : (
               <div className="w-full">
+                  <div className="text-center mb-8">
+                    <h1 className="text-4xl md:text-6xl font-bold font-headline text-white">{homePageData.hero.title}</h1>
+                    <p className="mt-2 max-w-2xl mx-auto text-lg md:text-xl text-white/90">
+                      {homePageData.hero.subtitle}
+                    </p>
+                  </div>
                   <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">Витрина популярных позиций каталога</h2>
                   {featuredProducts?.length > 0 ? (
                      <div className="flex w-full flex-col items-center justify-center">
