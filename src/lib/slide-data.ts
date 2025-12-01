@@ -25,7 +25,7 @@ export type HomePageData = {
 // Default data structure to be used in case of any error
 const defaultData: Omit<HomePageData, 'error'> = {
   hero: { title: 'Надежный сервис', subtitle: 'для вашей техники' },
-  featured: { title: 'Популярные запчасти', subtitle: 'Всегда в наличии', ids: [] }, // Changed from uuids
+  featured: { title: 'Витрина популярных позиций каталога', subtitle: 'Всегда в наличии', ids: [] }, // Changed from uuids
   services: { title: 'Что мы предлагаем', subtitle: 'Комплексный подход', list: [] },
   benefits: { title: 'Почему выбирают нас', subtitle: 'Гарантия качества', list: [] },
 };
