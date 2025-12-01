@@ -69,8 +69,8 @@ export function Sidebar({ contactData }: SidebarProps) {
 
         {/* Contacts Section */}
         <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg text-white flex-1 min-h-0 flex flex-col">
-            <h3 className="text-lg font-bold p-4 flex-shrink-0">Контакты</h3>
-            <div className="overflow-y-auto px-4 pb-4">
+            <h3 className="text-lg font-bold p-4 flex-shrink-0 border-b border-white/10">Контакты</h3>
+            <div className="overflow-y-auto px-4 py-4">
                 <div className="space-y-3 text-sm">
                     {contactData.address && (
                         <div className="flex items-start gap-2">
