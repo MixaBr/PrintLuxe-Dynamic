@@ -37,7 +37,7 @@ export function Sidebar({ contactData }: SidebarProps) {
   return (
     <div className="flex flex-col h-full gap-6">
         {/* Menu Section */}
-        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white flex-shrink-0">
+        <div className="flex-shrink-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
             <Collapsible open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <CollapsibleTrigger asChild>
                     <Button variant="ghost" className="w-full justify-between text-lg font-bold hover:bg-white/30 focus-visible:bg-white/30">
