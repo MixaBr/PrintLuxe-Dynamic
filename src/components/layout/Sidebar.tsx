@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ContactPageData } from '@/lib/contact-data';
@@ -31,7 +30,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ contactData }: SidebarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
   return (
