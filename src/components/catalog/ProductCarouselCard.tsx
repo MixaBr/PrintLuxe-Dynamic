@@ -9,14 +9,20 @@ import { ShoppingCart } from 'lucide-react';
 interface ProductCarouselCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
+  onClick: () => void;
 }
 
-export default function ProductCarouselCard({ product, onAddToCart }: ProductCarouselCardProps) {
+export default function ProductCarouselCard({ product, onAddToCart, onClick }: ProductCarouselCardProps) {
   // The component now receives the final price, no logic needed here.
   const price = product.price;
 
+  const handleAddToCartClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the card's onClick from firing
+    onAddToCart(product);
+  };
+
   return (
-    <div className="p-1 h-full">
+    <div className="p-1 h-full" onClick={onClick}>
       <div className="border rounded-lg p-4 bg-white/10 backdrop-blur-sm text-white flex flex-col h-full cursor-pointer">
         <div className="relative w-full h-32 mb-4 bg-muted rounded-md overflow-hidden">
           <Image
@@ -33,7 +39,7 @@ export default function ProductCarouselCard({ product, onAddToCart }: ProductCar
         </h3>
         <div className="mt-auto flex justify-between items-center">
             <p className="text-lg font-bold">{price ? `${price.toLocaleString('ru-RU')} BYN` : 'Цена по запросу'}</p>
-            <Button size="icon" variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/20 hover:text-white" onClick={() => onAddToCart(product)}>
+            <Button size="icon" variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/20 hover:text-white" onClick={handleAddToCartClick}>
                 <ShoppingCart className="h-4 w-4" />
             </Button>
         </div>

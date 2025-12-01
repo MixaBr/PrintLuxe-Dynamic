@@ -85,7 +85,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
     });
   };
 
-  const handleRowDoubleClick = async (product: Product) => {
+  const handleCardClick = async (product: Product) => {
     const fullProduct = await getFullProductDetails(product.id);
     setSelectedProduct(fullProduct || product);
   };
@@ -178,8 +178,8 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
           >
             <CarouselContent>
               {products.map((product) => (
-                <CarouselItem key={product.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5" onDoubleClick={() => handleRowDoubleClick(product)}>
-                  <ProductCarouselCard product={product} onAddToCart={handleAddToCart} />
+                <CarouselItem key={product.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                  <ProductCarouselCard product={product} onAddToCart={handleAddToCart} onClick={() => handleCardClick(product)} />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -206,12 +206,12 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
               <Table>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product.id} onDoubleClick={() => handleRowDoubleClick(product)} className="cursor-pointer text-white hover:bg-white/10">
+                    <TableRow key={product.id} onDoubleClick={() => handleCardClick(product)} className="cursor-pointer text-white hover:bg-white/10">
                       <TableCell className="font-medium truncate w-[40%]">{product.name}</TableCell>
                       <TableCell className="hidden md:table-cell truncate text-center w-[20%]">{product.article_number}</TableCell>
                       <TableCell className="text-right w-[30%]">{getPrice(product)}</TableCell>
                       <TableCell className="text-center w-[30%]">
-                         <Button size="sm" variant="outline" className="text-black" onClick={() => handleAddToCart(product)}>
+                         <Button size="sm" variant="outline" className="text-black" onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}>
                             <ShoppingCart className="mr-2 h-4 w-4" />
                              <span className="hidden sm:inline">В корзину</span>
                         </Button>
