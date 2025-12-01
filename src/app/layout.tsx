@@ -9,8 +9,8 @@ import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyt
 import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider'; // Import the new provider
 
 export const metadata: Metadata = {
-  title: 'PrintLux Dynamic',
-  description: 'Качественные услуги печати и дизайна',
+  title: 'PrintLux | Ремонт принтеров, запасные части и расходные материалы EPSON в Минске',
+  description: 'Профессиональный ремонт принтеров, МФУ, запасные части и расходные материалы EPSON в Минске. Быстро, качественно, с гарантией. Работаем со всеми популярными марками: HP, Canon, Epson, Samsung, Brother.',
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
