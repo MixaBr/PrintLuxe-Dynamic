@@ -158,7 +158,9 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                         {(contactData.telegram_link || contactData.viber_link) && (
                             <div className="flex items-start gap-4">
                                 <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                                    <Send className="w-7 h-7 text-white" />
+                                     <svg viewBox="0 0 50.8 50.8" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" className="w-7 h-7 text-white" fill="none">
+                                        <path d="M22.754 9.128h19.843c1.413 0 2.382 1.113 2.382 2.381v14.553c.031 1.397-.959 2.38-2.382 2.38h-4.762v4.499l-6.615-4.498h-8.466c-1.39.002-2.4-1.04-2.381-2.381V11.509c0-1.12.766-2.38 2.38-2.38zm-8.626 10.054H8.202c-1.375 0-2.381 1.021-2.381 2.382v13.493c0 1.492 1.204 2.382 2.381 2.382h3.969v4.233l6.085-4.233h7.937c1.225 0 2.382-.954 2.382-2.382v-.529" style={{opacity:1, fill:'none', fillRule:'evenodd', stroke:'currentColor', strokeWidth:3.175, strokeLinecap:'round', strokeLinejoin:'round', strokeMiterlimit:0, strokeDasharray:'none'}}/>
+                                    </svg>
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-lg text-white">Мессенджеры</h3>
@@ -240,4 +242,5 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   );
 }
 
+    
     

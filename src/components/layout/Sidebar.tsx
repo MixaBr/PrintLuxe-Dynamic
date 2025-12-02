@@ -38,7 +38,7 @@ export function Sidebar({ contactData }: SidebarProps) {
   // On mobile, use a different layout that doesn't need this flex logic
   if (isMobile) {
     return (
-        <div className="h-full w-full space-y-6">
+        <div className="flex flex-col h-full w-full gap-6">
             {/* Menu Section */}
             <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
                 <Collapsible open={isMenuOpen} onOpenChange={setIsMenuOpen} className="w-full">
@@ -61,7 +61,7 @@ export function Sidebar({ contactData }: SidebarProps) {
             </div>
 
             {/* Contacts Section */}
-            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
+            <div className="mt-auto bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
                  <h3 className="text-lg font-bold mb-4 flex-shrink-0">Контакты</h3>
                  <div className="space-y-3 text-sm">
                     {contactData.address && (
@@ -87,7 +87,9 @@ export function Sidebar({ contactData }: SidebarProps) {
                     )}
                     {(contactData.telegram_link || contactData.viber_link) && (
                         <div className="flex items-start gap-3">
-                            <Send className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <svg viewBox="0 0 50.8 50.8" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" className="h-4 w-4 mt-0.5 flex-shrink-0" fill="none">
+                                <path d="M22.754 9.128h19.843c1.413 0 2.382 1.113 2.382 2.381v14.553c.031 1.397-.959 2.38-2.382 2.38h-4.762v4.499l-6.615-4.498h-8.466c-1.39.002-2.4-1.04-2.381-2.381V11.509c0-1.12.766-2.38 2.38-2.38zm-8.626 10.054H8.202c-1.375 0-2.381 1.021-2.381 2.382v13.493c0 1.492 1.204 2.382 2.381 2.382h3.969v4.233l6.085-4.233h7.937c1.225 0 2.382-.954 2.382-2.382v-.529" style={{opacity:1, fill:'none', fillRule:'evenodd', stroke:'currentColor', strokeWidth:3.175, strokeLinecap:'round', strokeLinejoin:'round', strokeMiterlimit:0, strokeDasharray:'none'}}/>
+                            </svg>
                             <div className="flex items-center gap-4">
                                 {contactData.telegram_link && (
                                     <Link href={contactData.telegram_link} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition">
@@ -172,7 +174,9 @@ export function Sidebar({ contactData }: SidebarProps) {
                 )}
                 {(contactData.telegram_link || contactData.viber_link) && (
                   <div className="flex items-start gap-3">
-                      <Send className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <svg viewBox="0 0 50.8 50.8" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" className="h-4 w-4 mt-0.5 flex-shrink-0" fill="none">
+                          <path d="M22.754 9.128h19.843c1.413 0 2.382 1.113 2.382 2.381v14.553c.031 1.397-.959 2.38-2.382 2.38h-4.762v4.499l-6.615-4.498h-8.466c-1.39.002-2.4-1.04-2.381-2.381V11.509c0-1.12.766-2.38 2.38-2.38zm-8.626 10.054H8.202c-1.375 0-2.381 1.021-2.381 2.382v13.493c0 1.492 1.204 2.382 2.381 2.382h3.969v4.233l6.085-4.233h7.937c1.225 0 2.382-.954 2.382-2.382v-.529" style={{opacity:1, fill:'none', fillRule:'evenodd', stroke:'currentColor', strokeWidth:3.175, strokeLinecap:'round', strokeLinejoin:'round', strokeMiterlimit:0, strokeDasharray:'none'}}/>
+                      </svg>
                       <div className="flex items-center gap-4">
                           {contactData.telegram_link && (
                               <Link href={contactData.telegram_link} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition">
@@ -205,3 +209,5 @@ export function Sidebar({ contactData }: SidebarProps) {
     </div>
   );
 }
+
+    
