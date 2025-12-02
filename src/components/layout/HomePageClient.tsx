@@ -73,7 +73,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                       </p>
                     </div>
                     
-                    <div>
+                    <div className="pt-8">
                       <h2 className="text-2xl font-bold font-headline text-white text-center mb-4">{homePageData.featured.title}</h2>
                       {featuredProducts?.length > 0 ? (
                         <div className="flex w-full flex-col items-center justify-center">
@@ -113,7 +113,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                       )}
                     </div>
 
-                    <div>
+                    <div className="pt-8">
                       <h2 className="text-2xl font-bold font-headline text-white text-center">Новости</h2>
                       <div className="mt-4">
                           <Card className="bg-black/20 border border-white/10 text-white h-96">
