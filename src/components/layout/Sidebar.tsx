@@ -67,7 +67,7 @@ export function Sidebar({ contactData }: SidebarProps) {
             </Collapsible>
         </div>
 
-        {/* Contacts Section - Corrected for scrolling */}
+        {/* Contacts Section */}
         <div className="flex-1 min-h-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg text-white flex flex-col">
             <h3 className="text-lg font-bold p-4 flex-shrink-0 border-b border-white/10">Контакты</h3>
             <div className="overflow-y-auto px-4 py-4">

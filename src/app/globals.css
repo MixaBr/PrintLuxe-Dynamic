@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 12px; /* Set base font size to 12px for 75% scaling */
+  }
+
   :root {
     --background: 228 100% 98%;
     --foreground: 222.2 84% 4.9%;
