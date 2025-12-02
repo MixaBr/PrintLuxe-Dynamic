@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '../ui/scroll-area';
 
 type NavLinkItem = {
   href: string;
@@ -67,11 +68,11 @@ export function Sidebar({ contactData }: SidebarProps) {
             </Collapsible>
         </div>
 
-        {/* Contacts Section */}
+        {/* Contacts Section - This will take all remaining space */}
         <div className="flex-1 min-h-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg text-white flex flex-col">
             <h3 className="text-lg font-bold p-4 flex-shrink-0 border-b border-white/10">Контакты</h3>
-            <div className="overflow-y-auto px-4 py-4">
-                <div className="space-y-3 text-sm">
+            <ScrollArea className="flex-grow">
+                 <div className="space-y-3 text-sm p-4">
                     {contactData.address && (
                         <div className="flex items-start gap-2">
                             <MapPin className="h-4 w-4 mt-1 flex-shrink-0 text-white" />
@@ -128,7 +129,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                         </div>
                     )}
                 </div>
-            </div>
+            </ScrollArea>
         </div>
     </div>
   );
