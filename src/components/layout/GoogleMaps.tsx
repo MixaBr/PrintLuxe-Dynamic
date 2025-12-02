@@ -76,7 +76,9 @@ const MapComponent = ({ lat, lng, zoom, mapId, markerText }: MapComponentProps) 
         return () => {
             pinElement.removeEventListener('mouseover', handleMouseOver);
             pinElement.removeEventListener('mouseout', handleMouseOut);
-            marker.map = null;
+            if (marker) {
+                marker.map = null;
+            }
         };
     }, [lat, lng, zoom, mapId, markerText]); // Effect dependencies
 
