@@ -35,9 +35,9 @@ export function Sidebar({ contactData }: SidebarProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="h-full w-full flex flex-col gap-6">
+    <div className="h-full w-full space-y-6">
         {/* Menu Section */}
-        <div className="flex-shrink-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
+        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
             <Collapsible open={isMenuOpen} onOpenChange={setIsMenuOpen} className="w-full">
                 <CollapsibleTrigger asChild>
                     <button className="flex w-full items-center justify-between text-lg font-bold">
@@ -58,39 +58,37 @@ export function Sidebar({ contactData }: SidebarProps) {
         </div>
 
         {/* Contacts Section */}
-        <div className="flex-1 min-h-0 bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white flex flex-col">
+        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
              <h3 className="text-lg font-bold mb-4 flex-shrink-0">Контакты</h3>
-             <ScrollArea className="flex-grow">
-                 <div className={cn("space-y-3 text-sm", isMobile ? "" : "h-full")}>
-                    {contactData.address && (
-                        <div className="flex items-start gap-3">
-                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <span>{contactData.address}</span>
+             <div className="space-y-3 text-sm">
+                {contactData.address && (
+                    <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span>{contactData.address}</span>
+                    </div>
+                )}
+                {(contactData.phone_1 || contactData.phone_2) && (
+                    <div className="flex items-start gap-3">
+                        <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div className="flex flex-col">
+                            {contactData.phone_1 && <span>{contactData.phone_1}</span>}
+                            {contactData.phone_2 && <span>{contactData.phone_2}</span>}
                         </div>
-                    )}
-                    {(contactData.phone_1 || contactData.phone_2) && (
-                        <div className="flex items-start gap-3">
-                            <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <div className="flex flex-col">
-                                {contactData.phone_1 && <span>{contactData.phone_1}</span>}
-                                {contactData.phone_2 && <span>{contactData.phone_2}</span>}
-                            </div>
-                        </div>
-                    )}
-                    {contactData.email_main && (
-                        <div className="flex items-start gap-3">
-                            <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <a href={`mailto:${contactData.email_main}`} className="break-all hover:underline">{contactData.email_main}</a>
-                        </div>
-                    )}
-                    {contactData.working_hours && (
-                        <div className="flex items-start gap-3">
-                            <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <div className='whitespace-pre-wrap'>{contactData.working_hours}</div>
-                        </div>
-                    )}
-                 </div>
-            </ScrollArea>
+                    </div>
+                )}
+                {contactData.email_main && (
+                    <div className="flex items-start gap-3">
+                        <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <a href={`mailto:${contactData.email_main}`} className="break-all hover:underline">{contactData.email_main}</a>
+                    </div>
+                )}
+                {contactData.working_hours && (
+                    <div className="flex items-start gap-3">
+                        <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div className='whitespace-pre-wrap'>{contactData.working_hours}</div>
+                    </div>
+                )}
+             </div>
         </div>
     </div>
   );
