@@ -11,11 +11,11 @@ export default async function UserInfoPage() {
         <CardHeader>
           <div className="flex items-center gap-4">
             <Info className="h-8 w-8 text-primary" />
-            <CardTitle className="font-headline text-3xl">Информация для пользователя</CardTitle>
+            <CardTitle className="font-headline text-3xl text-white">Информация для пользователя</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="prose prose-invert max-w-none text-white/90 whitespace-pre-wrap">
+          <div className="prose prose-invert max-w-none text-white whitespace-pre-wrap">
             {info}
           </div>
         </CardContent>
