@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider';
 import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider';
 import { GlobalSidebar } from '@/components/layout/GlobalSidebar';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'PrintLux | Ремонт принтеров, запасные части и расходные материалы EPSON в Минске',
@@ -67,6 +68,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <main className="h-full overflow-hidden">{children}</main>
             </div>
             <Toaster />
+            <Footer />
           </RecaptchaProvider>
         </FirebaseAnalyticsProvider>
       </body>
