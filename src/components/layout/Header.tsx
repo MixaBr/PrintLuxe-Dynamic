@@ -174,20 +174,6 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
           </Button>
         </div>
       </div>
-       {/* Search Bar for mobile */}
-       <div className="md:hidden px-4 pb-4">
-            <form onSubmit={handleSearch} className="w-full relative">
-                <Input 
-                    placeholder="Поиск по приложению..."
-                    className="h-10 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white hover:bg-white/30">
-                    <Search className="h-5 w-5"/>
-                </Button>
-            </form>
-        </div>
     </header>
   );
 }
