@@ -51,10 +51,8 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full">
         
         {/* Sidebar - hidden on mobile */}
-        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0 h-full">
-          <div className="flex flex-col h-full w-full">
-            {contactData && <Sidebar contactData={contactData} />}
-          </div>
+        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0 h-full flex flex-col">
+          {contactData && <Sidebar contactData={contactData} />}
         </aside>
 
         {/* Main Content */}
