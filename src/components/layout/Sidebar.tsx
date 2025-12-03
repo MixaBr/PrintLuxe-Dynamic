@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '../ui/scroll-area';
+import { ViberIcon } from '../icons/ViberIcon';
 
 type NavLinkItem = {
   href: string;
@@ -106,7 +107,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                                 )}
                                 {contactData.viber_link && (
                                     <Link href={contactData.viber_link} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M12.001 0c-6.627 0-12 5.373-12 12 0 2.64.832 5.085 2.249 7.106l-.001.001c1.216 1.448 2.854 2.482 4.527 3.075l1.176-.335c1.047-.294 2.131-.704 3.098-1.226l4.275-2.112c1.586-.771 2.959-1.76 4.146-2.877l-.001-.001c1.035-1.029 1.848-2.308 2.372-3.685l-.002-.002c.688-1.537 1.036-3.294 1.036-5.107C24 5.373 18.627 0 12 0zm7.015 17.204l-1.157 1.157c-.204.204-.506.204-.711 0l-1.158-1.157c-.204-.205-.204-.507 0-.711l1.158-1.157c.205-.204.507-.204.711 0l1.157 1.157c.204.204.204.506 0 .711zm-3.797-3.797l-2.452 2.452c-.204.204-.506.204-.711 0l-1.158-1.158c-.204-.204-.204-.506 0-.711l2.452-2.452c1.34-1.34 3.537-1.34 4.877 0 .204.205.204.507 0 .711l-2.452 2.452c-.205.204-.507.204-.711 0zm-8-8l-1 .001c-.553 0-1 .447-1 1v6c0 .553.447 1 1 1h6c.553 0 1-.447 1-1v-1c0-.553-.447-1-1-1h-5v-4h4c0-.553-.447-1-1-1h-5z" fill="currentColor"></path></svg>
+                                        <ViberIcon className="w-6 h-6"/>
                                         <span className="sr-only">Viber</span>
                                     </Link>
                                 )}
@@ -210,7 +211,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                           )}
                           {contactData.viber_link && (
                               <Link href={contactData.viber_link} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white transition">
-                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M12.001 0c-6.627 0-12 5.373-12 12 0 2.64.832 5.085 2.249 7.106l-.001.001c1.216 1.448 2.854 2.482 4.527 3.075l1.176-.335c1.047-.294 2.131-.704 3.098-1.226l4.275-2.112c1.586-.771 2.959-1.76 4.146-2.877l-.001-.001c1.035-1.029 1.848-2.308 2.372-3.685l-.002-.002c.688-1.537 1.036-3.294 1.036-5.107C24 5.373 18.627 0 12 0zm7.015 17.204l-1.157 1.157c-.204.204-.506.204-.711 0l-1.158-1.157c-.204-.205-.204-.507 0-.711l1.158-1.157c.205-.204.507-.204.711 0l1.157 1.157c.204.204.204.506 0 .711zm-3.797-3.797l-2.452 2.452c-.204.204-.506.204-.711 0l-1.158-1.158c-.204-.204-.204-.506 0-.711l2.452-2.452c1.34-1.34 3.537-1.34 4.877 0 .204.205.204.507 0 .711l-2.452 2.452c-.205.204-.507.204-.711 0zm-8-8l-1 .001c-.553 0-1 .447-1 1v6c0 .553.447 1 1 1h6c.553 0 1-.447 1-1v-1c0-.553-.447-1-1-1h-5v-4h4c0-.553-.447-1-1-1h-5z" fill="currentColor"></path></svg>
+                                  <ViberIcon className="w-6 h-6"/>
                                   <span className="sr-only">Viber</span>
                               </Link>
                           )}
