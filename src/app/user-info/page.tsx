@@ -16,7 +16,7 @@ export default async function UserInfoPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-white/90 whitespace-pre-wrap text-lg">
+          <div className="text-white/90 whitespace-pre-wrap text-xl">
             {info}
           </div>
         </CardContent>
