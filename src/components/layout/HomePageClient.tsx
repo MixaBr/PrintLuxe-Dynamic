@@ -102,7 +102,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                                   <CarouselNext className="absolute right-[-1.5rem] top-1/2 -translate-y-1/2" />
                               </div>
                         </Carousel>
-                          <Button asChild variant="link" className="mt-4 text-white text-3xl">
+                          <Button asChild variant="link" className="mt-4 text-white text-2xl">
                               <Link href="/catalog">Посмотреть в каталоге подробней</Link>
                           </Button>
                         </div>
