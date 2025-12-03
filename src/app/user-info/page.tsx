@@ -16,8 +16,13 @@ export default async function UserInfoPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-white/90 whitespace-pre-wrap">
-            {info}
+          <div className="text-white/90">
+            {info.split('\n').map((line, index) => (
+              <span key={index}>
+                {line}
+                <br />
+              </span>
+            ))}
           </div>
         </CardContent>
       </Card>
