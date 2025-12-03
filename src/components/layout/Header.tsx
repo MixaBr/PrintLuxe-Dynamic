@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Wrench, ShoppingCart, User, Briefcase, Search } from 'lucide-react';
+import { Menu, ShoppingCart, User, Briefcase, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -82,7 +82,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer">
               <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12 text-white">
-                  <Wrench className="h-8 w-8 text-white" />
+                  <Menu className="h-8 w-8 text-white" />
                   <span className="sr-only">Открыть меню</span>
               </Button>
               <span className="hidden sm:inline font-headline text-2xl md:text-3xl font-bold text-white">
@@ -90,7 +90,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               </span>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 bg-black/80 text-white backdrop-blur-md border-white/20">
+          <DropdownMenuContent className="w-56 bg-background/80 text-white backdrop-blur-md border-white/20">
             <SidebarNav onLinkClick={closeSidebar} />
           </DropdownMenuContent>
         </DropdownMenu>
@@ -140,7 +140,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/admin">
-                        <Wrench className="mr-2 h-4 w-4" />
+                        <Menu className="mr-2 h-4 w-4" />
                         <span>Панель админа</span>
                       </Link>
                     </DropdownMenuItem>
