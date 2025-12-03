@@ -16,9 +16,9 @@ export default async function UserInfoPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="prose prose-invert max-w-none text-white/90 whitespace-pre-wrap">
+          <p className="prose prose-invert max-w-none text-white/90 whitespace-pre-wrap">
             {info}
-          </div>
+          </p>
         </CardContent>
       </Card>
     </div>
