@@ -2,21 +2,22 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Wrench, ShoppingCart, User, Menu, Briefcase, Search } from 'lucide-react';
+import { Wrench, ShoppingCart, User, Briefcase, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { useCartStore } from '@/hooks/use-cart-store';
 import { Input } from '../ui/input';
 import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
+import { SidebarNav } from './SidebarNav';
 
 
 type NavLinkItem = {
@@ -36,10 +37,9 @@ const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админ
 
 
 export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
-  const pathname = usePathname();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const { toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
+  const { isOpen, toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -79,15 +79,22 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-sm">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-4">
         
-        <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12 text-white" onClick={toggleSidebar}>
-                <Wrench className="h-8 w-8 text-white" />
-                <span className="sr-only">Открыть меню</span>
-            </Button>
-            <button onClick={toggleSidebar} className="hidden sm:inline font-headline text-2xl md:text-3xl font-bold text-white">
-                PrintLux
-            </button>
-        </div>
+        <DropdownMenu open={isOpen} onOpenChange={toggleSidebar}>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12 text-white">
+                  <Wrench className="h-8 w-8 text-white" />
+                  <span className="sr-only">Открыть меню</span>
+              </Button>
+              <span className="hidden sm:inline font-headline text-2xl md:text-3xl font-bold text-white">
+                  PrintLux
+              </span>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 bg-black/80 text-white backdrop-blur-md border-white/20">
+            <SidebarNav onLinkClick={closeSidebar} />
+          </DropdownMenuContent>
+        </DropdownMenu>
 
 
         {/* Search Bar */}

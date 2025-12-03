@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 playsInline
               />
             )}
-            <GlobalSidebar />
+            {/* GlobalSidebar больше не рендерит видимый UI здесь, он управляется из Header */}
             <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
               <Header isAuthenticated={!!user} userRole={userRole} />
               <main className="h-full overflow-hidden">{children}</main>
