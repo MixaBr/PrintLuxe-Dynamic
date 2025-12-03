@@ -90,7 +90,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
               </span>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 bg-background/80 text-white backdrop-blur-md border-white/20">
+          <DropdownMenuContent className="w-56 border-white/20">
             <SidebarNav onLinkClick={closeSidebar} />
           </DropdownMenuContent>
         </DropdownMenu>
@@ -121,7 +121,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                    <span className="sr-only">Панели</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-black/80 text-white backdrop-blur-md border-white/20">
+              <DropdownMenuContent className="border-white/20">
                 {userRole === 'manager' && (
                   <DropdownMenuItem asChild>
                     <Link href="/manager">
