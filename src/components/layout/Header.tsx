@@ -1,14 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Wrench, ShoppingCart, User, Menu, Briefcase, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -20,8 +16,7 @@ import {
 import { useCartStore } from '@/hooks/use-cart-store';
 import { Input } from '../ui/input';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from './Sidebar';
-import { getContactPageData } from '@/lib/contact-data';
+import { useSidebarStore } from '@/hooks/use-sidebar-store';
 
 
 type NavLinkItem = {
@@ -43,8 +38,8 @@ const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админ
 export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -54,40 +49,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
   const items = useCartStore((state) => state.items);
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
-  const [contactData, setContactData] = useState<Awaited<ReturnType<typeof getContactPageData>> | null>(null);
-
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      getContactPageData().then(setContactData);
-    }
-  }, [isMobileMenuOpen]);
-
-
-  const navLinks = useMemo(() => {
-    const links = [...baseLinks];
-    if (userRole === 'manager' || userRole === 'admin') {
-      links.push(managerLink);
-    }
-    if (userRole === 'admin') {
-      links.push(adminLink);
-    }
-    return links;
-  }, [userRole]);
-
   const showDropdown = userRole === 'admin' || userRole === 'manager';
-
-  const NavLink = ({ href, label }: { href: string; label: string }) => (
-    <Link
-      href={href}
-      className={cn(
-        "text-lg font-medium transition-colors hover:text-white",
-        pathname === href ? "text-white" : "text-gray-300"
-      )}
-      onClick={() => isMobileMenuOpen && setIsMobileMenuOpen(false)}
-    >
-      {label}
-    </Link>
-  );
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,55 +63,30 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
         'контакты': '/contact',
     };
   
-    // Find the first key that is included in the search term
     const foundPageKey = Object.keys(availablePages).find(key => cleanedSearchTerm.includes(key));
 
     if (foundPageKey) {
         const targetPage = availablePages[foundPageKey];
         router.push(targetPage);
     } else {
-        // If no page is found, just log it and do nothing, or show a notification
         console.log(`Страница по запросу "${searchTerm}" не найдена.`);
-        // Optionally, you could redirect to a general search page or the catalog as a fallback
-        // router.push(`/catalog?query=${encodeURIComponent(searchTerm)}`);
     }
 
-    if(isMobileMenuOpen) setIsMobileMenuOpen(false);
+    closeSidebar();
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-sm">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-4">
         
-        {/* Logo and Sandwich for mobile */}
         <div className="flex items-center gap-2">
-            <div className="md:hidden">
-                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                    <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12 text-white">
-                        <Menu className="h-8 w-8" strokeWidth={2} />
-                        <span className="sr-only">Открыть меню</span>
-                    </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="bg-black/50 text-white backdrop-blur-md w-[80vw] max-w-sm p-0">
-                         <div className="flex flex-col h-full">
-                             <div className="p-4 border-b border-white/10">
-                                 <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Wrench className="h-8 w-8 text-white" />
-                                    <span className="font-headline text-2xl font-bold">PrintLux</span>
-                                </Link>
-                             </div>
-                            <div className="p-4 flex-grow overflow-y-auto">
-                               {contactData && <Sidebar contactData={contactData} />}
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
-            </div>
-            <Link href="/" className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="hover:bg-white/20 h-12 w-12 text-white" onClick={toggleSidebar}>
                 <Wrench className="h-8 w-8 text-white" />
-                <span className="hidden sm:inline font-headline text-2xl md:text-3xl font-bold text-white">PrintLux</span>
-            </Link>
+                <span className="sr-only">Открыть меню</span>
+            </Button>
+            <button onClick={toggleSidebar} className="hidden sm:inline font-headline text-2xl md:text-3xl font-bold text-white">
+                PrintLux
+            </button>
         </div>
 
 

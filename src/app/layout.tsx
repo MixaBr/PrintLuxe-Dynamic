@@ -6,7 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { getAppBackground } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider';
-import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider'; // Import the new provider
+import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider';
+import { GlobalSidebar } from '@/components/layout/GlobalSidebar';
 
 export const metadata: Metadata = {
   title: 'PrintLux | Ремонт принтеров, запасные части и расходные материалы EPSON в Минске',
@@ -49,7 +50,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className="font-body antialiased h-screen w-screen overflow-hidden">
         <FirebaseAnalyticsProvider>
-          <RecaptchaProvider> {/* Wrap with RecaptchaProvider */}
+          <RecaptchaProvider>
             {backgroundUrl && (
               <video
                 className="fixed -z-10 w-full h-full object-cover"
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 playsInline
               />
             )}
+            <GlobalSidebar />
             <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
               <Header isAuthenticated={!!user} userRole={userRole} />
               <main className="h-full overflow-hidden">{children}</main>
