@@ -9,9 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { useCartStore } from '@/hooks/use-cart-store';
 import { Input } from '../ui/input';
@@ -122,7 +120,7 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
                    <span className="sr-only">Панели</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-black/80 text-white backdrop-blur-md border-white/20">
                 {userRole === 'manager' && (
                   <DropdownMenuItem asChild>
                     <Link href="/manager">
