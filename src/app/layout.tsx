@@ -7,8 +7,6 @@ import { getAppBackground } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider';
 import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider';
-import { GlobalSidebar } from '@/components/layout/GlobalSidebar';
-import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'PrintLux | Ремонт принтеров, запасные части и расходные материалы EPSON в Минске',
@@ -62,13 +60,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 playsInline
               />
             )}
-            {/* GlobalSidebar больше не рендерит видимый UI здесь, он управляется из Header */}
-            <div className="h-full w-full grid grid-rows-[auto_1fr] relative z-10">
+            {/* СТРУКТУРА "КАБИНЫ" */}
+            <div className="h-full w-full flex flex-col relative z-10">
               <Header isAuthenticated={!!user} userRole={userRole} />
-              <main className="h-full overflow-hidden">{children}</main>
+              {/* ОСНОВНАЯ ОБЛАСТЬ С ПРОКРУТКОЙ */}
+              <main className="flex-grow overflow-y-auto">
+                {children}
+              </main>
             </div>
+            {/* ИЗМЕНЕНО: Футер удален из глобального макета */}
             <Toaster />
-            <Footer />
           </RecaptchaProvider>
         </FirebaseAnalyticsProvider>
       </body>

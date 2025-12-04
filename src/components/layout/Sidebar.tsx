@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export function Sidebar({ contactData }: SidebarProps) {
   return (
-    <div className="absolute bottom-0 w-full bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
+    <div className="w-full bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white">
           <h3 className="text-lg font-bold mb-4 flex-shrink-0">Контакты</h3>
           <div className="space-y-3 text-sm overflow-y-auto">
             {contactData.address && (

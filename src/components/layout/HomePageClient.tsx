@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { getFullProductDetails } from '@/app/catalog/actions';
+import { Footer } from '@/components/layout/Footer';
 
 interface HomePageClientProps {
   homePageData: HomePageData;
@@ -48,15 +49,13 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
         
-        {/* Sidebar - hidden on mobile */}
-        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0 relative">
+        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0 sticky top-0 self-start h-screen overflow-y-auto pt-8">
           {contactData && <Sidebar contactData={contactData} />}
         </aside>
 
-        {/* Main Content */}
-        <main className="md:col-span-3 lg:col-span-4 flex flex-col px-4 md:px-8 overflow-y-auto space-y-8 py-8">
+        <main className="md:col-span-3 lg:col-span-4 flex flex-col px-4 md:px-8 space-y-8 py-8">
             {homePageData?.error ? (
                 <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
@@ -100,8 +99,8 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                                   <CarouselNext className="absolute right-[-1.5rem] top-1/2 -translate-y-1/2" />
                               </div>
                         </Carousel>
-                          <Button asChild variant="link" className="mt-4 text-white text-2xl">
-                              <Link href="/catalog">Посмотреть в каталоге подробней</Link>
+                          <Button asChild variant="link" className="mt-4 text-white text-2xl h-auto whitespace-normal text-center">
+                            <Link href="/catalog">Посмотреть в каталоге подробней</Link>
                           </Button>
                         </div>
                       ) : (
@@ -133,6 +132,11 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                 </>
             )}
         </main>
+        
+        <div className="md:hidden">
+          <Footer />
+        </div>
+
       </div>
       <ProductDetailModal
         product={selectedProduct}
