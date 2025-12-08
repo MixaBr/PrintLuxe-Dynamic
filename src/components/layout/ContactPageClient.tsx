@@ -296,7 +296,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                               onDrop={handleDrop}
                                               onClick={() => fileInputRef.current?.click()}
                                               className={cn(
-                                                "relative flex flex-col items-center justify-center w-full min-h-[10rem] border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+                                                "relative flex flex-col justify-center w-full min-h-[10rem] border-2 border-dashed rounded-lg cursor-pointer transition-colors",
                                                 "bg-white/5 border-white/20 hover:bg-white/10",
                                                 isDragging && "border-primary bg-primary/10"
                                               )}
@@ -311,35 +311,37 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                                 onChange={(e) => handleFilesChange(e.target.files)}
                                               />
                                               {files.length === 0 ? (
-                                                <div className="flex flex-col items-center justify-center text-center">
+                                                <div className="flex flex-col items-center justify-center text-center p-4">
                                                   <UploadCloud className="w-8 h-8 mb-2 text-white/70"/>
                                                   <p className="text-sm font-semibold text-white/90">
                                                     <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файлы
                                                   </p>
-                                                  <p className="text-xs text-white/50">До {MAX_FILES} файлов, до 10 МБ</p>
+                                                  <p className="text-xs text-white/50">До {MAX_FILES} файлов, до 10 МБ. Разрешены: jpeg, png, pdf, doc, docx.</p>
                                                 </div>
                                               ) : (
-                                                <ScrollArea className="w-full h-full max-h-36">
-                                                  <div className='p-4 space-y-2'>
-                                                      {files.map((file, index) => (
-                                                          <div key={index} className="relative flex items-center justify-between p-2 bg-white/10 rounded-md">
-                                                              <div className="flex items-center gap-2 overflow-hidden">
-                                                                  <FileIcon className="h-5 w-5 flex-shrink-0" />
-                                                                  <span className="text-sm truncate">{file.name}</span>
-                                                                  <span className="text-xs text-gray-400 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                                                              </div>
-                                                              <Button 
-                                                                  variant="ghost" 
-                                                                  size="icon" 
-                                                                  className="h-6 w-6 text-destructive hover:bg-destructive/20"
-                                                                  onClick={(e) => { e.stopPropagation(); removeFile(index); }}
-                                                              >
-                                                                  <X className="h-4 w-4" />
-                                                              </Button>
-                                                          </div>
-                                                      ))}
-                                                  </div>
-                                                </ScrollArea>
+                                                <div className="w-full h-full p-2">
+                                                  <ScrollArea className="h-36 w-full">
+                                                    <div className='p-2 space-y-2'>
+                                                        {files.map((file, index) => (
+                                                            <div key={index} className="relative flex items-center justify-between p-2 bg-white/10 rounded-md">
+                                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                                    <FileIcon className="h-5 w-5 flex-shrink-0" />
+                                                                    <span className="text-sm truncate">{file.name}</span>
+                                                                    <span className="text-xs text-gray-400 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                                                </div>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="h-6 w-6 text-destructive hover:bg-destructive/20"
+                                                                    onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                  </ScrollArea>
+                                                </div>
                                               )}
                                             </div>
                                             <div className='flex justify-between text-xs text-gray-400 mt-1'>
@@ -366,5 +368,3 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     </div>
   );
 }
-
-    

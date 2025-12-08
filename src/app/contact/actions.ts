@@ -91,7 +91,7 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
         }
         
         if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
-            return { message: `Недопустимый тип файла: ${file.name}.`, status: 'error' };
+            return { message: `Недопустимый тип файла: ${file.name}. Разрешены: jpeg, png, pdf, doc, docx.`, status: 'error' };
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
