@@ -42,7 +42,7 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
     <div className="container mx-auto px-4 py-12 md:px-8 md:py-16 text-white">
       {/* Hero Section */}
       <div className="text-center mb-12 md:mb-16">
-        <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold">{aboutData.main_title}</h1>
+        <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold text-white">{aboutData.main_title}</h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-white/80">
           {aboutData.main_subtitle}
         </p>
@@ -77,7 +77,7 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
         <h2 className="font-headline text-4xl md:text-5xl font-bold text-white">{aboutData.values_title}</h2>
         <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-white/80">{aboutData.values_description}</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 md:mb-16">
         {values.map((value) => (
           <Card key={value.title} className="bg-black/30 border-white/20 backdrop-blur-sm text-center p-6 hover:bg-black/50 transition-colors">
             <CardHeader className="p-0 items-center">
@@ -92,6 +92,34 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
           </Card>
         ))}
       </div>
+
+       {/* Team Section */}
+      {aboutData.team_members && aboutData.team_members.length > 0 && (
+          <div className="text-center">
+              <h2 className="font-headline text-4xl md:text-5xl font-bold text-white">{aboutData.team_section_title}</h2>
+              <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-white/80">{aboutData.team_section_subtitle}</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+                  {aboutData.team_members.map((member, index) => (
+                      <Card key={index} className="bg-black/30 border-white/20 backdrop-blur-sm text-center p-6 hover:bg-black/50 transition-colors overflow-hidden">
+                          <CardContent className="p-0 flex flex-col items-center">
+                              <div className="relative h-32 w-32 rounded-full mb-4 overflow-hidden border-2 border-white/20">
+                                  <Image
+                                      src={member.image_url || '/placeholder-avatar.png'}
+                                      alt={member.name || 'Team member'}
+                                      fill
+                                      className="object-cover"
+                                      sizes="128px"
+                                  />
+                              </div>
+                              <p className="font-semibold text-lg text-white">{member.name}</p>
+                              <p className="text-sm text-white/70">{member.role}</p>
+                          </CardContent>
+                      </Card>
+                  ))}
+              </div>
+          </div>
+      )}
     </div>
   );
 }
