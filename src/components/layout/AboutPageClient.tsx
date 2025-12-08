@@ -105,7 +105,7 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
                           <CardContent className="p-0 flex flex-col items-center">
                               <div className="relative h-32 w-32 rounded-full mb-4 overflow-hidden border-2 border-white/20">
                                   <Image
-                                      src={member.image_url || '/placeholder-avatar.png'}
+                                      src={member.image_url || 'https://placehold.co/150x150.png'}
                                       alt={member.name || 'Team member'}
                                       fill
                                       className="object-cover"
