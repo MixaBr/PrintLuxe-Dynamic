@@ -20,7 +20,7 @@ export interface ContactFormState {
   };
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10 MB
 const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
 
@@ -76,21 +76,27 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
       };
   }
 
-  const file = formData.get('file') as File | null;
-  let attachments;
+  const files = formData.getAll('files') as File[];
+  const attachments: { filename: string; content: Buffer }[] = [];
+  let totalSize = 0;
 
-  if (file && file.size > 0) {
-    if (file.size > MAX_FILE_SIZE) {
-      return { message: 'Файл слишком большой. Максимальный размер 10 МБ.', status: 'error' };
-    }
-    
-    // Server-side type check for security
-    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
-      return { message: 'Недопустимый тип файла.', status: 'error' };
-    }
+  if (files && files.length > 0) {
+    for (const file of files) {
+        if (file.size === 0) continue;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    attachments = [{ filename: file.name, content: buffer }];
+        totalSize += file.size;
+
+        if (totalSize > MAX_TOTAL_SIZE) {
+            return { message: 'Общий размер файлов превышает 10 МБ.', status: 'error' };
+        }
+        
+        if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+            return { message: `Недопустимый тип файла: ${file.name}.`, status: 'error' };
+        }
+
+        const buffer = Buffer.from(await file.arrayBuffer());
+        attachments.push({ filename: file.name, content: buffer });
+    }
   }
 
 
@@ -117,5 +123,3 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
     };
   }
 }
-
-    

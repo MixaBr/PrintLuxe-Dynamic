@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Loader2, UploadCloud, X } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, UploadCloud, X, File as FileIcon, BadgeAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { submitContactForm, type ContactFormState } from '@/app/contact/actions';
 import type { ContactPageData } from '@/lib/contact-data';
@@ -22,6 +22,7 @@ import {
 import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
 import { ViberIcon } from '../icons/ViberIcon';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 const initialState: ContactFormState = {
   message: '',
@@ -49,6 +50,9 @@ interface ContactPageClientProps {
     contactData: ContactPageData;
 }
 
+const MAX_FILES = 5;
+const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10 MB
+
 export default function ContactPageClient({ contactData }: ContactPageClientProps) {
   const [state, formAction] = useFormState(submitContactForm, initialState);
   const { toast } = useToast();
@@ -58,7 +62,9 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  
+  const totalSize = files.reduce((acc, file) => acc + file.size, 0);
 
   useEffect(() => {
     if (state.status === 'success') {
@@ -67,7 +73,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
         description: state.message,
       });
       formRef.current?.reset();
-      setFileName(null);
+      setFiles([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -84,31 +90,27 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     }
   }, [state, toast]);
   
-  const handleFileChange = (file: File | null) => {
-    if (file) {
-      const maxSize = 10 * 1024 * 1024; // 10 MB
-      if (file.size > maxSize) {
-        toast({
-            variant: "destructive",
-            title: "Ошибка",
-            description: "Размер файла не должен превышать 10 МБ.",
-        });
+  const handleFilesChange = (newFiles: FileList | null) => {
+    if (!newFiles) return;
+
+    const filesArray = Array.from(newFiles);
+    if (files.length + filesArray.length > MAX_FILES) {
+        toast({ variant: "destructive", title: "Ошибка", description: `Можно прикрепить не более ${MAX_FILES} файлов.` });
         return;
-      }
-      setFileName(file.name);
-      // Create a new FileList to assign to the input
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-      if(fileInputRef.current) {
-        fileInputRef.current.files = dataTransfer.files;
-      }
-    } else {
-      setFileName(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
+
+    const combinedSize = files.reduce((acc, f) => acc + f.size, 0) + filesArray.reduce((acc, f) => acc + f.size, 0);
+    if (combinedSize > MAX_TOTAL_SIZE) {
+        toast({ variant: "destructive", title: "Ошибка", description: `Общий размер файлов не должен превышать 10 МБ.` });
+        return;
+    }
+
+    setFiles(prevFiles => [...prevFiles, ...filesArray]);
   };
+
+  const removeFile = (index: number) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  }
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -129,7 +131,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileChange(e.dataTransfer.files[0]);
+      handleFilesChange(e.dataTransfer.files);
       e.dataTransfer.clearData();
     }
   };
@@ -146,6 +148,15 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   }
 
   const { map_lat, map_lng, map_zoom, map_marker_text } = contactData;
+
+  const handleSubmit = (formData: FormData) => {
+    // Clear existing 'files' entries and append the current ones
+    formData.delete('files');
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    formAction(formData);
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -257,7 +268,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                         <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Напишите нам</h2>
                         <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full h-full flex flex-col">
                             <CardContent className="pt-6 flex-grow flex flex-col">
-                                <form ref={formRef} action={formAction} className="space-y-4 flex-grow flex flex-col">
+                                <form ref={formRef} action={handleSubmit} className="space-y-4 flex-grow flex flex-col">
                                     <div className="flex-grow space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
@@ -273,11 +284,11 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                         </div>
                                         <div className="space-y-2">
                                             <label htmlFor="message" className="font-medium text-gray-200">Сообщение</label>
-                                            <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={4} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
+                                            <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={3} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
                                             {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
                                         </div>
                                          <div className="space-y-2">
-                                            <label htmlFor="file-upload" className="font-medium text-gray-200">Прикрепить файл</label>
+                                            <label htmlFor="file-upload" className="font-medium text-gray-200">Прикрепить файлы</label>
                                             <div
                                               onDragEnter={handleDragEnter}
                                               onDragLeave={handleDragLeave}
@@ -285,7 +296,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                               onDrop={handleDrop}
                                               onClick={() => fileInputRef.current?.click()}
                                               className={cn(
-                                                "relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+                                                "relative flex flex-col items-center justify-center w-full min-h-[10rem] border-2 border-dashed rounded-lg cursor-pointer transition-colors",
                                                 "bg-white/5 border-white/20 hover:bg-white/10",
                                                 isDragging && "border-primary bg-primary/10"
                                               )}
@@ -296,32 +307,45 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                                 type="file" 
                                                 ref={fileInputRef} 
                                                 className="hidden"
-                                                onChange={(e) => handleFileChange(e.target.files ? e.target.files[0] : null)}
+                                                multiple
+                                                onChange={(e) => handleFilesChange(e.target.files)}
                                               />
-                                              {fileName ? (
-                                                <div className="text-center p-4">
-                                                  <p className="font-medium text-sm truncate">{fileName}</p>
-                                                  <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="absolute top-1 right-1 h-6 w-6 text-destructive hover:bg-destructive/20"
-                                                    onClick={(e) => { e.stopPropagation(); handleFileChange(null); }}
-                                                  >
-                                                    <X className="h-4 w-4" />
-                                                  </Button>
-                                                </div>
-                                              ) : (
+                                              {files.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center text-center">
                                                   <UploadCloud className="w-8 h-8 mb-2 text-white/70"/>
                                                   <p className="text-sm font-semibold text-white/90">
-                                                    <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файл
+                                                    <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файлы
                                                   </p>
-                                                  <p className="text-xs text-white/50">SVG, PNG, JPG, PDF и т.д.</p>
+                                                  <p className="text-xs text-white/50">До {MAX_FILES} файлов, до 10 МБ</p>
                                                 </div>
+                                              ) : (
+                                                <ScrollArea className="w-full h-full max-h-36">
+                                                  <div className='p-4 space-y-2'>
+                                                      {files.map((file, index) => (
+                                                          <div key={index} className="relative flex items-center justify-between p-2 bg-white/10 rounded-md">
+                                                              <div className="flex items-center gap-2 overflow-hidden">
+                                                                  <FileIcon className="h-5 w-5 flex-shrink-0" />
+                                                                  <span className="text-sm truncate">{file.name}</span>
+                                                                  <span className="text-xs text-gray-400 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                                              </div>
+                                                              <Button 
+                                                                  variant="ghost" 
+                                                                  size="icon" 
+                                                                  className="h-6 w-6 text-destructive hover:bg-destructive/20"
+                                                                  onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                                                              >
+                                                                  <X className="h-4 w-4" />
+                                                              </Button>
+                                                          </div>
+                                                      ))}
+                                                  </div>
+                                                </ScrollArea>
                                               )}
                                             </div>
-                                            <p className="text-xs text-gray-400">Максимальный размер файла: 10 МБ.</p>
-                                            <p className="text-xs text-gray-400">Допустимые типы: JPG, PNG, WEBP, PDF, DOC, DOCX.</p>
+                                            <div className='flex justify-between text-xs text-gray-400 mt-1'>
+                                                <span>Файлов: {files.length} / {MAX_FILES}</span>
+                                                <span>Размер: {(totalSize / 1024 / 1024).toFixed(2)} / 10.00 МБ</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -342,5 +366,3 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     </div>
   );
 }
-
-    
