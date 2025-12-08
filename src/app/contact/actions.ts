@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -18,6 +19,10 @@ export interface ContactFormState {
     message?: string[];
   };
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
 
 export async function submitContactForm(prevState: ContactFormState, formData: FormData): Promise<ContactFormState> {
 
@@ -71,6 +76,24 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
       };
   }
 
+  const file = formData.get('file') as File | null;
+  let attachments;
+
+  if (file && file.size > 0) {
+    if (file.size > MAX_FILE_SIZE) {
+      return { message: 'Файл слишком большой. Максимальный размер 10 МБ.', status: 'error' };
+    }
+    
+    // Server-side type check for security
+    // if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+    //   return { message: 'Недопустимый тип файла.', status: 'error' };
+    // }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    attachments = [{ filename: file.name, content: buffer }];
+  }
+
+
   try {
     const { name, email, message } = validatedFields.data;
 
@@ -79,6 +102,7 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
       subject: `Новое сообщение с сайта от ${name}`,
       html: `<p>Имя: ${name}</p><p>Email: ${email}</p><p>Сообщение: ${message}</p>`,
       replyTo: email,
+      attachments
     });
 
     return {

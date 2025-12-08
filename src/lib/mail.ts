@@ -16,11 +16,13 @@ export async function sendMail({
   subject,
   html,
   replyTo,
+  attachments,
 }: {
   to: string;
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: { filename: string; content: Buffer }[];
 }) {
   const mailOptions = {
     from: process.env.SMTP_FROM,
@@ -28,6 +30,7 @@ export async function sendMail({
     subject,
     html,
     replyTo,
+    attachments,
   };
 
   try {

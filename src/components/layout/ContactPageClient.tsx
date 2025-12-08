@@ -20,7 +20,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
-import { ScrollArea } from '../ui/scroll-area';
 import { ViberIcon } from '../icons/ViberIcon';
 
 const initialState: ContactFormState = {
@@ -55,6 +54,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
   const [recaptchaKey, setRecaptchaKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (state.status === 'success') {
@@ -75,6 +75,25 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
       setRecaptchaKey(prevKey => prevKey + 1);
     }
   }, [state, toast]);
+  
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
+    const maxSize = 10 * 1024 * 1024; // 10 MB
+
+    if (file && file.size > maxSize) {
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: "Размер файла не должен превышать 10 МБ.",
+        });
+        return; 
+    }
+    
+    const formData = new FormData(event.currentTarget);
+    formAction(formData);
+  };
+
 
   if (contactData.error) {
       return (
@@ -199,7 +218,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                         <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Напишите нам</h2>
                         <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full h-full flex flex-col">
                             <CardContent className="pt-6 flex-grow flex flex-col">
-                                <form ref={formRef} action={formAction} className="space-y-4 flex-grow flex flex-col">
+                                <form ref={formRef} action={formAction} onSubmit={handleFormSubmit} className="space-y-4 flex-grow flex flex-col">
                                     <div className="flex-grow space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
@@ -217,6 +236,11 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                             <label htmlFor="message" className="font-medium text-gray-200">Сообщение</label>
                                             <Textarea id="message" name="message" placeholder="Ваш вопрос или предложение..." rows={4} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white" required/>
                                             {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
+                                        </div>
+                                         <div className="space-y-2">
+                                            <label htmlFor="file" className="font-medium text-gray-200">Прикрепить файл</label>
+                                            <Input id="file" name="file" type="file" ref={fileInputRef} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white file:text-white" />
+                                            <p className="text-xs text-gray-400">Максимальный размер файла: 10 МБ.</p>
                                         </div>
                                     </div>
 
@@ -237,6 +261,3 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     </div>
   );
 }
-
-    
-    
