@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Loader2, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, UploadCloud, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { submitContactForm, type ContactFormState } from '@/app/contact/actions';
 import type { ContactPageData } from '@/lib/contact-data';
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { RecaptchaWidget } from '@/components/ui/RecaptchaWidget';
 import { ViberIcon } from '../icons/ViberIcon';
+import { cn } from '@/lib/utils';
 
 const initialState: ContactFormState = {
   message: '',
@@ -55,6 +56,9 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
   const [recaptchaKey, setRecaptchaKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.status === 'success') {
@@ -63,6 +67,10 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
         description: state.message,
       });
       formRef.current?.reset();
+      setFileName(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setIsRecaptchaVerified(false);
       setRecaptchaKey(prevKey => prevKey + 1);
     } else if (state.status === 'error' && state.message) {
@@ -76,24 +84,55 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     }
   }, [state, toast]);
   
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const file = fileInputRef.current?.files?.[0];
-    const maxSize = 10 * 1024 * 1024; // 10 MB
-
-    if (file && file.size > maxSize) {
+  const handleFileChange = (file: File | null) => {
+    if (file) {
+      const maxSize = 10 * 1024 * 1024; // 10 MB
+      if (file.size > maxSize) {
         toast({
             variant: "destructive",
             title: "Ошибка",
             description: "Размер файла не должен превышать 10 МБ.",
         });
-        return; 
+        return;
+      }
+      setFileName(file.name);
+      // Create a new FileList to assign to the input
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      if(fileInputRef.current) {
+        fileInputRef.current.files = dataTransfer.files;
+      }
+    } else {
+      setFileName(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
-    
-    const formData = new FormData(event.currentTarget);
-    formAction(formData);
   };
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileChange(e.dataTransfer.files[0]);
+      e.dataTransfer.clearData();
+    }
+  };
 
   if (contactData.error) {
       return (
@@ -218,7 +257,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                         <h2 className="font-headline text-2xl sm:text-3xl font-semibold text-white text-center lg:text-left">Напишите нам</h2>
                         <Card className="bg-white/10 border-white/20 text-white rounded-xl shadow-lg w-full h-full flex flex-col">
                             <CardContent className="pt-6 flex-grow flex flex-col">
-                                <form ref={formRef} action={formAction} onSubmit={handleFormSubmit} className="space-y-4 flex-grow flex flex-col">
+                                <form ref={formRef} action={formAction} className="space-y-4 flex-grow flex flex-col">
                                     <div className="flex-grow space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
@@ -238,8 +277,49 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                             {state.errors?.message && <p className="text-sm text-destructive">{state.errors.message[0]}</p>}
                                         </div>
                                          <div className="space-y-2">
-                                            <label htmlFor="file" className="font-medium text-gray-200">Прикрепить файл</label>
-                                            <Input id="file" name="file" type="file" ref={fileInputRef} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white file:text-white" />
+                                            <label htmlFor="file-upload" className="font-medium text-gray-200">Прикрепить файл</label>
+                                            <div
+                                              onDragEnter={handleDragEnter}
+                                              onDragLeave={handleDragLeave}
+                                              onDragOver={handleDragOver}
+                                              onDrop={handleDrop}
+                                              onClick={() => fileInputRef.current?.click()}
+                                              className={cn(
+                                                "relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
+                                                "bg-white/5 border-white/20 hover:bg-white/10",
+                                                isDragging && "border-primary bg-primary/10"
+                                              )}
+                                            >
+                                              <Input 
+                                                id="file-upload" 
+                                                name="file" 
+                                                type="file" 
+                                                ref={fileInputRef} 
+                                                className="hidden"
+                                                onChange={(e) => handleFileChange(e.target.files ? e.target.files[0] : null)}
+                                              />
+                                              {fileName ? (
+                                                <div className="text-center p-4">
+                                                  <p className="font-medium text-sm truncate">{fileName}</p>
+                                                  <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="absolute top-1 right-1 h-6 w-6 text-destructive hover:bg-destructive/20"
+                                                    onClick={(e) => { e.stopPropagation(); handleFileChange(null); }}
+                                                  >
+                                                    <X className="h-4 w-4" />
+                                                  </Button>
+                                                </div>
+                                              ) : (
+                                                <div className="flex flex-col items-center justify-center text-center">
+                                                  <UploadCloud className="w-8 h-8 mb-2 text-white/70"/>
+                                                  <p className="text-sm font-semibold text-white/90">
+                                                    <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файл
+                                                  </p>
+                                                  <p className="text-xs text-white/50">SVG, PNG, JPG, PDF и т.д.</p>
+                                                </div>
+                                              )}
+                                            </div>
                                             <p className="text-xs text-gray-400">Максимальный размер файла: 10 МБ.</p>
                                             <p className="text-xs text-gray-400">Допустимые типы: JPG, PNG, WEBP, PDF, DOC, DOCX.</p>
                                         </div>
