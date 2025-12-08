@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -21,17 +22,17 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
 
   const values = [
     { 
-      icon: <Award className="h-8 w-8 text-primary" />, 
+      icon: <Award className="h-8 w-8 text-white" />, 
       title: "Качество", 
       description: "Мы стремимся к совершенству в каждой детали, от выбора материалов до финального продукта." 
     },
     { 
-      icon: <Users className="h-8 w-8 text-primary" />, 
+      icon: <Users className="h-8 w-8 text-white" />, 
       title: "Клиенты", 
       description: "Наши клиенты — наш главный приоритет. Мы строим долгосрочные и доверительные отношения." 
     },
     { 
-      icon: <Target className="h-8 w-8 text-primary" />, 
+      icon: <Target className="h-8 w-8 text-white" />, 
       title: "Инновации", 
       description: "Мы постоянно ищем и внедряем новые технологии для достижения наилучших результатов." 
     },
