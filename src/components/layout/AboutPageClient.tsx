@@ -51,10 +51,10 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
       <Card className="bg-black/30 border-white/20 backdrop-blur-sm mb-12 md:mb-16">
         <div className="grid md:grid-cols-2 items-center">
           <div className="p-6 md:p-8 order-2 md:order-1">
-            <h2 className="font-headline text-3xl font-semibold mb-4">{aboutData.history_title}</h2>
+            <h2 className="font-headline text-3xl font-semibold mb-4 text-white">{aboutData.history_title}</h2>
             <p className="text-white/80 leading-relaxed mb-8">{aboutData.history_p1}</p>
             
-            <h2 className="font-headline text-3xl font-semibold mb-4">{aboutData.mission_title}</h2>
+            <h2 className="font-headline text-3xl font-semibold mb-4 text-white">{aboutData.mission_title}</h2>
             <p className="text-white/80 leading-relaxed">{aboutData.mission_description}</p>
           </div>
           <div className="relative h-64 md:h-full w-full order-1 md:order-2">
@@ -73,7 +73,7 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
 
       {/* Values Section */}
       <div className="text-center mb-12">
-        <h2 className="font-headline text-4xl md:text-5xl font-bold">{aboutData.values_title}</h2>
+        <h2 className="font-headline text-4xl md:text-5xl font-bold text-white">{aboutData.values_title}</h2>
         <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-white/80">{aboutData.values_description}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -83,7 +83,7 @@ export default function AboutPageClient({ aboutData }: AboutPageClientProps) {
               <div className="flex justify-center items-center h-16 w-16 bg-white/10 rounded-full mb-4">
                 {value.icon}
               </div>
-              <CardTitle className="font-headline text-2xl">{value.title}</CardTitle>
+              <CardTitle className="font-headline text-2xl text-white">{value.title}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 mt-4">
               <p className="text-white/80">{value.description}</p>
