@@ -241,6 +241,7 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
                                             <label htmlFor="file" className="font-medium text-gray-200">Прикрепить файл</label>
                                             <Input id="file" name="file" type="file" ref={fileInputRef} className="bg-white/5 border-white/20 placeholder:text-white/50 text-white file:text-white" />
                                             <p className="text-xs text-gray-400">Максимальный размер файла: 10 МБ.</p>
+                                            <p className="text-xs text-gray-400">Допустимые типы: JPG, PNG, WEBP, PDF, DOC, DOCX.</p>
                                         </div>
                                     </div>
 
@@ -261,3 +262,5 @@ export default function ContactPageClient({ contactData }: ContactPageClientProp
     </div>
   );
 }
+
+    
