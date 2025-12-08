@@ -51,7 +51,7 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
     <>
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
         
-        <aside className="hidden md:block md:col-span-1 lg:col-span-1 px-4 md:px-0 sticky top-0 self-start h-screen overflow-y-auto pt-8">
+        <aside className="hidden md:flex flex-col md:col-span-1 lg:col-span-1 px-4 md:px-0 sticky top-20 self-start">
           {contactData && <Sidebar contactData={contactData} />}
         </aside>
 

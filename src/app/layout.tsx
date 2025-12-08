@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased h-screen w-screen overflow-hidden">
+      <body className="font-body antialiased">
         <FirebaseAnalyticsProvider>
           <RecaptchaProvider>
             {backgroundUrl && (
@@ -61,10 +61,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               />
             )}
             {/* СТРУКТУРА "КАБИНЫ" */}
-            <div className="h-full w-full flex flex-col relative z-10">
+            <div className="min-h-screen w-full flex flex-col relative z-10">
               <Header isAuthenticated={!!user} userRole={userRole} />
               {/* ОСНОВНАЯ ОБЛАСТЬ С ПРОКРУТКОЙ */}
-              <main className="flex-grow overflow-y-auto">
+              <main className="flex-grow">
                 {children}
               </main>
             </div>
