@@ -85,9 +85,9 @@ export async function submitContactForm(prevState: ContactFormState, formData: F
     }
     
     // Server-side type check for security
-    // if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
-    //   return { message: 'Недопустимый тип файла.', status: 'error' };
-    // }
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      return { message: 'Недопустимый тип файла.', status: 'error' };
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     attachments = [{ filename: file.name, content: buffer }];
