@@ -126,13 +126,13 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
                                                 <div key={newsItem.id} className="p-3 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
                                                     {/* We will wrap this in a Link later */}
                                                     <div className="cursor-pointer">
-                                                      <div className="flex justify-between items-baseline">
-                                                        <p className="font-semibold text-sm">{newsItem.title}</p>
+                                                      <div className="flex justify-between items-baseline gap-4">
+                                                        <p className="font-semibold text-base">{newsItem.title}</p>
                                                         {newsItem.published_at && (
-                                                            <p className="text-xs text-white/50">{formatNewsDate(newsItem.published_at)}</p>
+                                                            <p className="text-sm text-white/50 flex-shrink-0">{formatNewsDate(newsItem.published_at)}</p>
                                                         )}
                                                       </div>
-                                                      <p className="text-xs text-white/70 mt-1">{newsItem.excerpt}</p>
+                                                      <p className="text-sm text-white/70 mt-1">{newsItem.excerpt}</p>
                                                     </div>
                                                 </div>
                                             ))
