@@ -20,7 +20,8 @@ import { ScrollArea } from '../ui/scroll-area';
 import { getFullProductDetails } from '@/app/catalog/actions';
 import { Footer } from '@/components/layout/Footer';
 import type { News } from '@/lib/news-data';
-import { formatNewsDate } from '@/lib/news-data';
+import { formatNewsDate, getNewsBySlug } from '@/lib/news-data';
+import NewsDetailModal from '../news/NewsDetailModal';
 
 interface HomePageClientProps {
   homePageData: HomePageData;
@@ -33,6 +34,7 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
   const { addToCart } = useCartStore();
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedNews, setSelectedNews] = useState<News | null>(null);
 
   useEffect(() => {
     getContactPageData().then(setContactData);
@@ -46,10 +48,17 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
     });
   };
 
-  const handleCardClick = async (product: Product) => {
+  const handleProductCardClick = async (product: Product) => {
     const fullProduct = await getFullProductDetails(product.id);
     setSelectedProduct(fullProduct || product);
   };
+  
+  const handleNewsClick = async (slug: string | undefined) => {
+    if (!slug) return;
+    const newsItem = await getNewsBySlug(slug);
+    setSelectedNews(newsItem);
+  };
+
 
   return (
     <>
@@ -93,7 +102,7 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
                                       <ProductCarouselCard 
                                         product={product} 
                                         onAddToCart={handleAddToCart}
-                                        onClick={() => handleCardClick(product)}
+                                        onClick={() => handleProductCardClick(product)}
                                       />
                                   </CarouselItem>
                                   ))}
@@ -123,16 +132,14 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
                                       <div className="p-4 space-y-4">
                                           {recentNews && recentNews.length > 0 ? (
                                             recentNews.map((newsItem) => (
-                                                <div key={newsItem.id} className="p-3 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
-                                                    <Link href={`/news/${newsItem.slug}`} className="cursor-pointer">
-                                                      <div className="flex justify-between items-baseline gap-4">
-                                                        <p className="font-semibold text-lg">{newsItem.title}</p>
-                                                        {newsItem.published_at && (
-                                                            <p className="text-lg text-white/50 flex-shrink-0">{formatNewsDate(newsItem.published_at)}</p>
-                                                        )}
-                                                      </div>
-                                                      <p className="text-lg text-white/70 mt-1">{newsItem.excerpt}</p>
-                                                    </Link>
+                                                <div key={newsItem.id} className="p-3 bg-white/5 rounded-md hover:bg-white/10 transition-colors cursor-pointer" onClick={() => handleNewsClick(newsItem.slug)}>
+                                                    <div className="flex justify-between items-baseline gap-4">
+                                                      <p className="font-semibold text-lg">{newsItem.title}</p>
+                                                      {newsItem.published_at && (
+                                                          <p className="text-lg text-white/50 flex-shrink-0">{formatNewsDate(newsItem.published_at)}</p>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-lg text-white/70 mt-1">{newsItem.excerpt}</p>
                                                 </div>
                                             ))
                                           ) : (
@@ -160,6 +167,11 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
+      />
+      <NewsDetailModal 
+        newsItem={selectedNews}
+        isOpen={!!selectedNews}
+        onClose={() => setSelectedNews(null)}
       />
     </>
   );
