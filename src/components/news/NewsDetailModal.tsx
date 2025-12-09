@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Image from 'next/image';
 import { Calendar } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { marked } from 'marked';
 
 interface NewsDetailModalProps {
   newsItem: News | null;
@@ -16,6 +17,12 @@ interface NewsDetailModalProps {
 
 export default function NewsDetailModal({ newsItem, isOpen, onClose }: NewsDetailModalProps) {
   if (!newsItem) return null;
+
+  const getHtmlContent = () => {
+    if (!newsItem.content) return { __html: '' };
+    const html = marked(newsItem.content);
+    return { __html: html as string };
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -47,7 +54,7 @@ export default function NewsDetailModal({ newsItem, isOpen, onClose }: NewsDetai
             )}
             <div
               className="prose dark:prose-invert max-w-none text-base"
-              dangerouslySetInnerHTML={{ __html: newsItem.content }}
+              dangerouslySetInnerHTML={getHtmlContent()}
             />
           </div>
         </ScrollArea>
