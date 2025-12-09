@@ -38,6 +38,10 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
     getContactPageData().then(setContactData);
   }, []);
 
+  useEffect(() => {
+    console.log('Количество загруженных новостей:', recentNews.length);
+  }, [recentNews]);
+
   const handleAddToCart = (product: Product) => {
     addToCart(product);
     toast({
