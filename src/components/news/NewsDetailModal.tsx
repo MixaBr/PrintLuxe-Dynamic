@@ -27,7 +27,7 @@ export default function NewsDetailModal({ newsItem, isOpen, onClose }: NewsDetai
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className='p-6 pb-2'>
+        <DialogHeader className='p-6 pb-2 flex-shrink-0'>
           <DialogTitle className="font-headline text-2xl lg:text-3xl">{newsItem.title}</DialogTitle>
           {newsItem.published_at && (
             <DialogDescription className="flex items-center gap-2 text-muted-foreground pt-2">
@@ -38,7 +38,7 @@ export default function NewsDetailModal({ newsItem, isOpen, onClose }: NewsDetai
             </DialogDescription>
           )}
         </DialogHeader>
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-grow min-h-0">
           <div className="px-6 pb-6">
             {newsItem.featured_image_url && (
               <div className="relative w-full h-64 md:h-80 my-4 rounded-lg overflow-hidden">
@@ -53,7 +53,7 @@ export default function NewsDetailModal({ newsItem, isOpen, onClose }: NewsDetai
               </div>
             )}
             <div
-              className="prose dark:prose-invert max-w-none text-base"
+              className="prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={getHtmlContent()}
             />
           </div>
