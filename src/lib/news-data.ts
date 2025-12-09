@@ -20,7 +20,7 @@ export interface News {
  * @param limit The number of news articles to fetch.
  * @returns A promise that resolves to an array of news articles.
  */
-export async function getRecentNews(limit: number = 5): Promise<News[]> {
+export async function getRecentNews(limit: number = 10): Promise<News[]> {
   const { data, error } = await supabase
     .from('news')
     .select('*')
@@ -35,6 +35,28 @@ export async function getRecentNews(limit: number = 5): Promise<News[]> {
 
   return data;
 }
+
+/**
+ * Fetches a single news article by its slug.
+ * @param slug The slug of the news article to fetch.
+ * @returns A promise that resolves to a single news article or null if not found.
+ */
+export async function getNewsBySlug(slug: string): Promise<News | null> {
+    const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .single();
+
+    if (error) {
+        console.error(`Error fetching news by slug "${slug}":`, error);
+        return null;
+    }
+
+    return data;
+}
+
 
 /**
  * Formats a date string into a more readable format.

@@ -124,8 +124,7 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
                                           {recentNews && recentNews.length > 0 ? (
                                             recentNews.map((newsItem) => (
                                                 <div key={newsItem.id} className="p-3 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
-                                                    {/* We will wrap this in a Link later */}
-                                                    <div className="cursor-pointer">
+                                                    <Link href={`/news/${newsItem.slug}`} className="cursor-pointer">
                                                       <div className="flex justify-between items-baseline gap-4">
                                                         <p className="font-semibold text-lg">{newsItem.title}</p>
                                                         {newsItem.published_at && (
@@ -133,7 +132,7 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
                                                         )}
                                                       </div>
                                                       <p className="text-lg text-white/70 mt-1">{newsItem.excerpt}</p>
-                                                    </div>
+                                                    </Link>
                                                 </div>
                                             ))
                                           ) : (
