@@ -97,12 +97,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--card)); /* White background for the track */
+  background: hsl(var(--background)); /* Changed from --card */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted-foreground)); /* Grey for the thumb */
+  background-color: hsl(var(--muted-foreground));
   border-radius: 10px;
-  border: 3px solid hsl(var(--card)); /* Padding around thumb */
+  border: 3px solid hsl(var(--background)); /* Changed from --card */
 }
