@@ -116,10 +116,10 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
 
                     <div className="pt-8">
                       <h2 className="text-2xl font-bold font-headline text-white text-center">Новости</h2>
-                      <div className="mt-4">
+                       <div className="mt-4">
                           <Card className="bg-black/20 border border-white/10 text-white">
                               <CardContent className="p-0">
-                                  <ScrollArea className="max-h-96">
+                                  <ScrollArea className="h-auto max-h-[22rem]">
                                       <div className="p-4 space-y-4">
                                           {recentNews && recentNews.length > 0 ? (
                                             recentNews.map((newsItem) => (

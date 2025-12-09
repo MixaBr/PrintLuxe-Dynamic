@@ -1,5 +1,4 @@
 
-import { createClient } from './supabase/server';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { supabase } from './supabaseClient';
