@@ -15,16 +15,16 @@ export function Sidebar({ contactData }: SidebarProps) {
   return (
     <div className="w-full bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-white mt-auto">
           <h3 className="text-lg font-bold mb-4 flex-shrink-0">Контакты</h3>
-          <div className="space-y-3 text-base overflow-y-auto">
+          <div className="space-y-3 text-lg overflow-y-auto">
             {contactData.address && (
                 <div className="flex items-start gap-3">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
                     <span>{contactData.address}</span>
                 </div>
             )}
             {(contactData.phone_1 || contactData.phone_2) && (
                 <div className="flex items-start gap-3">
-                    <Phone className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <Phone className="h-4 w-4 mt-1 flex-shrink-0" />
                     <div className="flex flex-col">
                         {contactData.phone_1 && <span>{contactData.phone_1}</span>}
                         {contactData.phone_2 && <span>{contactData.phone_2}</span>}
@@ -33,7 +33,7 @@ export function Sidebar({ contactData }: SidebarProps) {
             )}
             {contactData.email_main && (
                 <div className="flex items-start gap-3">
-                    <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <Mail className="h-4 w-4 mt-1 flex-shrink-0" />
                     <a href={`mailto:${contactData.email_main}`} className="break-all hover:underline">{contactData.email_main}</a>
                 </div>
             )}
@@ -42,7 +42,7 @@ export function Sidebar({ contactData }: SidebarProps) {
                   <svg
                     viewBox="0 0 50.8 50.8"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mt-0.5 flex-shrink-0"
+                    className="h-4 w-4 mt-1 flex-shrink-0"
                     fill="currentColor"
                     >
                     <path
@@ -77,7 +77,7 @@ export function Sidebar({ contactData }: SidebarProps) {
             )}
             {contactData.working_hours && (
                 <div className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <Clock className="h-4 w-4 mt-1 flex-shrink-0" />
                     <div className='whitespace-pre-wrap'>{contactData.working_hours}</div>
                 </div>
             )}
