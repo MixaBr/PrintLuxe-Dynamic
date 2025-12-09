@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { News } from '@/lib/news-data';
