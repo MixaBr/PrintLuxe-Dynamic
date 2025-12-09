@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,13 +19,16 @@ import { Card, CardContent } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { getFullProductDetails } from '@/app/catalog/actions';
 import { Footer } from '@/components/layout/Footer';
+import type { News } from '@/lib/news-data';
+import { formatNewsDate } from '@/lib/news-data';
 
 interface HomePageClientProps {
   homePageData: HomePageData;
   featuredProducts: Product[];
+  recentNews: News[];
 }
 
-export default function HomePageClient({ homePageData, featuredProducts }: HomePageClientProps) {
+export default function HomePageClient({ homePageData, featuredProducts, recentNews }: HomePageClientProps) {
   const [contactData, setContactData] = useState<Awaited<ReturnType<typeof getContactPageData>> | null>(null);
   const { addToCart } = useCartStore();
   const { toast } = useToast();
@@ -117,12 +121,26 @@ export default function HomePageClient({ homePageData, featuredProducts }: HomeP
                               <CardContent className="p-0 h-full">
                                   <ScrollArea className="h-full">
                                       <div className="p-4 space-y-4">
-                                          {[...Array(10)].map((_, i) => (
-                                              <div key={i} className="p-3 bg-white/5 rounded-md">
-                                                  <p className="font-semibold text-sm">Новость #{i + 1}</p>
-                                                  <p className="text-xs text-white/70">Краткое описание для новости, которое может занимать пару строк.</p>
-                                              </div>
-                                          ))}
+                                          {recentNews && recentNews.length > 0 ? (
+                                            recentNews.map((newsItem) => (
+                                                <div key={newsItem.id} className="p-3 bg-white/5 rounded-md hover:bg-white/10 transition-colors">
+                                                    {/* We will wrap this in a Link later */}
+                                                    <div className="cursor-pointer">
+                                                      <div className="flex justify-between items-baseline">
+                                                        <p className="font-semibold text-sm">{newsItem.title}</p>
+                                                        {newsItem.published_at && (
+                                                            <p className="text-xs text-white/50">{formatNewsDate(newsItem.published_at)}</p>
+                                                        )}
+                                                      </div>
+                                                      <p className="text-xs text-white/70 mt-1">{newsItem.excerpt}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                          ) : (
+                                            <div className="flex items-center justify-center h-full p-8">
+                                              <p className="text-white/50">Пока нет новостей.</p>
+                                            </div>
+                                          )}
                                       </div>
                                   </ScrollArea>
                               </CardContent>

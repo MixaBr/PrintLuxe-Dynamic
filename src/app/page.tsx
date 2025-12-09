@@ -1,8 +1,10 @@
 
+
 import HomePageClient from '@/components/layout/HomePageClient';
 import { getHomePageData } from '@/lib/slide-data';
 import { getFeaturedProducts } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
+import { getRecentNews } from '@/lib/news-data';
 
 export default async function Home() {
   const supabase = createClient();
@@ -11,6 +13,7 @@ export default async function Home() {
 
   // Fetch page structure and featured product IDs
   const homePageData = await getHomePageData();
+  const recentNews = await getRecentNews(10);
 
   // Fetch the actual product data based on the IDs,
   // providing the auth status so the server can prepare the correct price.
@@ -20,5 +23,5 @@ export default async function Home() {
   const featuredProducts = featuredProductsData.map(p => ({ ...p, description: p.name }));
 
 
-  return <HomePageClient homePageData={homePageData} featuredProducts={featuredProducts} />;
+  return <HomePageClient homePageData={homePageData} featuredProducts={featuredProducts} recentNews={recentNews} />;
 }
