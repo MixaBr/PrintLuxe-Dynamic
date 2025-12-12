@@ -37,7 +37,7 @@ export function Header({ isAuthenticated, userRole, runningLineText }: HeaderPro
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-sm">
-      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-4">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-2">
         
         <DropdownMenu open={isOpen} onOpenChange={toggleSidebar}>
           <DropdownMenuTrigger asChild>
@@ -58,7 +58,7 @@ export function Header({ isAuthenticated, userRole, runningLineText }: HeaderPro
 
         {/* Running Line */}
         {runningLineText && (
-          <div className="hidden md:flex flex-1 items-center h-10 rounded-md bg-white/20 border border-white/30 overflow-hidden">
+          <div className="flex flex-1 items-center h-10 rounded-md bg-white/20 border border-white/30 overflow-hidden mx-2">
             <div className="relative flex w-full h-full items-center">
               <div className="absolute flex items-center whitespace-nowrap animate-marquee">
                 <span className="mx-8 text-white/90 text-sm font-medium">{runningLineText}</span>
