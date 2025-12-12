@@ -27,3 +27,23 @@ export async function getPageLastModified(keyPrefix: string): Promise<Date> {
 
   return new Date(data.updated_at);
 }
+
+/**
+ * Fetches the text for the running line from the 'settings' table.
+ * @returns A promise that resolves to the text string or null.
+ */
+export async function getRunningLineText(): Promise<string | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'running_line_text')
+    .single();
+
+  if (error) {
+    console.error('Error fetching running line text:', error);
+    return null;
+  }
+
+  return data?.value || null;
+}

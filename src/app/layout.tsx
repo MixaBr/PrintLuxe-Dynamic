@@ -7,6 +7,7 @@ import { getAppBackground } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { FirebaseAnalyticsProvider } from '@/components/providers/FirebaseAnalyticsProvider';
 import { RecaptchaProvider } from '@/components/providers/RecaptchaProvider';
+import { getRunningLineText } from '@/lib/settings-data';
 
 export const metadata: Metadata = {
   title: 'PrintLux | Ремонт принтеров, запасные части и расходные материалы EPSON в Минске',
@@ -36,6 +37,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       .single();
     userRole = roleData?.role || 'buyer';
   }
+  
+  const runningLineText = await getRunningLineText();
 
   return (
     <html lang="ru">
@@ -46,6 +49,20 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee {
+            animation: marquee 30s linear infinite;
+          }
+          @media (min-width: 768px) {
+            .animate-marquee {
+              animation-duration: 60s; /* Slower on larger screens */
+            }
+          }
+        `}</style>
       </head>
       <body className="font-body antialiased">
         <FirebaseAnalyticsProvider>
@@ -62,7 +79,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             )}
             {/* СТРУКТУРА "КАБИНЫ" */}
             <div className="min-h-screen w-full flex flex-col relative z-10">
-              <Header isAuthenticated={!!user} userRole={userRole} />
+              <Header isAuthenticated={!!user} userRole={userRole} runningLineText={runningLineText} />
               {/* ОСНОВНАЯ ОБЛАСТЬ С ПРОКРУТКОЙ */}
               <main className="flex-grow">
                 {children}

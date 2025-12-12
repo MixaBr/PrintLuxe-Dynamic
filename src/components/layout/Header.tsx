@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, ShoppingCart, User, Briefcase, Search } from 'lucide-react';
+import { Menu, ShoppingCart, User, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -13,31 +13,16 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { useCartStore } from '@/hooks/use-cart-store';
-import { Input } from '../ui/input';
-import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { SidebarNav } from './SidebarNav';
 
+interface HeaderProps {
+  isAuthenticated: boolean;
+  userRole: string | null;
+  runningLineText: string | null;
+}
 
-type NavLinkItem = {
-  href: string;
-  label: string;
-};
-
-const baseLinks: NavLinkItem[] = [
-  { href: '/', label: 'Главная' },
-  { href: '/catalog', label: 'Каталог' },
-  { href: '/about', label: 'О нас' },
-  { href: '/contact', label: 'Контакты' },
-];
-
-const managerLink: NavLinkItem = { href: '/manager', label: 'Панель менеджера' };
-const adminLink: NavLinkItem = { href: '/admin', label: 'Панель админа' };
-
-
-export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean, userRole: string | null }) {
-  const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
+export function Header({ isAuthenticated, userRole, runningLineText }: HeaderProps) {
   const { isOpen, toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
   
   const [isMounted, setIsMounted] = useState(false);
@@ -49,30 +34,6 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   const showDropdown = userRole === 'admin' || userRole === 'manager';
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const cleanedSearchTerm = searchTerm.trim().toLowerCase();
-    if (!cleanedSearchTerm) return;
-  
-    const availablePages: { [key: string]: string } = {
-        'главная': '/',
-        'каталог': '/catalog',
-        'о нас': '/about',
-        'контакты': '/contact',
-    };
-  
-    const foundPageKey = Object.keys(availablePages).find(key => cleanedSearchTerm.includes(key));
-
-    if (foundPageKey) {
-        const targetPage = availablePages[foundPageKey];
-        router.push(targetPage);
-    } else {
-        console.log(`Страница по запросу "${searchTerm}" не найдена.`);
-    }
-
-    closeSidebar();
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-sm">
@@ -95,21 +56,17 @@ export function Header({ isAuthenticated, userRole }: { isAuthenticated: boolean
           </DropdownMenuContent>
         </DropdownMenu>
 
-
-        {/* Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-lg">
-            <form onSubmit={handleSearch} className="w-full relative">
-                <Input 
-                    placeholder="Поиск по приложению..."
-                    className="h-10 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white hover:bg-white/30">
-                    <Search className="h-5 w-5"/>
-                </Button>
-            </form>
-        </div>
+        {/* Running Line */}
+        {runningLineText && (
+          <div className="hidden md:flex flex-1 items-center h-10 rounded-md bg-white/20 border border-white/30 overflow-hidden">
+            <div className="relative flex w-full h-full items-center">
+              <div className="absolute flex items-center whitespace-nowrap animate-marquee">
+                <span className="mx-8 text-white/90 text-sm font-medium">{runningLineText}</span>
+                <span className="mx-8 text-white/90 text-sm font-medium">{runningLineText}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Icons (Right) */}
         <div className="flex items-center justify-self-end gap-1 sm:gap-2">
