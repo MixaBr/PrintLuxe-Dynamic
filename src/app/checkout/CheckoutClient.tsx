@@ -17,6 +17,7 @@ import { Loader2, Package, ShoppingCart, User, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Address } from '@/lib/definitions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import InputMask from 'react-input-mask';
 
 interface CheckoutClientProps {
   user: {
@@ -34,6 +35,7 @@ interface CheckoutClientProps {
 const initialState = {
   status: 'error' as 'error' | 'success',
   message: '',
+  orderId: undefined
 };
 
 function SubmitButton() {
@@ -73,7 +75,7 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <form action={formAction} className="lg:col-span-2 space-y-6">
-          <input type="hidden" name="cart_items" value={JSON.stringify(items.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price })))} />
+          <input type="hidden" name="cart_items" value={JSON.stringify(items.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, name: i.name })))} />
           {/* Add more hidden fields for metadata */}
           
           <Card>
@@ -95,7 +97,15 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="phone">Телефон</Label>
-                <Input id="phone" name="phone" type="tel" defaultValue={user?.profile?.phone || ''} required />
+                 <InputMask
+                  mask="+ (999) 99-999-99-99"
+                  defaultValue={user?.profile?.phone || ''}
+                  name="phone"
+                  required
+                >
+                  {/* @ts-ignore */}
+                  {(inputProps: any) => <Input {...inputProps} type="tel" id="phone" placeholder="+ (___) __-___-__-__" />}
+                </InputMask>
               </div>
             </CardContent>
           </Card>
@@ -215,4 +225,3 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
     </div>
   );
 }
-

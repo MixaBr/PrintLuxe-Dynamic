@@ -50,6 +50,11 @@ export async function processOrder(
   const supabase = createClient();
   const rawData = Object.fromEntries(formData.entries());
 
+  // Clean the phone number from mask characters before validation
+  if (typeof rawData.phone === 'string') {
+    rawData.phone = rawData.phone.replace(/[^\d]/g, '');
+  }
+
   const validatedFields = formSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -69,7 +74,7 @@ export async function processOrder(
       errors: { street: ['Улица обязательна для доставки'] },
     };
   }
-
+  let newOrderId: number;
   // Use a database function (RPC) to handle the transaction
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -124,7 +129,7 @@ export async function processOrder(
       return { status: 'error', message: `Ошибка при создании заказа: ${rpcError.message}` };
     }
 
-    const newOrderId = orderData;
+    newOrderId = orderData;
     
     // Send email notifications
     const orderDetailsForEmail = cartItems.map((item: any) => `<li>${item.name} (x${item.quantity}) - ${(item.price * item.quantity).toFixed(2)} BYN</li>`).join('');
@@ -172,5 +177,5 @@ export async function processOrder(
   
   // On success, redirect to a thank you page
   // The redirection will be handled on the client-side based on the returned state.
-  return { status: 'success', message: 'Заказ успешно оформлен!', orderId: (await supabase.rpc('create_order_and_details')).data };
+  return { status: 'success', message: 'Заказ успешно оформлен!', orderId: newOrderId };
 }
