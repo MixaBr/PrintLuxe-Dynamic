@@ -58,6 +58,10 @@ export async function processOrder(
   const validatedFields = formSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
+    // --- START DIAGNOSTIC LOGGING ---
+    console.log("Validation failed. Raw data:", rawData);
+    console.log("Validation errors:", validatedFields.error.flatten().fieldErrors);
+    // --- END DIAGNOSTIC LOGGING ---
     return {
       status: 'error',
       message: 'Пожалуйста, проверьте правильность введенных данных.',
