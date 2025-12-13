@@ -150,7 +150,9 @@ export default function CartPage() {
                                 <span className="text-muted-foreground">Итого:</span>
                                 <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
                             </div>
-                            <Button size="lg" className="font-bold">Оформить заказ</Button>
+                            <Button asChild size="lg" className="font-bold">
+                               <Link href="/checkout">Оформить заказ</Link>
+                            </Button>
                         </div>
                     </div>
 
@@ -161,7 +163,9 @@ export default function CartPage() {
                                 <Link href="/catalog">Продолжить покупки</Link>
                             </Button>
                         </div>
-                        <Button size="lg" className="font-bold w-full">Оформить заказ</Button>
+                        <Button asChild size="lg" className="font-bold w-full">
+                           <Link href="/checkout">Оформить заказ</Link>
+                        </Button>
                     </div>
                 </div>
             </div>
