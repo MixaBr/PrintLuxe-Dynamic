@@ -50,7 +50,7 @@ export default function CartPage() {
                             <Card key={item.id} className="overflow-hidden">
                             <CardContent className="p-4 flex gap-4">
                                 <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
-                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill sizes="96px" className="object-cover" />
                                 </div>
                                 <div className="flex-grow flex flex-col">
                                 <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
@@ -103,7 +103,7 @@ export default function CartPage() {
                                     <TableRow key={item.id}>
                                         <TableCell className="w-24 py-2">
                                             <div className="relative h-14 w-14 rounded-md overflow-hidden">
-                                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill className="object-cover" />
+                                                <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill sizes="56px" className="object-cover" />
                                             </div>
                                         </TableCell>
                                         <TableCell className="font-medium py-2">{item.name}</TableCell>

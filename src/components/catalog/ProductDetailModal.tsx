@@ -185,7 +185,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
                 src={lightboxImage}
                 alt={`Увеличенное изображение ${product.name}`}
                 fill
-                sizes="calc(100vw - 48px)"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-contain"
             />
           )}
