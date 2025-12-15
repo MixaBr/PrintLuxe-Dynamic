@@ -72,3 +72,6 @@ env:
   - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     secret: GOOGLE_MAPS_API_KEY
     availability: [BUILD, RUNTIME]
+  - variable: TELEGRAM_BOT_TOKEN
+    secret: TELEGRAM_BOT_TOKEN
+    availability: [BUILD, RUNTIME]
