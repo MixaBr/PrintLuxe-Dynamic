@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runAssistant } from '@/ai/flows/assistant-flow';
 
-const TELEGRAM_TOKEN = "7248210692:AAFOuF4tyXAtLciy60rmDqIvp7djWgKa5tw";
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
 async function sendMessage(chatId: number, text: string) {
