@@ -24,7 +24,7 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
       {
-        protocol: 'https' ,
+        protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
@@ -51,6 +51,7 @@ const nextConfig = {
     config.externals.push('require-in-the-middle');
     // Genkit tools may have this as a peer dependency.
     config.externals.push('firebase-functions');
+    config.externals.push('node-fetch');
     return config;
   },
 
