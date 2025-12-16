@@ -51,8 +51,13 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, 'Здравствуйте! Я PrintLux Helper, ваш AI-ассистент по ремонту принтеров. Чем могу помочь?');
         return NextResponse.json({ status: 'ok' });
       }
+      
+      // Временно отвечаем стандартным сообщением для проверки
+      const responseMessage = "Сервер получил ваше сообщение. Ответ от сервера.";
+      await sendMessage(chatId, responseMessage);
 
-      // Для всех остальных сообщений используем AI
+      // Для всех остальных сообщений используем AI (закомментировано)
+      /*
       console.log('Sending to AI for processing...');
       await fetch(`${TELEGRAM_API_URL}/sendChatAction`, {
         method: 'POST',
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
       const assistantResponse = await runAssistant({ query: userText });
       console.log('AI Response:', assistantResponse.response);
       await sendMessage(chatId, assistantResponse.response);
+      */
     } else {
         console.log('No message found in body');
     }
