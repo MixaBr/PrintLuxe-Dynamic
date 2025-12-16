@@ -1,7 +1,13 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // If the request is for the telegram webhook, pass it through without any session checks.
+  if (request.nextUrl.pathname.startsWith('/api/telegram')) {
+    return NextResponse.next()
+  }
+
+  // For all other requests, run the session update logic.
   return await updateSession(request)
 }
 
