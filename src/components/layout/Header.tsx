@@ -19,7 +19,7 @@ import { SidebarNav } from './SidebarNav';
 interface HeaderProps {
   isAuthenticated: boolean;
   userRole: string | null;
-  runningLineText: string | null;
+  runningLineText: string | { error: string } | null;
 }
 
 export function Header({ isAuthenticated, userRole, runningLineText }: HeaderProps) {
@@ -57,7 +57,7 @@ export function Header({ isAuthenticated, userRole, runningLineText }: HeaderPro
         </DropdownMenu>
 
         {/* Running Line */}
-        {runningLineText && (
+        {runningLineText && typeof runningLineText === 'string' && (
           <div className="flex flex-1 items-center h-10 rounded-md bg-white/20 border border-white/30 overflow-hidden mx-2">
             <div className="relative flex w-full h-full items-center">
               <div className="absolute flex items-center whitespace-nowrap animate-marquee">

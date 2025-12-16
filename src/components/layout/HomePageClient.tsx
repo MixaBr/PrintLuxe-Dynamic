@@ -59,20 +59,27 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
     setSelectedNews(newsItem);
   };
 
+  const hasContactError = contactData && 'error' in contactData;
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
         
         <aside className="hidden md:flex flex-col md:col-span-1 lg:col-span-1 px-4 md:px-0 sticky top-20 self-start">
-          {contactData && <Sidebar contactData={contactData} />}
+          {hasContactError ? (
+            <div className="text-center text-white bg-red-500/20 p-4 rounded-lg">
+                <p className="text-sm">Ошибка загрузки контактов</p>
+            </div>
+          ) : (
+            contactData && <Sidebar contactData={contactData} />
+          )}
         </aside>
 
         <main className="md:col-span-3 lg:col-span-4 flex flex-col px-4 md:px-8 space-y-8 py-8">
             {homePageData?.error ? (
                 <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
-                    <p className="mt-2">{homePageData.error}</p>
+                    <p className="mt-2">{typeof homePageData.error === 'string' ? homePageData.error : JSON.stringify(homePageData.error)}</p>
                 </div>
             ) : (
                 <>

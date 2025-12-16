@@ -38,7 +38,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     userRole = roleData?.role || 'buyer';
   }
   
-  const runningLineText = await getRunningLineText();
+  let runningLineText: string | { error: string } | null = null;
+  try {
+    runningLineText = await getRunningLineText();
+  } catch (error) {
+    console.error('Error fetching running line text:', error);
+    runningLineText = { error: 'Failed to load running line text' };
+  }
+
 
   return (
     <html lang="ru">

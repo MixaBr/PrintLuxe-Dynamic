@@ -75,3 +75,6 @@ env:
   - variable: TELEGRAM_BOT_TOKEN
     secret: TELEGRAM_BOT_TOKEN
     availability: [BUILD, RUNTIME]
+  - variable: TELEGRAM_SECRET_TOKEN
+    secret: TELEGRAM_SECRET_TOKEN
+    availability: [BUILD, RUNTIME]

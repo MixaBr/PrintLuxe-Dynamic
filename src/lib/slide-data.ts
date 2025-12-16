@@ -16,7 +16,7 @@ export type Benefit = {
 
 export type HomePageData = {
   hero: { title: string; subtitle: string; };
-  featured: { title: string; subtitle: string; ids: number[]; }; // Changed from uuids: string[]
+  featured: { title: string; subtitle: string; ids: number[]; };
   services: { title: string; subtitle: string; list: Service[]; };
   benefits: { title: string; subtitle: string; list: Benefit[]; };
   error?: string; // Optional error field
@@ -25,7 +25,7 @@ export type HomePageData = {
 // Default data structure to be used in case of any error
 const defaultData: Omit<HomePageData, 'error'> = {
   hero: { title: 'Надежный сервис', subtitle: 'для вашей техники' },
-  featured: { title: 'Витрина популярных позиций каталога', subtitle: 'Всегда в наличии', ids: [] }, // Changed from uuids
+  featured: { title: 'Витрина популярных позиций каталога', subtitle: 'Всегда в наличии', ids: [] },
   services: { title: 'Что мы предлагаем', subtitle: 'Комплексный подход', list: [] },
   benefits: { title: 'Почему выбирают нас', subtitle: 'Гарантия качества', list: [] },
 };
@@ -66,6 +66,7 @@ export async function getHomePageData(): Promise<HomePageData> {
 
     if (error) {
       console.error('Error fetching home page settings from Supabase:', error);
+      // FIX: Return only the error message, not the whole object
       return { ...defaultData, error: `Ошибка базы данных: ${error.message}` };
     }
 
@@ -92,6 +93,7 @@ export async function getHomePageData(): Promise<HomePageData> {
     };
   } catch (e: any) {
       console.error('A critical error occurred in getHomePageData:', e);
+      // FIX: Return only the error message, not the whole object
       return { ...defaultData, error: `Критическая ошибка сервера: ${e.message}` };
   }
 }
