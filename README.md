@@ -10,3 +10,4 @@ To get started, take a look at src/app/page.tsx.
 # Forcing new commit to fix deployment
 # ппп03-12-25 08-12-2025 23^21 23:45 23-40 
 # 12-12-25 21^03 22
+#    curl "https://api.telegram.org/bot7248210692:AAFOuF4tyXAtLciy60rmDqIvp7djWgKa5tw/setWebhook?url=https://unrotative-unappreciated-diane.ngrok-free.dev/api/telegram"
