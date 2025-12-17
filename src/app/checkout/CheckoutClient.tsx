@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { processOrder } from './actions';
 import { refinedCheckoutFormSchema, CheckoutFormValues } from '@/lib/form-schema';
 import type { Address } from '@/lib/definitions';
+import { cn } from '@/lib/utils';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,8 +53,8 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
       last_name: user?.profile?.last_name || '',
       email: user?.email || '',
       phone: user?.profile?.phone || '',
-      delivery_method: 'Самовывоз', // Default to a valid enum value
-      payment_method: 'Наличный при получении', // Default to a valid enum value
+      delivery_method: 'Самовывоз',
+      payment_method: 'Наличный при получении',
       country: 'Беларусь',
       city: 'Минск',
       street: '',
@@ -68,6 +69,8 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
 
   const { formState: { isSubmitting }, control, watch, setValue } = form;
   const deliveryMethod = watch('delivery_method');
+  const cardClasses = "bg-black/50 text-white border-white/20 backdrop-blur-sm";
+  const inputClasses = "bg-white/10 border-white/20 text-white placeholder:text-white/50";
 
   useEffect(() => {
     if (formState.status === 'success' && formState.orderId) {
@@ -122,45 +125,48 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Оформление заказа</h1>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className={cardClasses}>
               <CardHeader><CardTitle className="flex items-center gap-2"><User />Контактная информация</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="first_name" render={({ field }) => (<FormItem><FormLabel>Имя</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="last_name" render={({ field }) => (<FormItem><FormLabel>Фамилия</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="phone" render={({ field }) => (<FormItem><FormLabel>Телефон</FormLabel><FormControl><Input type="tel" placeholder="+375 (XX) XXX-XX-XX" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="first_name" render={({ field }) => (<FormItem><FormLabel>Имя</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="last_name" render={({ field }) => (<FormItem><FormLabel>Фамилия</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="phone" render={({ field }) => (<FormItem><FormLabel>Телефон</FormLabel><FormControl><Input type="tel" placeholder="+375 (XX) XXX-XX-XX" {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className={cardClasses}>
               <CardHeader><CardTitle className="flex items-center gap-2"><Truck />Доставка и оплата</CardTitle></CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-                  <AccordionItem value="item-1">
+                  <AccordionItem value="item-1" className="border-b-white/20">
                     <AccordionTrigger>Шаг 1: Способ доставки</AccordionTrigger>
                     <AccordionContent>
                       <FormField control={control} name="delivery_method" render={({ field }) => (
                         <FormItem><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Самовывоз" /></FormControl><FormLabel>Самовывоз</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Курьером по городу" /></FormControl><FormLabel>Курьером по городу</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="СДЭК" /></FormControl><FormLabel>СДЭК</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Почта" /></FormControl><FormLabel>Почта</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Самовывоз" /></FormControl><FormLabel className="font-normal">Самовывоз</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Курьером по городу" /></FormControl><FormLabel className="font-normal">Курьером по городу</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="СДЭК" /></FormControl><FormLabel className="font-normal">СДЭК</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Почта" /></FormControl><FormLabel className="font-normal">Почта</FormLabel></FormItem>
                         </RadioGroup></FormControl><FormMessage /></FormItem>)} />
                     </AccordionContent>
                   </AccordionItem>
 
                   {deliveryMethod === 'Курьером по городу' && (
-                    <AccordionItem value="item-2">
+                    <AccordionItem value="item-2" className="border-b-white/20">
                       <AccordionTrigger>Шаг 2: Адрес доставки</AccordionTrigger>
                       <AccordionContent className="space-y-4">
                         {user && user.addresses.length > 0 && (
                             <div className="space-y-2">
                                 <Label>Выбор адреса</Label>
                                 <Select onValueChange={handleAddressSelect} defaultValue="new">
-                                    <SelectTrigger><SelectValue placeholder="Выберите сохраненный адрес" /></SelectTrigger>
+                                    <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите сохраненный адрес" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="new">-- Ввести новый адрес --</SelectItem>
                                         {user.addresses.map(addr => (
@@ -173,35 +179,35 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={control} name="country" render={({ field }) => (<FormItem><FormLabel>Страна</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>Город</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="street" render={({ field }) => (<FormItem><FormLabel>Улица</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                             <FormField control={control} name="postal_code" render={({ field }) => (<FormItem><FormLabel>Индекс</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="building" render={({ field }) => (<FormItem><FormLabel>Дом</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="housing" render={({ field }) => (<FormItem><FormLabel>Корпус</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="apartment" render={({ field }) => (<FormItem><FormLabel>Квартира</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="country" render={({ field }) => (<FormItem><FormLabel>Страна</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>Город</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="street" render={({ field }) => (<FormItem><FormLabel>Улица</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={control} name="postal_code" render={({ field }) => (<FormItem><FormLabel>Индекс</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="building" render={({ field }) => (<FormItem><FormLabel>Дом</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="housing" render={({ field }) => (<FormItem><FormLabel>Корпус</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name="apartment" render={({ field }) => (<FormItem><FormLabel>Квартира</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
-                        <FormField control={control} name="address_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к адресу</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="address_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к адресу</FormLabel><FormControl><Textarea {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
                       </AccordionContent>
                     </AccordionItem>
                   )}
 
-                  <AccordionItem value="item-3">
+                  <AccordionItem value="item-3" className="border-b-white/20">
                     <AccordionTrigger>Шаг 3: Способ оплаты</AccordionTrigger>
                     <AccordionContent>
                       <FormField control={control} name="payment_method" render={({ field }) => (
                         <FormItem><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Наличный при получении" /></FormControl><FormLabel>Наличный при получении</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Картой при получении" /></FormControl><FormLabel>Картой при получении</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Оплата через ЕРИП" /></FormControl><FormLabel>Оплата через ЕРИП</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Наличный при получении" /></FormControl><FormLabel className="font-normal">Наличный при получении</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Картой при получении" /></FormControl><FormLabel className="font-normal">Картой при получении</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Оплата через ЕРИП" /></FormControl><FormLabel className="font-normal">Оплата через ЕРИП</FormLabel></FormItem>
                         </RadioGroup></FormControl><FormMessage /></FormItem>)} />
                     </AccordionContent>
                   </AccordionItem>
                   
-                  <AccordionItem value="item-4">
+                  <AccordionItem value="item-4" className="border-b-0">
                     <AccordionTrigger>Шаг 4: Комментарий к заказу</AccordionTrigger>
                     <AccordionContent>
-                      <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -212,7 +218,7 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
           </div>
 
           <div className="lg:col-span-1">
-            <Card className="sticky top-24">
+            <Card className={cn(cardClasses, "sticky top-24")}>
               <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart />Ваш заказ</CardTitle></CardHeader>
               <CardContent>
                 <ul className="space-y-4">
@@ -226,7 +232,7 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
                     </li>
                   ))}
                 </ul>
-                <hr className="my-4" />
+                <hr className="my-4 border-white/20" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Итого:</span>
                   <span>{total.toLocaleString('ru-RU')} BYN</span>
