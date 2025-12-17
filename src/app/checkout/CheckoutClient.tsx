@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/hooks/use-cart-store';
 import { useToast } from '@/hooks/use-toast';
 import { processOrder } from './actions';
-import { refinedCheckoutFormSchema, CheckoutFormValues } from '@/lib/form-schema';
+import { refinedCheckoutFormSchema, CheckoutFormValues, deliveryMethods, paymentMethods } from '@/lib/form-schema';
 import type { Address } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 
@@ -55,8 +55,8 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
       last_name: user?.profile?.last_name || '',
       email: user?.email || '',
       phone: user?.profile?.phone || '',
-      delivery_method: undefined, // Start with no selection
-      payment_method: 'Наличный при получении',
+      delivery_method: undefined, 
+      payment_method: undefined,
       country: 'Беларусь',
       city: 'Минск',
       street: '',
@@ -69,8 +69,9 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     },
   });
 
-  const { formState: { isSubmitting }, control, watch, setValue, trigger } = form;
+  const { formState: { isSubmitting }, control, watch, setValue } = form;
   const deliveryMethod = watch('delivery_method');
+  const paymentMethod = watch('payment_method');
   const cardClasses = "bg-black/50 text-white border-white/20 backdrop-blur-sm";
   const inputClasses = "bg-white/10 border-white/20 text-white placeholder:text-white/50";
 
@@ -104,6 +105,41 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     setValue('country', 'Беларусь');
   }, [deliveryMethod, setValue]);
 
+  // --- DEPENDENCY LOGIC ---
+  useEffect(() => {
+      if (deliveryMethod === 'Самовывоз') {
+          if (paymentMethod === 'Оплата через ЕРИП') {
+              setValue('payment_method', undefined);
+              toast({ variant: 'destructive', title: 'Способ оплаты сброшен', description: 'Оплата через ЕРИП недоступна для самовывоза. Пожалуйста, выберите другой способ.' });
+          }
+      }
+  }, [deliveryMethod, paymentMethod, setValue, toast]);
+
+  useEffect(() => {
+      if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
+          if (deliveryMethod && deliveryMethod !== 'Самовывоз') {
+              setValue('delivery_method', undefined);
+              toast({ variant: 'destructive', title: 'Способ доставки сброшен', description: 'Для выбранного способа оплаты доступен только самовывоз.' });
+          }
+      }
+  }, [paymentMethod, deliveryMethod, setValue, toast]);
+
+
+  const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
+      if (deliveryMethod === 'Самовывоз') {
+          return method === 'Оплата через ЕРИП';
+      }
+      return false;
+  };
+
+  const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
+      if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
+          return method !== 'Самовывоз';
+      }
+      return false;
+  };
+  // --- END OF DEPENDENCY LOGIC ---
+
   const handleSelectSavedAddress = () => {
       if (selectedSavedAddress) {
           setValue('street', selectedSavedAddress.street || '');
@@ -113,7 +149,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
           setValue('postal_code', selectedSavedAddress.postal_code || '');
           setValue('city', selectedSavedAddress.city || 'Минск');
           setValue('country', selectedSavedAddress.country || 'Беларусь');
-          setShowNewAddressForm(true); // Show form populated with data
+          setShowNewAddressForm(true); 
           toast({ title: "Адрес выбран", description: "Данные адреса подставлены в форму."});
       }
   };
@@ -141,7 +177,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
       );
     }
     
-    // Logic for other delivery methods
     const isDelivery = deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта';
     if (!isDelivery) return null;
 
@@ -169,7 +204,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
         <div className='mt-6 space-y-4'>
             <h3 className="font-semibold">Адрес доставки</h3>
             
-            {/* Saved Addresses List */}
             {user.addresses.length > 0 && !showNewAddressForm && (
                 <div className='space-y-3'>
                     <p className="text-sm text-gray-300">Выберите сохраненный адрес или введите новый.</p>
@@ -201,7 +235,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                 </div>
             )}
             
-            {/* New/Edit Address Form */}
             {(user.addresses.length === 0 || showNewAddressForm) && (
                  <div className="space-y-4">
                     {user.addresses.length > 0 && 
@@ -251,15 +284,16 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ доставки</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Самовывоз">Самовывоз</SelectItem>
-                              <SelectItem value="Курьером по городу">Курьером по городу</SelectItem>
-                              <SelectItem value="СДЭК">СДЭК</SelectItem>
-                              <SelectItem value="Почта">Почта</SelectItem>
+                               {deliveryMethods.map(method => (
+                                <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
+                                  {method}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -272,14 +306,16 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ оплаты</FormLabel>
-                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Наличный при получении">Наличный при получении</SelectItem>
-                              <SelectItem value="Картой при получении">Картой при получении</SelectItem>
-                              <SelectItem value="Оплата через ЕРИП">Оплата через ЕРИП</SelectItem>
+                               {paymentMethods.map(method => (
+                                <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
+                                  {method}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -325,3 +361,5 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
+
+    

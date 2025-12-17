@@ -2,13 +2,13 @@
 import { z } from 'zod';
 
 // Обновленные ENUM значения в соответствии с базой данных
-const paymentMethods = [
+export const paymentMethods = [
   'Наличный при получении',
   'Картой при получении',
   'Оплата через ЕРИП'
 ] as const;
 
-const deliveryMethods = [
+export const deliveryMethods = [
   'Самовывоз',
   'Курьером по городу',
   'СДЭК',
@@ -46,3 +46,5 @@ export const refinedCheckoutFormSchema = checkoutFormSchema.superRefine((data, c
 });
 
 export type CheckoutFormValues = z.infer<typeof refinedCheckoutFormSchema>;
+
+    
