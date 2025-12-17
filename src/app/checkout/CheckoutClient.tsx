@@ -107,23 +107,27 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
 
   // --- DEPENDENCY LOGIC ---
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
-    if (!deliveryMethod) return false; // All enabled if no delivery method is selected
+    if (!deliveryMethod) return false;
 
     if (deliveryMethod === 'Самовывоз') {
       return method === 'Оплата через ЕРИП';
     }
     
-    return method === 'Наличный при получении' || method === 'Картой при получении';
+    if (deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта') {
+      return method === 'Наличный при получении' || method === 'Картой при получении';
+    }
+    
+    return false;
   };
 
   const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
-    if (!paymentMethod) return false; // All enabled if no payment method is selected
+    if (!paymentMethod) return false;
 
     if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
       return method !== 'Самовывоз';
     }
     
-    return false; // All delivery methods are allowed for "Оплата через ЕРИП"
+    return false;
   };
 
   // This effect checks for incompatibilities and clears the invalid selection.
@@ -370,5 +374,3 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
-
-    
