@@ -24,6 +24,22 @@ type CartItem = {
   product_id: number;
 };
 
+async function getPickupAddress() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'pickup_address')
+        .single();
+    
+    if (error) {
+        console.error("Error fetching pickup address in action:", error.message);
+        return 'Адрес самовывоза не найден';
+    }
+    return data.value || 'Адрес самовывоза не указан';
+}
+
+
 export async function processOrder(
   prevState: FormState,
   formData: FormData
@@ -74,16 +90,13 @@ export async function processOrder(
     const cookieStore = cookies();
 
     const deliveryRequiresAddress = ['Курьером по городу', 'СДЭК', 'Почта'].includes(validatedData.delivery_method);
-
-    const rpcParameters = {
-        p_user_id: user?.id || null,
-        p_guest_email: user ? null : validatedData.email,
-        p_guest_first_name: user ? null : validatedData.first_name,
-        p_guest_last_name: user ? null : validatedData.last_name,
-        p_guest_phone: user ? null : validatedData.phone,
-        p_delivery_method: validatedData.delivery_method,
-        p_payment_method: validatedData.payment_method,
-        p_delivery_address: deliveryRequiresAddress ? {
+    const isPickup = validatedData.delivery_method === 'Самовывоз';
+    
+    let deliveryAddressObject = {};
+    let addressComment = validatedData.address_comment;
+    
+    if (deliveryRequiresAddress) {
+        deliveryAddressObject = {
             raw: `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}`,
             structured: {
                 country: validatedData.country,
@@ -94,8 +107,29 @@ export async function processOrder(
                 apartment: validatedData.apartment,
                 postal_code: validatedData.postal_code,
             },
-            comment: validatedData.address_comment
-        } : {}, // Send an empty object instead of null
+            comment: addressComment
+        };
+    } else if (isPickup) {
+        const pickupAddress = await getPickupAddress();
+        deliveryAddressObject = {
+            raw: pickupAddress,
+            structured: {
+                city: "Минск", // Предполагаем
+                street: pickupAddress,
+            }
+        };
+        addressComment = "Самовывоз";
+    }
+
+    const rpcParameters = {
+        p_user_id: user?.id || null,
+        p_guest_email: user ? null : validatedData.email,
+        p_guest_first_name: user ? null : validatedData.first_name,
+        p_guest_last_name: user ? null : validatedData.last_name,
+        p_guest_phone: user ? null : validatedData.phone,
+        p_delivery_method: validatedData.delivery_method,
+        p_payment_method: validatedData.payment_method,
+        p_delivery_address: deliveryAddressObject,
         p_metadata: {
             order_comment: validatedData.order_comment,
             user_agent: headerList.get('user-agent'),
@@ -142,8 +176,13 @@ export async function processOrder(
       }
 
       if (managerEmail) {
-        // Теперь эта строка не вызовет ошибки
         const totalAmount = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        
+        let addressHtml = `<li>Адрес: ${isPickup ? 'Самовывоз' : `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}`}</li>`;
+        if(isPickup) {
+            addressHtml += `<li>Пункт самовывоза: ${await getPickupAddress()}</li>`
+        }
+
         const orderSummary = `
           <h1>Поступил новый заказ #${newOrderId}</h1>
           <h2>Данные клиента:</h2>
@@ -160,8 +199,8 @@ export async function processOrder(
           <h2>Доставка и оплата:</h2>
           <ul>
             <li>Способ доставки: ${validatedData.delivery_method}</li>
-            <li>Адрес: ${deliveryRequiresAddress ? `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}` : 'Самовывоз'}</li>
-            <li>Комментарий к адресу: ${validatedData.address_comment || 'Нет'}</li>
+            ${addressHtml}
+            <li>Комментарий к адресу: ${addressComment || 'Нет'}</li>
             <li>Способ оплаты: ${validatedData.payment_method}</li>
           </ul>
           <h2>Комментарий к заказу:</h2>
