@@ -93,16 +93,18 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   }, [formState, router, clearCart, toast, form]);
 
   useEffect(() => {
-    // Reset address form when delivery method changes
-    setShowNewAddressForm(false);
-    setSelectedSavedAddress(null);
-    setValue('street', '');
-    setValue('building', '');
-    setValue('housing', '');
-    setValue('apartment', '');
-    setValue('postal_code', '');
-    setValue('city', 'Минск');
-    setValue('country', 'Беларусь');
+    // Reset address form when delivery method changes to a non-delivery one
+    if (deliveryMethod === 'Самовывоз' || !deliveryMethod) {
+        setShowNewAddressForm(false);
+        setSelectedSavedAddress(null);
+        setValue('street', '');
+        setValue('building', '');
+        setValue('housing', '');
+        setValue('apartment', '');
+        setValue('postal_code', '');
+        setValue('city', 'Минск');
+        setValue('country', 'Беларусь');
+    }
   }, [deliveryMethod, setValue]);
 
   // --- DEPENDENCY LOGIC ---
@@ -125,6 +127,10 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
 
     if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
       return method !== 'Самовывоз';
+    }
+
+    if (paymentMethod === 'Оплата через ЕРИП') {
+        return false; // Все способы доставки доступны
     }
     
     return false;
@@ -299,7 +305,9 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                           <FormLabel>Способ доставки</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
+                              <SelectTrigger className={inputClasses}>
+                                <SelectValue placeholder="Выберите способ..." />
+                              </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                                {deliveryMethods.map(method => (
@@ -321,7 +329,9 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                           <FormLabel>Способ оплаты</FormLabel>
                            <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
+                              <SelectTrigger className={inputClasses}>
+                                <SelectValue placeholder="Выберите способ..." />
+                              </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                                {paymentMethods.map(method => (
