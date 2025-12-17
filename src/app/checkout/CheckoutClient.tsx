@@ -94,7 +94,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
 
   useEffect(() => {
     // Reset address form when delivery method changes to a non-delivery one
-    if (deliveryMethod === 'Самовывоз' || !deliveryMethod) {
+    if (deliveryMethod === 'Самовывоз' || !deliveryMethod || deliveryMethod === 'Выберите способ...') {
         setShowNewAddressForm(false);
         setSelectedSavedAddress(null);
         setValue('street', '');
@@ -308,14 +308,14 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ доставки</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} defaultValue='Выберите способ...'>
+                          <Select onValueChange={field.onChange} value={field.value || 'Выберите способ...'}>
                             <FormControl>
                               <SelectTrigger className={inputClasses}>
                                 <SelectValue placeholder="Выберите способ..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                               <SelectItem value="Выберите способ..." disabled>Выберите способ...</SelectItem>
+                               <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
                                {deliveryMethods.map(method => (
                                 <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
                                   {method}
@@ -333,14 +333,14 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ оплаты</FormLabel>
-                           <Select onValueChange={field.onChange} value={field.value} defaultValue='Выберите способ...'>
+                           <Select onValueChange={field.onChange} value={field.value || 'Выберите способ...'}>
                             <FormControl>
                               <SelectTrigger className={inputClasses}>
                                 <SelectValue placeholder="Выберите способ..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                               <SelectItem value="Выберите способ..." disabled>Выберите способ...</SelectItem>
+                               <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
                                {paymentMethods.map(method => (
                                 <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
                                   {method}
@@ -391,3 +391,5 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
+
+    
