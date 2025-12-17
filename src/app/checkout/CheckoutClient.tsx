@@ -384,3 +384,5 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
+
+    
