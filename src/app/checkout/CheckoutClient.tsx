@@ -67,6 +67,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
       address_comment: '',
       order_comment: '',
     },
+     mode: 'onBlur', 
   });
 
   const { formState: { isSubmitting }, control, watch, setValue, trigger } = form;
@@ -93,7 +94,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   }, [formState, router, clearCart, toast, form]);
 
   useEffect(() => {
-    // Reset address form when delivery method changes to a non-delivery one
     if (deliveryMethod === 'Самовывоз' || !deliveryMethod || deliveryMethod === 'Выберите способ...') {
         setShowNewAddressForm(false);
         setSelectedSavedAddress(null);
@@ -112,18 +112,14 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     trigger();
   }, [paymentMethod, trigger]);
 
-  // --- DEPENDENCY LOGIC ---
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
     if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return false;
-
     if (deliveryMethod === 'Самовывоз') {
-      return false; // All payment methods are enabled
+      return false; // Все способы оплаты доступны
     }
-    
     if (deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта') {
       return method === 'Наличный при получении' || method === 'Картой при получении';
     }
-    
     return false;
   };
 
@@ -135,14 +131,12 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     }
 
     if (paymentMethod === 'Оплата через ЕРИП') {
-        return false; // Все способы доставки доступны
+        return false;
     }
     
     return false;
   };
   
-  // --- END OF DEPENDENCY LOGIC ---
-
   const handleSelectSavedAddress = () => {
       if (selectedSavedAddress) {
           setValue('street', selectedSavedAddress.street || '');
@@ -183,7 +177,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     const isDelivery = deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта';
     if (!isDelivery) return null;
 
-    // Guest View
     if (!user) {
         return (
             <div className='mt-6 space-y-4'>
@@ -202,7 +195,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
         );
     }
     
-    // Authenticated User View
     return (
         <div className='mt-6 space-y-4'>
             <h3 className="font-semibold">Адрес доставки</h3>
@@ -264,9 +256,32 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
       <div className="text-center mb-8">
         <h1 className="font-headline text-4xl md:text-5xl font-bold text-white">Оформление заказа</h1>
       </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+      
+      <div className="w-full max-w-4xl mx-auto space-y-8">
+        <Card className={cn(cardClasses)}>
+          <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart />Ваш заказ</CardTitle></CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {items.map(item => (
+                <li key={item.id} className="flex justify-between items-center text-sm">
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-muted-foreground">x {item.quantity}</p>
+                  </div>
+                  <p>{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</p>
+                </li>
+              ))}
+            </ul>
+            <hr className="my-4 border-white/20" />
+            <div className="flex justify-between font-bold text-lg">
+              <span>Итого:</span>
+              <span>{total.toLocaleString('ru-RU')} BYN</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <Card className={cardClasses}>
               <CardHeader><CardTitle className="flex items-center gap-2"><User />Контактная информация</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -281,92 +296,68 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
               <CardHeader><CardTitle className="flex items-center gap-2"><Truck />Доставка и оплата</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <FormField
-                      control={control}
-                      name="delivery_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Способ доставки</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || 'Выберите способ...'}>
-                            <FormControl>
-                              <SelectTrigger className={inputClasses}>
-                                <SelectValue placeholder="Выберите способ..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                               <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
-                               {deliveryMethods.map(method => (
-                                <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
-                                  {method}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={control}
-                      name="payment_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Способ оплаты</FormLabel>
-                           <Select onValueChange={field.onChange} value={field.value || 'Выберите способ...'}>
-                            <FormControl>
-                              <SelectTrigger className={inputClasses}>
-                                <SelectValue placeholder="Выберите способ..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                               <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
-                               {paymentMethods.map(method => (
-                                <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
-                                  {method}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={control}
+                    name="delivery_method"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Способ доставки</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={inputClasses}>
+                              <SelectValue placeholder="Выберите способ..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
+                            {deliveryMethods.map(method => (
+                              <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
+                                {method}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name="payment_method"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Способ оплаты</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={inputClasses}>
+                              <SelectValue placeholder="Выберите способ..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
+                            {paymentMethods.map(method => (
+                              <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
+                                {method}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
                 {renderAddressSection()}
                 <div className="mt-6">
-                    <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к заказу</FormLabel><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к заказу</FormLabel><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
               </CardContent>
             </Card>
 
             <SubmitButton isSubmitting={isSubmitting} />
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className={cn(cardClasses, "sticky top-24")}>
-              <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingCart />Ваш заказ</CardTitle></CardHeader>
-              <CardContent>
-                <ul className="space-y-4">
-                  {items.map(item => (
-                    <li key={item.id} className="flex justify-between items-center text-sm">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-muted-foreground">x {item.quantity}</p>
-                      </div>
-                      <p>{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</p>
-                    </li>
-                  ))}
-                </ul>
-                <hr className="my-4 border-white/20" />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Итого:</span>
-                  <span>{total.toLocaleString('ru-RU')} BYN</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }
