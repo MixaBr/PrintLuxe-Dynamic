@@ -106,38 +106,52 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   }, [deliveryMethod, setValue]);
 
   // --- DEPENDENCY LOGIC ---
-  useEffect(() => {
-      if (deliveryMethod === 'Самовывоз') {
-          if (paymentMethod === 'Оплата через ЕРИП') {
-              setValue('payment_method', undefined);
-              toast({ variant: 'destructive', title: 'Способ оплаты сброшен', description: 'Оплата через ЕРИП недоступна для самовывоза. Пожалуйста, выберите другой способ.' });
-          }
-      }
-  }, [deliveryMethod, paymentMethod, setValue, toast]);
-
-  useEffect(() => {
-      if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
-          if (deliveryMethod && deliveryMethod !== 'Самовывоз') {
-              setValue('delivery_method', undefined);
-              toast({ variant: 'destructive', title: 'Способ доставки сброшен', description: 'Для выбранного способа оплаты доступен только самовывоз.' });
-          }
-      }
-  }, [paymentMethod, deliveryMethod, setValue, toast]);
-
-
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
-      if (deliveryMethod === 'Самовывоз') {
-          return method === 'Оплата через ЕРИП';
-      }
-      return false;
+    if (deliveryMethod === 'Самовывоз') {
+      // For pickup, only cash and card are allowed.
+      return method === 'Оплата через ЕРИП';
+    }
+    // For other deliveries, all payment methods are theoretically available,
+    // but the other rule will disable cash/card. Let's make it explicit.
+    if (deliveryMethod && deliveryMethod !== 'Самовывоз') {
+        return method === 'Наличный при получении' || method === 'Картой при получении';
+    }
+    return false; // No delivery method selected, enable all.
   };
 
   const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
-      if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
-          return method !== 'Самовывоз';
-      }
-      return false;
+    if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
+      // For cash/card payment, only pickup is allowed.
+      return method !== 'Самовывоз';
+    }
+    // If payment is ERIP, all delivery methods are allowed.
+    if (paymentMethod === 'Оплата через ЕРИП') {
+        return false;
+    }
+    return false; // No payment method selected, enable all.
   };
+
+  // This effect checks for incompatibilities and clears the invalid selection.
+  useEffect(() => {
+      if (deliveryMethod && paymentMethod) {
+          if (isPaymentMethodDisabled(paymentMethod)) {
+              setValue('payment_method', undefined);
+              toast({
+                  variant: 'destructive',
+                  title: 'Способ оплаты сброшен',
+                  description: 'Выбранный способ оплаты несовместим с текущим способом доставки.',
+              });
+          }
+          else if (isDeliveryMethodDisabled(deliveryMethod)) {
+              setValue('delivery_method', undefined);
+              toast({
+                  variant: 'destructive',
+                  title: 'Способ доставки сброшен',
+                  description: 'Выбранный способ доставки несовместим с текущим способом оплаты.',
+              });
+          }
+      }
+  }, [deliveryMethod, paymentMethod, setValue, toast]);
   // --- END OF DEPENDENCY LOGIC ---
 
   const handleSelectSavedAddress = () => {
@@ -361,5 +375,3 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
-
-    
