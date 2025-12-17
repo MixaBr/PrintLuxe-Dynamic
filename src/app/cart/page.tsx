@@ -30,10 +30,10 @@ export default function CartPage() {
         </div>
 
         {items.length === 0 ? (
-            <div className="text-center bg-card p-12 rounded-lg shadow-sm">
-            <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground" />
+            <div className="text-center bg-black/50 text-white p-12 rounded-lg shadow-lg border-none backdrop-blur-sm">
+            <ShoppingCart className="mx-auto h-16 w-16 text-gray-400" />
             <h2 className="mt-6 text-2xl font-semibold">Ваша корзина пуста</h2>
-            <p className="mt-2 text-muted-foreground">
+            <p className="mt-2 text-gray-300">
                 Похоже, вы еще ничего не добавили. Начните покупки, чтобы увидеть товары здесь.
             </p>
             <Button asChild className="mt-6 font-bold">
@@ -41,30 +41,30 @@ export default function CartPage() {
             </Button>
             </div>
         ) : (
-            <div className="bg-card rounded-lg shadow-sm flex flex-col flex-grow min-h-0">
+            <div className="bg-black/50 text-white border-white/20 backdrop-blur-sm rounded-lg shadow-lg flex flex-col flex-grow min-h-0">
                 {/* Mobile View */}
                 <div className="md:hidden flex-grow min-h-0">
                     <ScrollArea className="h-full p-4">
                         <div className="space-y-4">
                         {items.map(item => (
-                            <Card key={item.id} className="overflow-hidden">
+                            <Card key={item.id} className="overflow-hidden bg-white/10 border-none">
                             <CardContent className="p-4 flex gap-4">
                                 <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden">
                                 <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill sizes="96px" className="object-cover" />
                                 </div>
                                 <div className="flex-grow flex flex-col">
-                                <p className="font-medium text-sm leading-tight mb-2">{item.name}</p>
+                                <p className="font-medium text-sm leading-tight mb-2 text-white">{item.name}</p>
                                 <div className="flex items-center justify-between my-2">
-                                    <span className="text-sm text-muted-foreground">Кол-во:</span>
+                                    <span className="text-sm text-gray-300">Кол-во:</span>
                                     <div className="flex items-center">
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-white" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
                                     <span className="w-8 text-center text-sm">{item.quantity}</span>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-white" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Сумма:</span>
-                                    <span className="font-semibold">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
+                                    <span className="text-gray-300">Сумма:</span>
+                                    <span className="font-semibold text-white">{((item.price || 0) * item.quantity).toLocaleString('ru-RU')} BYN</span>
                                 </div>
                                 <div className="mt-auto flex justify-end">
                                     <Button size="icon" variant="ghost" onClick={() => removeFromCart(item.id)}>
@@ -81,15 +81,15 @@ export default function CartPage() {
 
                 {/* Desktop View */}
                 <div className="hidden md:flex flex-col flex-grow min-h-0">
-                    <div className='flex-shrink-0 border-b'>
+                    <div className='flex-shrink-0 border-b border-white/20'>
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-24 text-foreground">Товар</TableHead>
-                                    <TableHead className="text-center text-foreground">Название</TableHead>
-                                    <TableHead className="text-center text-foreground w-40">Количество</TableHead>
-                                    <TableHead className="text-right text-foreground w-40">Цена за шт.</TableHead>
-                                    <TableHead className="text-right text-foreground w-40">Сумма</TableHead>
+                                <TableRow className="border-b-white/20 hover:bg-transparent">
+                                    <TableHead className="w-24 text-white">Товар</TableHead>
+                                    <TableHead className="text-left text-white">Название</TableHead>
+                                    <TableHead className="text-center text-white w-40">Количество</TableHead>
+                                    <TableHead className="text-right text-white w-40">Цена за шт.</TableHead>
+                                    <TableHead className="text-right text-white w-40">Сумма</TableHead>
                                     <TableHead className="w-12"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -97,21 +97,20 @@ export default function CartPage() {
                     </div>
                     <ScrollArea className="flex-grow">
                         <Table>
-                            {/* The header is defined outside scroll area, so we can omit it here */}
                             <TableBody>
                                 {items.map(item => (
-                                    <TableRow key={item.id}>
+                                    <TableRow key={item.id} className="border-b-white/10 hover:bg-white/5">
                                         <TableCell className="w-24 py-2">
                                             <div className="relative h-14 w-14 rounded-md overflow-hidden">
                                                 <Image src={item.photo_url || '/placeholder.png'} alt={item.name} fill sizes="56px" className="object-cover" />
                                             </div>
                                         </TableCell>
-                                        <TableCell className="font-medium py-2">{item.name}</TableCell>
+                                        <TableCell className="font-medium text-white py-2">{item.name}</TableCell>
                                         <TableCell className="w-40 py-2">
                                         <div className="flex items-center justify-center">
-                                                <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
+                                                <Button size="icon" variant="ghost" className="text-white" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</Button>
                                                 <span className="w-12 text-center">{item.quantity}</span>
-                                                <Button size="icon" variant="ghost" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
+                                                <Button size="icon" variant="ghost" className="text-white" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</Button>
                                         </div>
                                         </TableCell>
                                         <TableCell className="text-right w-40 py-2">{(item.price || 0).toLocaleString('ru-RU')} BYN</TableCell>
@@ -129,43 +128,22 @@ export default function CartPage() {
                 </div>
 
                 {/* Common Footer */}
-                <div className="flex-shrink-0 mt-auto p-4 sm:p-6 border-t">
-                    {/* Mobile total */}
-                    <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-2 mb-4 sm:mb-0 md:hidden">
-                        <div className="flex justify-between items-center gap-4">
-                            <span className="text-lg font-bold">Итого:</span>
-                            <span className="text-xl font-bold">{total.toLocaleString('ru-RU')} BYN</span>
-                        </div>
-                    </div>
-
-                    {/* Desktop total and buttons */}
-                    <div className='hidden md:flex justify-between items-center gap-6'>
+                <div className="flex-shrink-0 mt-auto p-4 sm:p-6 border-t border-white/20">
+                    <div className='flex justify-between items-center gap-6'>
                         <div>
-                            <Button variant="outline" asChild>
+                            <Button variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10" asChild>
                                 <Link href="/catalog">Продолжить покупки</Link>
                             </Button>
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right">
-                                <span className="text-muted-foreground">Итого:</span>
-                                <p className="font-bold text-2xl">{total.toLocaleString('ru-RU')} BYN</p>
+                                <span className="text-gray-300">Итого:</span>
+                                <p className="font-bold text-2xl text-white">{total.toLocaleString('ru-RU')} BYN</p>
                             </div>
                             <Button asChild size="lg" className="font-bold">
                                <Link href="/checkout">Оформить заказ</Link>
                             </Button>
                         </div>
-                    </div>
-
-                    {/* Mobile checkout button */}
-                    <div className='w-full md:hidden mt-2'>
-                        <div className="flex justify-between items-center w-full mb-4">
-                            <Button variant="outline" asChild>
-                                <Link href="/catalog">Продолжить покупки</Link>
-                            </Button>
-                        </div>
-                        <Button asChild size="lg" className="font-bold w-full">
-                           <Link href="/checkout">Оформить заказ</Link>
-                        </Button>
                     </div>
                 </div>
             </div>
