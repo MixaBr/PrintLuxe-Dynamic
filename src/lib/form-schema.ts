@@ -20,8 +20,8 @@ export const checkoutFormSchema = z.object({
   last_name: z.string().min(2, 'Фамилия обязательна'),
   email: z.string().email('Неверный формат email'),
   phone: z.string().min(9, 'Телефон обязателен').transform((val) => val.replace(/[^\d]/g, '')), 
-  delivery_method: z.enum(deliveryMethods, { required_error: 'Выберите способ доставки' }),
-  payment_method: z.enum(paymentMethods, { required_error: 'Выберите способ оплаты' }),
+  delivery_method: z.union([z.enum(deliveryMethods), z.literal('Выберите способ...')]).refine(val => val !== 'Выберите способ...', { message: 'Выберите способ доставки' }),
+  payment_method: z.union([z.enum(paymentMethods), z.literal('Выберите способ...')]).refine(val => val !== 'Выберите способ...', { message: 'Выберите способ оплаты' }),
   order_comment: z.string().optional(),
 
   country: z.string().optional(),
@@ -36,15 +36,31 @@ export const checkoutFormSchema = z.object({
 
 // Уточненная схема, использующая корректное значение для проверки
 export const refinedCheckoutFormSchema = checkoutFormSchema.superRefine((data, ctx) => {
-  if (data.delivery_method === 'Курьером по городу' && !data.street) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Улица, дом и город обязательны для доставки',
-      path: ['street'],
-    });
+  const deliveryRequiresAddress = ['Курьером по городу', 'СДЭК', 'Почта'].includes(data.delivery_method);
+
+  if (deliveryRequiresAddress && (!data.street || !data.building || !data.city)) {
+    if (!data.street) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Улица обязательна для доставки',
+            path: ['street'],
+        });
+    }
+    if (!data.building) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Номер дома обязателен для доставки',
+            path: ['building'],
+        });
+    }
+     if (!data.city) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Город обязателен для доставки',
+            path: ['city'],
+        });
+    }
   }
 });
 
 export type CheckoutFormValues = z.infer<typeof refinedCheckoutFormSchema>;
-
-    

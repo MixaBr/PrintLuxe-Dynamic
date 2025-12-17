@@ -69,7 +69,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     },
   });
 
-  const { formState: { isSubmitting }, control, watch, setValue } = form;
+  const { formState: { isSubmitting }, control, watch, setValue, trigger } = form;
   const deliveryMethod = watch('delivery_method');
   const paymentMethod = watch('payment_method');
   const cardClasses = "bg-black/50 text-white border-white/20 backdrop-blur-sm";
@@ -105,11 +105,16 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
         setValue('city', 'Минск');
         setValue('country', 'Беларусь');
     }
-  }, [deliveryMethod, setValue]);
+    trigger();
+  }, [deliveryMethod, setValue, trigger]);
+  
+  useEffect(() => {
+    trigger();
+  }, [paymentMethod, trigger]);
 
   // --- DEPENDENCY LOGIC ---
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
-    if (!deliveryMethod) return false;
+    if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return false;
 
     if (deliveryMethod === 'Самовывоз') {
       return method === 'Оплата через ЕРИП';
@@ -123,7 +128,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   };
 
   const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
-    if (!paymentMethod) return false;
+    if (!paymentMethod || paymentMethod === 'Выберите способ...') return false;
 
     if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
       return method !== 'Самовывоз';
@@ -135,12 +140,12 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     
     return false;
   };
-
+  
   // This effect checks for incompatibilities and clears the invalid selection.
   useEffect(() => {
-      if (deliveryMethod && paymentMethod) {
+      if (deliveryMethod && paymentMethod && deliveryMethod !== 'Выберите способ...' && paymentMethod !== 'Выберите способ...') {
           if (isPaymentMethodDisabled(paymentMethod)) {
-              setValue('payment_method', undefined);
+              setValue('payment_method', 'Выберите способ...');
               toast({
                   variant: 'destructive',
                   title: 'Способ оплаты сброшен',
@@ -148,7 +153,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
               });
           }
           else if (isDeliveryMethodDisabled(deliveryMethod)) {
-              setValue('delivery_method', undefined);
+              setValue('delivery_method', 'Выберите способ...');
               toast({
                   variant: 'destructive',
                   title: 'Способ доставки сброшен',
@@ -176,7 +181,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   const onSubmit = (data: CheckoutFormValues) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
-        if (value) formData.append(key, value.toString());
+        if (value && value !== 'Выберите способ...') formData.append(key, value.toString());
     });
     formData.append('cart_items', JSON.stringify(items.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, name: i.name }))));
     formAction(formData);
@@ -185,7 +190,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
   const total = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
 
   const renderAddressSection = () => {
-    if (!deliveryMethod) return null;
+    if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return null;
 
     if (deliveryMethod === 'Самовывоз') {
       return (
@@ -303,13 +308,14 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ доставки</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue='Выберите способ...'>
                             <FormControl>
                               <SelectTrigger className={inputClasses}>
                                 <SelectValue placeholder="Выберите способ..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                               <SelectItem value="Выберите способ..." disabled>Выберите способ...</SelectItem>
                                {deliveryMethods.map(method => (
                                 <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
                                   {method}
@@ -327,13 +333,14 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Способ оплаты</FormLabel>
-                           <Select onValueChange={field.onChange} value={field.value}>
+                           <Select onValueChange={field.onChange} value={field.value} defaultValue='Выберите способ...'>
                             <FormControl>
                               <SelectTrigger className={inputClasses}>
                                 <SelectValue placeholder="Выберите способ..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                               <SelectItem value="Выберите способ..." disabled>Выберите способ...</SelectItem>
                                {paymentMethods.map(method => (
                                 <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
                                   {method}
@@ -384,5 +391,3 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
-
-    
