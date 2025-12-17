@@ -73,6 +73,8 @@ export async function processOrder(
     const headerList = headers();
     const cookieStore = cookies();
 
+    const deliveryRequiresAddress = ['Курьером по городу', 'СДЭК', 'Почта'].includes(validatedData.delivery_method);
+
     const rpcParameters = {
         p_user_id: user?.id || null,
         p_guest_email: user ? null : validatedData.email,
@@ -81,7 +83,7 @@ export async function processOrder(
         p_guest_phone: user ? null : validatedData.phone,
         p_delivery_method: validatedData.delivery_method,
         p_payment_method: validatedData.payment_method,
-        p_delivery_address: validatedData.delivery_method === 'Курьером по городу' ? {
+        p_delivery_address: deliveryRequiresAddress ? {
             raw: `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}`,
             structured: {
                 country: validatedData.country,
@@ -93,7 +95,7 @@ export async function processOrder(
                 postal_code: validatedData.postal_code,
             },
             comment: validatedData.address_comment
-        } : null,
+        } : {}, // Send an empty object instead of null
         p_metadata: {
             order_comment: validatedData.order_comment,
             user_agent: headerList.get('user-agent'),
@@ -158,7 +160,7 @@ export async function processOrder(
           <h2>Доставка и оплата:</h2>
           <ul>
             <li>Способ доставки: ${validatedData.delivery_method}</li>
-            <li>Адрес: ${validatedData.delivery_method === 'Курьером по городу' ? `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}` : 'Самовывоз'}</li>
+            <li>Адрес: ${deliveryRequiresAddress ? `${validatedData.country || ''}, ${validatedData.city || ''}, ${validatedData.street || ''}, ${validatedData.building || ''}` : 'Самовывоз'}</li>
             <li>Комментарий к адресу: ${validatedData.address_comment || 'Нет'}</li>
             <li>Способ оплаты: ${validatedData.payment_method}</li>
           </ul>
