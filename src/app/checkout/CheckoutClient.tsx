@@ -107,28 +107,23 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
 
   // --- DEPENDENCY LOGIC ---
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
+    if (!deliveryMethod) return false; // All enabled if no delivery method is selected
+
     if (deliveryMethod === 'Самовывоз') {
-      // For pickup, only cash and card are allowed.
       return method === 'Оплата через ЕРИП';
     }
-    // For other deliveries, all payment methods are theoretically available,
-    // but the other rule will disable cash/card. Let's make it explicit.
-    if (deliveryMethod && deliveryMethod !== 'Самовывоз') {
-        return method === 'Наличный при получении' || method === 'Картой при получении';
-    }
-    return false; // No delivery method selected, enable all.
+    
+    return method === 'Наличный при получении' || method === 'Картой при получении';
   };
 
   const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
+    if (!paymentMethod) return false; // All enabled if no payment method is selected
+
     if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
-      // For cash/card payment, only pickup is allowed.
       return method !== 'Самовывоз';
     }
-    // If payment is ERIP, all delivery methods are allowed.
-    if (paymentMethod === 'Оплата через ЕРИП') {
-        return false;
-    }
-    return false; // No payment method selected, enable all.
+    
+    return false; // All delivery methods are allowed for "Оплата через ЕРИП"
   };
 
   // This effect checks for incompatibilities and clears the invalid selection.
@@ -375,3 +370,5 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
+
+    
