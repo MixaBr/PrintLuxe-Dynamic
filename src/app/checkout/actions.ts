@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -30,6 +31,22 @@ export async function processOrder(
   
   const supabase = createClient();
   const rawData = Object.fromEntries(formData.entries());
+
+  // Server-side check for placeholder values
+  if (rawData.delivery_method === 'Выберите способ...') {
+    return {
+      status: 'error',
+      message: 'Пожалуйста, выберите способ доставки.',
+      errors: { delivery_method: ['Выберите способ доставки.'] }
+    };
+  }
+  if (rawData.payment_method === 'Выберите способ...') {
+    return {
+      status: 'error',
+      message: 'Пожалуйста, выберите способ оплаты.',
+      errors: { payment_method: ['Выберите способ оплаты.'] }
+    };
+  }
 
   const validatedFields = refinedCheckoutFormSchema.safeParse(rawData);
 

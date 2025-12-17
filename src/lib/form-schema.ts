@@ -20,8 +20,8 @@ export const checkoutFormSchema = z.object({
   last_name: z.string().min(2, 'Фамилия обязательна'),
   email: z.string().email('Неверный формат email'),
   phone: z.string().min(9, 'Телефон обязателен').transform((val) => val.replace(/[^\d]/g, '')), 
-  delivery_method: z.enum(deliveryMethods, { required_error: 'Выберите способ доставки.' }),
-  payment_method: z.enum(paymentMethods, { required_error: 'Выберите способ оплаты.' }),
+  delivery_method: z.string({ required_error: 'Выберите способ доставки.' }).refine(val => deliveryMethods.includes(val as any), { message: "Выберите допустимый способ доставки." }),
+  payment_method: z.string({ required_error: 'Выберите способ оплаты.' }).refine(val => paymentMethods.includes(val as any), { message: "Выберите допустимый способ оплаты." }),
   order_comment: z.string().optional(),
 
   country: z.string().optional(),
