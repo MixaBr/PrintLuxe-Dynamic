@@ -22,7 +22,7 @@ export default async function ThankYouPage({ params }: ThankYouPageProps) {
     if (error || !order) {
         return (
              <div className="container mx-auto h-full flex items-center justify-center p-4">
-                <Card className="w-full max-w-lg">
+                <Card className="w-full max-w-lg bg-card/80 backdrop-blur-sm border-white/20">
                     <CardHeader className="items-center text-center">
                         <CheckCircle2 className="w-16 h-16 text-destructive mb-4" />
                         <CardTitle className="text-2xl">Ошибка</CardTitle>
@@ -43,7 +43,7 @@ export default async function ThankYouPage({ params }: ThankYouPageProps) {
 
     return (
         <div className="container mx-auto h-full flex items-center justify-center p-4">
-            <Card className="w-full max-w-lg bg-card/80 backdrop-blur-sm border-white/20">
+            <Card className="w-full max-w-lg bg-black/50 backdrop-blur-sm border-white/20 text-white">
                 <CardHeader className="items-center text-center">
                     <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
                     <CardTitle className="text-2xl text-white">Спасибо, {order.guest_first_name || 'клиент'}!</CardTitle>
@@ -59,7 +59,7 @@ export default async function ThankYouPage({ params }: ThankYouPageProps) {
                     <Button asChild className="w-full">
                         <Link href="/catalog">Продолжить покупки</Link>
                     </Button>
-                     <Button asChild variant="outline" className="w-full">
+                     <Button asChild variant="outline" className="w-full bg-transparent border-white/50 text-white hover:bg-white/10 hover:text-white">
                         <Link href="/">Вернуться на главную</Link>
                     </Button>
                 </CardContent>
