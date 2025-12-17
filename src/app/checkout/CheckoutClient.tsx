@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFormState } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -17,18 +17,17 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ShoppingCart, User, Truck } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const initialState = { status: 'error' as const, message: '', orderId: undefined };
 
 interface CheckoutClientProps {
   user: { id: string; email?: string; profile?: { first_name?: string; last_name?: string; phone?: string; }; addresses: Address[]; } | null;
+  pickupAddress: string | null;
 }
 
 function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
@@ -40,11 +39,14 @@ function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
   );
 }
 
-export default function CheckoutClient({ user }: CheckoutClientProps) {
+export default function CheckoutClient({ user, pickupAddress }: CheckoutClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { items, clearCart } = useCartStore();
   const [formState, formAction] = useFormState(processOrder, initialState);
+
+  const [selectedSavedAddress, setSelectedSavedAddress] = useState<Address | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(refinedCheckoutFormSchema),
@@ -53,7 +55,7 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
       last_name: user?.profile?.last_name || '',
       email: user?.email || '',
       phone: user?.profile?.phone || '',
-      delivery_method: 'Самовывоз',
+      delivery_method: undefined, // Start with no selection
       payment_method: 'Наличный при получении',
       country: 'Беларусь',
       city: 'Минск',
@@ -67,7 +69,7 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
     },
   });
 
-  const { formState: { isSubmitting }, control, watch, setValue } = form;
+  const { formState: { isSubmitting }, control, watch, setValue, trigger } = form;
   const deliveryMethod = watch('delivery_method');
   const cardClasses = "bg-black/50 text-white border-white/20 backdrop-blur-sm";
   const inputClasses = "bg-white/10 border-white/20 text-white placeholder:text-white/50";
@@ -89,27 +91,31 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
     }
   }, [formState, router, clearCart, toast, form]);
 
-  const handleAddressSelect = (addressId: string) => {
-    if (addressId === 'new') {
-        setValue('country', 'Беларусь');
-        setValue('city', 'Минск');
-        setValue('street', '');
-        setValue('building', '');
-        setValue('housing', '');
-        setValue('apartment', '');
-        setValue('postal_code', '');
-    } else {
-      const selectedAddr = user?.addresses.find(a => a.id.toString() === addressId);
-      if (selectedAddr) {
-        setValue('country', selectedAddr.country || 'Беларусь');
-        setValue('city', selectedAddr.city || 'Минск');
-        setValue('street', selectedAddr.street || '');
-        setValue('building', selectedAddr.building || '');
-        setValue('housing', selectedAddr.housing || '');
-        setValue('apartment', selectedAddr.apartment || '');
-        setValue('postal_code', selectedAddr.postal_code || '');
+  useEffect(() => {
+    // Reset address form when delivery method changes
+    setShowNewAddressForm(false);
+    setSelectedSavedAddress(null);
+    setValue('street', '');
+    setValue('building', '');
+    setValue('housing', '');
+    setValue('apartment', '');
+    setValue('postal_code', '');
+    setValue('city', 'Минск');
+    setValue('country', 'Беларусь');
+  }, [deliveryMethod, setValue]);
+
+  const handleSelectSavedAddress = () => {
+      if (selectedSavedAddress) {
+          setValue('street', selectedSavedAddress.street || '');
+          setValue('building', selectedSavedAddress.building || '');
+          setValue('housing', selectedSavedAddress.housing || '');
+          setValue('apartment', selectedSavedAddress.apartment || '');
+          setValue('postal_code', selectedSavedAddress.postal_code || '');
+          setValue('city', selectedSavedAddress.city || 'Минск');
+          setValue('country', selectedSavedAddress.country || 'Беларусь');
+          setShowNewAddressForm(true); // Show form populated with data
+          toast({ title: "Адрес выбран", description: "Данные адреса подставлены в форму."});
       }
-    }
   };
 
   const onSubmit = (data: CheckoutFormValues) => {
@@ -122,6 +128,100 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
   };
 
   const total = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
+
+  const renderAddressSection = () => {
+    if (!deliveryMethod) return null;
+
+    if (deliveryMethod === 'Самовывоз') {
+      return (
+        <div className='mt-6'>
+          <h3 className="font-semibold mb-2">Адрес самовывоза</h3>
+          <p className="text-gray-300 bg-white/5 p-3 rounded-md">{pickupAddress || 'Адрес уточняется.'}</p>
+        </div>
+      );
+    }
+    
+    // Logic for other delivery methods
+    const isDelivery = deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта';
+    if (!isDelivery) return null;
+
+    // Guest View
+    if (!user) {
+        return (
+            <div className='mt-6 space-y-4'>
+                <h3 className="font-semibold">Адрес доставки</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={control} name="country" render={({ field }) => (<FormItem><FormLabel>Страна</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>Город</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="street" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Улица</FormLabel><FormControl><Input {...field} placeholder="Введите адрес" className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="building" render={({ field }) => (<FormItem><FormLabel>Дом</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="housing" render={({ field }) => (<FormItem><FormLabel>Корпус</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="apartment" render={({ field }) => (<FormItem><FormLabel>Квартира</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="postal_code" render={({ field }) => (<FormItem><FormLabel>Индекс</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+                <FormField control={control} name="address_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к адресу</FormLabel><FormControl><Textarea {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+        );
+    }
+    
+    // Authenticated User View
+    return (
+        <div className='mt-6 space-y-4'>
+            <h3 className="font-semibold">Адрес доставки</h3>
+            
+            {/* Saved Addresses List */}
+            {user.addresses.length > 0 && !showNewAddressForm && (
+                <div className='space-y-3'>
+                    <p className="text-sm text-gray-300">Выберите сохраненный адрес или введите новый.</p>
+                     <div className="h-48 w-full rounded-md border border-white/20 flex flex-col bg-white/5">
+                        <ScrollArea className="flex-grow">
+                            <div className="p-2 space-y-2">
+                            {user.addresses.map(addr => (
+                                <div 
+                                    key={addr.id}
+                                    onClick={() => setSelectedSavedAddress(addr)}
+                                    className={cn(
+                                        "p-3 rounded-md cursor-pointer transition-colors border",
+                                        selectedSavedAddress?.id === addr.id 
+                                            ? "bg-primary/20 border-primary" 
+                                            : "bg-white/5 border-transparent hover:bg-white/10"
+                                    )}
+                                >
+                                    <p className="font-medium text-sm">{`${addr.city}, ${addr.street}, ${addr.building}`}</p>
+                                    <p className="text-xs text-gray-400">{`${addr.postal_code || ''}, ${addr.country || ''}`}</p>
+                                </div>
+                            ))}
+                            </div>
+                        </ScrollArea>
+                    </div>
+                    <div className='flex gap-2'>
+                        <Button onClick={handleSelectSavedAddress} disabled={!selectedSavedAddress} className="flex-1">Выберите адрес</Button>
+                        <Button onClick={() => setShowNewAddressForm(true)} variant="outline" className="flex-1">Ввести новый адрес</Button>
+                    </div>
+                </div>
+            )}
+            
+            {/* New/Edit Address Form */}
+            {(user.addresses.length === 0 || showNewAddressForm) && (
+                 <div className="space-y-4">
+                    {user.addresses.length > 0 && 
+                        <Button variant="link" onClick={() => setShowNewAddressForm(false)} className="p-0 h-auto text-white">Назад к выбору адреса</Button>
+                    }
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <FormField control={control} name="country" render={({ field }) => (<FormItem><FormLabel>Страна</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>Город</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="street" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Улица</FormLabel><FormControl><Input {...field} placeholder="Введите адрес" className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="building" render={({ field }) => (<FormItem><FormLabel>Дом</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="housing" render={({ field }) => (<FormItem><FormLabel>Корпус</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="apartment" render={({ field }) => (<FormItem><FormLabel>Квартира</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name="postal_code" render={({ field }) => (<FormItem><FormLabel>Индекс</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                     <FormField control={control} name="address_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к адресу</FormLabel><FormControl><Textarea {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+            )}
+        </div>
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -144,73 +244,53 @@ export default function CheckoutClient({ user }: CheckoutClientProps) {
             <Card className={cardClasses}>
               <CardHeader><CardTitle className="flex items-center gap-2"><Truck />Доставка и оплата</CardTitle></CardHeader>
               <CardContent>
-                <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-                  <AccordionItem value="item-1" className="border-b-white/20">
-                    <AccordionTrigger>Шаг 1: Способ доставки</AccordionTrigger>
-                    <AccordionContent>
-                      <FormField control={control} name="delivery_method" render={({ field }) => (
-                        <FormItem><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Самовывоз" /></FormControl><FormLabel className="font-normal">Самовывоз</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Курьером по городу" /></FormControl><FormLabel className="font-normal">Курьером по городу</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="СДЭК" /></FormControl><FormLabel className="font-normal">СДЭК</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Почта" /></FormControl><FormLabel className="font-normal">Почта</FormLabel></FormItem>
-                        </RadioGroup></FormControl><FormMessage /></FormItem>)} />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {deliveryMethod === 'Курьером по городу' && (
-                    <AccordionItem value="item-2" className="border-b-white/20">
-                      <AccordionTrigger>Шаг 2: Адрес доставки</AccordionTrigger>
-                      <AccordionContent className="space-y-4">
-                        {user && user.addresses.length > 0 && (
-                            <div className="space-y-2">
-                                <Label>Выбор адреса</Label>
-                                <Select onValueChange={handleAddressSelect} defaultValue="new">
-                                    <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите сохраненный адрес" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="new">-- Ввести новый адрес --</SelectItem>
-                                        {user.addresses.map(addr => (
-                                            <SelectItem key={addr.id} value={addr.id.toString()}>
-                                                {`${addr.city}, ${addr.street}, ${addr.building}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={control} name="country" render={({ field }) => (<FormItem><FormLabel>Страна</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>Город</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="street" render={({ field }) => (<FormItem><FormLabel>Улица</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                             <FormField control={control} name="postal_code" render={({ field }) => (<FormItem><FormLabel>Индекс</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="building" render={({ field }) => (<FormItem><FormLabel>Дом</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="housing" render={({ field }) => (<FormItem><FormLabel>Корпус</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name="apartment" render={({ field }) => (<FormItem><FormLabel>Квартира</FormLabel><FormControl><Input {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <FormField control={control} name="address_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к адресу</FormLabel><FormControl><Textarea {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-
-                  <AccordionItem value="item-3" className="border-b-white/20">
-                    <AccordionTrigger>Шаг 3: Способ оплаты</AccordionTrigger>
-                    <AccordionContent>
-                      <FormField control={control} name="payment_method" render={({ field }) => (
-                        <FormItem><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Наличный при получении" /></FormControl><FormLabel className="font-normal">Наличный при получении</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Картой при получении" /></FormControl><FormLabel className="font-normal">Картой при получении</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Оплата через ЕРИП" /></FormControl><FormLabel className="font-normal">Оплата через ЕРИП</FormLabel></FormItem>
-                        </RadioGroup></FormControl><FormMessage /></FormItem>)} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="item-4" className="border-b-0">
-                    <AccordionTrigger>Шаг 4: Комментарий к заказу</AccordionTrigger>
-                    <AccordionContent>
-                      <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <FormField
+                      control={control}
+                      name="delivery_method"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Способ доставки</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Самовывоз">Самовывоз</SelectItem>
+                              <SelectItem value="Курьером по городу">Курьером по городу</SelectItem>
+                              <SelectItem value="СДЭК">СДЭК</SelectItem>
+                              <SelectItem value="Почта">Почта</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="payment_method"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Способ оплаты</FormLabel>
+                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className={inputClasses}><SelectValue placeholder="Выберите способ..." /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Наличный при получении">Наличный при получении</SelectItem>
+                              <SelectItem value="Картой при получении">Картой при получении</SelectItem>
+                              <SelectItem value="Оплата через ЕРИП">Оплата через ЕРИП</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
+                {renderAddressSection()}
+                <div className="mt-6">
+                    <FormField control={control} name="order_comment" render={({ field }) => (<FormItem><FormLabel>Комментарий к заказу</FormLabel><FormControl><Textarea placeholder="Ваши пожелания к заказу..." {...field} className={inputClasses} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
               </CardContent>
             </Card>
 
