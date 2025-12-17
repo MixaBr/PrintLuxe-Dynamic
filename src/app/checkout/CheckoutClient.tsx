@@ -117,7 +117,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return false;
 
     if (deliveryMethod === 'Самовывоз') {
-      return method === 'Оплата через ЕРИП';
+      return false; // All payment methods are enabled
     }
     
     if (deliveryMethod === 'Курьером по городу' || deliveryMethod === 'СДЭК' || deliveryMethod === 'Почта') {
@@ -141,27 +141,6 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     return false;
   };
   
-  // This effect checks for incompatibilities and clears the invalid selection.
-  useEffect(() => {
-      if (deliveryMethod && paymentMethod && deliveryMethod !== 'Выберите способ...' && paymentMethod !== 'Выберите способ...') {
-          if (isPaymentMethodDisabled(paymentMethod)) {
-              setValue('payment_method', 'Выберите способ...');
-              toast({
-                  variant: 'destructive',
-                  title: 'Способ оплаты сброшен',
-                  description: 'Выбранный способ оплаты несовместим с текущим способом доставки.',
-              });
-          }
-          else if (isDeliveryMethodDisabled(deliveryMethod)) {
-              setValue('delivery_method', 'Выберите способ...');
-              toast({
-                  variant: 'destructive',
-                  title: 'Способ доставки сброшен',
-                  description: 'Выбранный способ доставки несовместим с текущим способом оплаты.',
-              });
-          }
-      }
-  }, [deliveryMethod, paymentMethod, setValue, toast]);
   // --- END OF DEPENDENCY LOGIC ---
 
   const handleSelectSavedAddress = () => {
@@ -391,5 +370,3 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
     </div>
   );
 }
-
-    
