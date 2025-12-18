@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview The main webhook endpoint for handling Telegram updates.
  * This file implements a sophisticated pipeline for processing incoming messages:
@@ -16,7 +15,7 @@
  */
 
 import { runAssistant } from '@/ai/flows/assistant-flow';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/service'; // Use the admin client
 import { NextResponse } from 'next/server';
 
 // Helper function to send a message to the user via the Telegram API.
@@ -37,6 +36,11 @@ async function sendTelegramMessage(chatId: number, text: string) {
 // Main POST handler for the Telegram webhook
 export async function POST(req: Request) {
   try {
+    const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (secretToken !== process.env.TELEGRAM_SECRET_TOKEN) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const body = await req.json();
     const message = body.message;
 
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
     const chatId = message.chat.id;
     const query = message.text;
 
-    const supabase = createClient();
+    const supabase = createAdminClient(); // Use the admin client to bypass RLS
 
     // 1. Fetch settings and chat data in parallel for efficiency.
     const [settingsRes, chatRes] = await Promise.all([
@@ -83,7 +87,7 @@ export async function POST(req: Request) {
         .insert({
           chat_id: chatId,
           username: message.chat.username,
-          first_name: message.chat.first_name,
+          first_name: message.chat.first_name, // This is from the Telegram profile
           last_message_at: new Date().toISOString(),
           quota_reset_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           rate_limit_tokens: config.rateLimitMax,
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
       currentTokens = Math.min(currentTokens + tokensToAdd, config.rateLimitMax);
     }
 
-    if (currentTokens < 1) {
+    if (currentTokens < 1 && !isNewUser) {
       await sendTelegramMessage(chatId, config.msgRateLimit);
       // Even if rate limited, we update the token count in the DB.
       if (currentTokens !== chat.rate_limit_tokens) {
@@ -139,22 +143,28 @@ export async function POST(req: Request) {
     updates.rate_limit_tokens = currentTokens - 1; // Consume a token
     updates.daily_quota_used = (updates.daily_quota_used ?? chat.daily_quota_used) + 1;
     updates.last_message_at = now.toISOString();
+    
+    // Save usage updates immediately.
+    // The assistant might perform its own DB updates later.
+    const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
+    if (updateError) throw updateError;
+
 
     // 6. Determine if it's a new session
     const minutesSinceLast = isNewUser ? Infinity : secondsPassed / 60;
     const isNewSession = minutesSinceLast > config.sessionTimeout;
-    if (isNewSession) {
-      updates.session_start_at = now.toISOString();
-    }
-
-    // 7. Save all updates to the database in one go
-    const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
-    if (updateError) throw updateError;
-
-    // 8. Call the AI assistant
-    const assistantResponse = await runAssistant({ query, isNewSession });
-
-    // 9. Send the final response to the user
+    
+    // 7. Call the AI assistant with the full context
+    const assistantResponse = await runAssistant({
+      query,
+      isNewUser,
+      isNewSession,
+      userName: chat.first_name, // Suggest the user's profile display name
+      firstName: chat.us_first_name, // The name they want to be called
+      chatId: chat.chat_id,
+    });
+    
+    // 8. Send the final response to the user
     await sendTelegramMessage(chatId, assistantResponse.response);
 
   } catch (err: any) {
