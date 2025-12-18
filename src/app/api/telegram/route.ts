@@ -1,110 +1,166 @@
 
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * @fileOverview The main webhook endpoint for handling Telegram updates.
+ * This file implements a sophisticated pipeline for processing incoming messages:
+ * 1. Fetches global settings and the user's chat data from Supabase.
+ * 2. Creates a new user if one doesn't exist.
+ * 3. Performs a series of security and resource checks:
+ *    - Blocked status check.
+ *    - Daily quota check (resets every 24 hours).
+ *    - Rate limit check (using a token bucket algorithm).
+ * 4. If all checks pass, it determines if the session is new.
+ * 5. Calls the AI assistant (`runAssistant`) with the user's query and session status.
+ * 6. Sends the AI's response back to the user.
+ * 7. If any check fails, it sends a predefined message to the user.
+ * 8. All database writes for a single user are batched into one update call.
+ */
+
 import { runAssistant } from '@/ai/flows/assistant-flow';
-import { createClient } from '@/lib/supabase/server'; // Импортируем server-клиент Supabase
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
 
-const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_SECRET_TOKEN = process.env.TELEGRAM_SECRET_TOKEN;
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
-
-// --- Функция для загрузки приветствия из БД ---
-async function getWelcomeMessage(): Promise<string> {
-  const supabase = createClient();
-  const fallbackMessage = 'Здравствуйте! Я PrintLux Helper, ваш AI-ассистент по ремонту принтеров. Чем могу помочь?';
-
-  const { data, error } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('key', 'bot_welcome_message')
-    .single();
-
-  if (error) {
-    console.error('Error fetching welcome message:', error.message);
-    return fallbackMessage; // Возвращаем запасной вариант при ошибке
-  }
-
-  return data?.value || fallbackMessage; // Возвращаем значение из БД или запасной вариант
-}
-
-async function sendMessage(chatId: number, text: string) {
-  const url = `${TELEGRAM_API_URL}/sendMessage`;
-  console.log(`Sending message to chat_id: ${chatId}, text: ${text}`);
+// Helper function to send a message to the user via the Telegram API.
+async function sendTelegramMessage(chatId: number, text: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   try {
-    const response = await fetch(url, {
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: text }),
+      body: JSON.stringify({ chat_id: chatId, text }),
     });
-    const result = await response.json();
-    if (!result.ok) {
-      console.error('Error sending message to Telegram:', result);
-    } else {
-      console.log('Message sent successfully.');
-    }
   } catch (error) {
-    console.error('Error in sendMessage function:', error);
+    console.error('Failed to send Telegram message:', error);
   }
 }
 
-export async function POST(req: NextRequest) {
-  const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
-
-  if (!secretToken || secretToken !== TELEGRAM_SECRET_TOKEN) {
-    console.warn('Unauthorized webhook access attempt');
-    return new NextResponse('Unauthorized', { status: 401 });
-  }
-
-  console.log('--- New POST request received (authorized) ---');
+// Main POST handler for the Telegram webhook
+export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log('Request body:', JSON.stringify(body, null, 2));
+    const message = body.message;
 
-    if (body.message) {
-      const chatId = body.message.chat.id;
-      const userText = body.message.text;
-
-      if (!userText) {
-        await sendMessage(chatId, 'Я умею обрабатывать только текстовые сообщения.');
-        return NextResponse.json({ status: 'ok' });
-      }
-
-      // --- Обработка команды /start с приветствием из БД ---
-      if (userText.trim() === '/start') {
-        console.log('Handling /start command');
-        const welcomeMessage = await getWelcomeMessage(); // Получаем приветствие
-        await sendMessage(chatId, welcomeMessage);
-        return NextResponse.json({ status: 'ok' });
-      }
-
-      console.log('Sending to AI for processing...');
-      await fetch(`${TELEGRAM_API_URL}/sendChatAction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
-      });
-
-      const assistantResponse = await runAssistant({ query: userText });
-      console.log('AI Response:', assistantResponse.response);
-      await sendMessage(chatId, assistantResponse.response);
-    } else {
-      console.log('No message found in body');
+    // Basic validation to ensure we have a message with text and a chat ID.
+    if (!message || !message.text || !message.chat || !message.chat.id) {
+      return NextResponse.json({ status: 'ok' }); // Not a message we can handle
     }
 
-    return NextResponse.json({ status: 'ok' });
-  } catch (error: any) {
-    console.error('Error processing Telegram webhook:', error.message, error.stack);
-    try {
-      const body = await req.json().catch(() => ({}));
-      if (body.message?.chat?.id) {
-        await sendMessage(body.message.chat.id, 'Произошла внутренняя ошибка. Пожалуйста, попробуйте позже.');
-      }
-    } catch (e) {
-      // ignore
+    const chatId = message.chat.id;
+    const query = message.text;
+
+    const supabase = createClient();
+
+    // 1. Fetch settings and chat data in parallel for efficiency.
+    const [settingsRes, chatRes] = await Promise.all([
+      supabase.from('settings').select('key, value'),
+      supabase.from('chats').select('*').eq('chat_id', chatId).single(),
+    ]);
+
+    // Process settings into a more usable key-value object.
+    const settings = settingsRes.data?.reduce((acc, { key, value }) => {
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>) || {};
+
+    const config = {
+      sessionTimeout: parseInt(settings.bot_session_timeout || '30', 10),
+      rateLimitMax: parseInt(settings.bot_rate_limit_max || '5', 10),
+      refillSeconds: parseInt(settings.bot_rate_limit_refill_seconds || '5', 10),
+      dailyQuotaMax: parseInt(settings.bot_daily_quota_max || '100', 10),
+      msgRateLimit: settings.bot_message_rate_limit || 'You are sending messages too fast. Please wait.',
+      msgDailyQuota: settings.bot_message_daily_quota || 'You have reached your daily message limit. Try again tomorrow.',
+      msgBlocked: settings.bot_message_blocked || 'Your access to the bot has been restricted.',
+    };
+
+    let chat = chatRes.data;
+    let isNewUser = false;
+
+    // 2. Find or Create User
+    if (!chat) {
+      isNewUser = true;
+      const { data: newChat, error: newChatError } = await supabase
+        .from('chats')
+        .insert({
+          chat_id: chatId,
+          username: message.chat.username,
+          first_name: message.chat.first_name,
+          last_message_at: new Date().toISOString(),
+          quota_reset_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          rate_limit_tokens: config.rateLimitMax,
+        })
+        .select()
+        .single();
+
+      if (newChatError) throw newChatError;
+      chat = newChat;
     }
-    return new NextResponse('Internal Server Error', { status: 500 });
+
+    const now = new Date();
+    const updates: Partial<typeof chat> = {};
+
+    // 3. Check #1: Blocked User
+    if (chat.is_blocked) {
+      await sendTelegramMessage(chatId, config.msgBlocked);
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    // 4. Check #2: Daily Quota
+    const quotaResetAt = new Date(chat.quota_reset_at);
+    if (now > quotaResetAt) {
+      updates.daily_quota_used = 0;
+      updates.quota_reset_at = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    if ((updates.daily_quota_used ?? chat.daily_quota_used) >= config.dailyQuotaMax) {
+      await sendTelegramMessage(chatId, config.msgDailyQuota);
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    // 5. Check #3: Rate Limiter
+    const lastMessageAt = new Date(chat.last_message_at);
+    const secondsPassed = (now.getTime() - lastMessageAt.getTime()) / 1000;
+    const tokensToAdd = Math.floor(secondsPassed / config.refillSeconds);
+
+    let currentTokens = chat.rate_limit_tokens;
+    if (tokensToAdd > 0) {
+      currentTokens = Math.min(currentTokens + tokensToAdd, config.rateLimitMax);
+    }
+
+    if (currentTokens < 1) {
+      await sendTelegramMessage(chatId, config.msgRateLimit);
+      // Even if rate limited, we update the token count in the DB.
+      if (currentTokens !== chat.rate_limit_tokens) {
+        await supabase.from('chats').update({ rate_limit_tokens: currentTokens }).eq('chat_id', chatId);
+      }
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    // All checks passed, proceed with AI call.
+    updates.rate_limit_tokens = currentTokens - 1; // Consume a token
+    updates.daily_quota_used = (updates.daily_quota_used ?? chat.daily_quota_used) + 1;
+    updates.last_message_at = now.toISOString();
+
+    // 6. Determine if it's a new session
+    const minutesSinceLast = isNewUser ? Infinity : secondsPassed / 60;
+    const isNewSession = minutesSinceLast > config.sessionTimeout;
+    if (isNewSession) {
+      updates.session_start_at = now.toISOString();
+    }
+
+    // 7. Save all updates to the database in one go
+    const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
+    if (updateError) throw updateError;
+
+    // 8. Call the AI assistant
+    const assistantResponse = await runAssistant({ query, isNewSession });
+
+    // 9. Send the final response to the user
+    await sendTelegramMessage(chatId, assistantResponse.response);
+
+  } catch (err: any) {
+    console.error('Error in Telegram webhook:', err.message || err);
   }
-}
 
-export async function GET(req: NextRequest) {
-  return NextResponse.json({ message: "Telegram webhook is ready. Use POST for messages." });
+  // Always return a 200 OK to Telegram
+  return NextResponse.json({ status: 'ok' });
 }
