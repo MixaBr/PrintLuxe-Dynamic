@@ -13,7 +13,8 @@ export const handleGeneralQuestion = ai.defineTool(
     inputSchema: z.string().describe('The user question or message.'),
     outputSchema: z.string().describe("A direct answer to the user's question."),
   },
-  async (question, { flow: { custom } }) => {
+  async (question, { flow }) => {
+    const { custom } = flow;
     const { chatId } = custom || {};
 
     if (!chatId) {
