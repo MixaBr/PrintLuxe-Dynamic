@@ -115,7 +115,7 @@ export async function POST(req: Request) {
       updates.quota_reset_at = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
     }
 
-    if ((updates.daily_quota_used ?? chat.daily_quota_used) >= config.dailyQuotaMax) {
+    if ((updates.daily_quota_used ?? chat.daily_quota_used) >= config.dailyQuotaMax && !isNewUser) {
       await sendTelegramMessage(chatId, config.msgDailyQuota);
       return NextResponse.json({ status: 'ok' });
     }
@@ -145,14 +145,13 @@ export async function POST(req: Request) {
     updates.last_message_at = now.toISOString();
     
     // Save usage updates immediately.
-    // The assistant might perform its own DB updates later.
     const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
     if (updateError) throw updateError;
 
 
     // 6. Determine if it's a new session
     const minutesSinceLast = isNewUser ? Infinity : secondsPassed / 60;
-    const isNewSession = minutesSinceLast > config.sessionTimeout;
+    const isNewSession = !isNewUser && minutesSinceLast > config.sessionTimeout;
     
     // 7. Call the AI assistant with the full context
     const assistantResponse = await runAssistant({
@@ -160,7 +159,7 @@ export async function POST(req: Request) {
       isNewUser,
       isNewSession,
       userName: chat.first_name, // Suggest the user's profile display name
-      firstName: chat.us_first_name, // The name they want to be called
+      firstName: chat.user_first_name, // The name they want to be called
       chatId: chat.chat_id,
     });
     
@@ -174,3 +173,5 @@ export async function POST(req: Request) {
   // Always return a 200 OK to Telegram
   return NextResponse.json({ status: 'ok' });
 }
+
+    

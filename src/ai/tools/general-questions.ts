@@ -1,53 +1,32 @@
 /**
- * @fileOverview A Genkit tool for answering general questions based on database settings.
+ * @fileOverview A Genkit tool for answering general questions.
  */
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-
-// Fetches and formats all settings from the Supabase database to create a context string.
-async function getSettingsContext(): Promise<string> {
-  const supabase = createClient();
-  const { data: settingsData, error } = await supabase
-    .from('settings')
-    .select('key, value, description');
-
-  if (error) {
-    console.error('Error fetching settings:', error);
-    return 'No business information available.';
-  }
-
-  // Format the settings into a single string for the prompt
-  const context = settingsData
-    .map((setting) => {
-      return `Key: ${setting.key}\nDescription: ${setting.description}\nValue: ${setting.value}`;
-    })
-    .join('\n\n');
-
-  return context;
-}
 
 export const handleGeneralQuestion = ai.defineTool(
   {
     name: 'handleGeneralQuestion',
-    description: 'Use this tool to answer general questions from the user. The answer will be based on the business information provided in the database.',
-    inputSchema: z.string().describe('The user question to be answered.'),
-    outputSchema: z.string().describe('The answer to the question.'),
+    description: "Use this tool for any general question, greeting, or command that is not a person's name.",
+    inputSchema: z.string().describe('The user question or message.'),
+    outputSchema: z.string().describe("A direct answer to the user's question."),
   },
-  async (query) => {
-    const settingsContext = await getSettingsContext();
+  async (question, { custom }) => {
+    const { chatId } = custom || {};
 
-    const { text } = await ai.generate({
-        prompt: `You are a helpful assistant for PrintLux. Answer the user's question based *only* on the business information provided below. Keep the answer concise.
-        
-== Business Information ==
-${settingsContext}
-== End of Business Information ==
+    if (!chatId) {
+      console.error('handleGeneralQuestion tool was called without a chatId.');
+    }
 
-User's question: "${query}"`,
-    });
-    return text;
+    // In a real app, you would use a knowledge base (RAG) here to find a real answer.
+    // For now, we return a simple, placeholder answer. The LLM will then format this
+    // into a polite, user-facing response.
+    const answer = `This is a placeholder response for the question: "${question}". A real implementation would use a knowledge base to provide a detailed answer.`;
+    
+    return answer;
   }
 );
+
+    

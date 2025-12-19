@@ -9,7 +9,7 @@
  * @param userName - The user's name from their Telegram profile.
  * @returns A welcome string.
  */
-export function getIntroduction(userName?: string | null): string {
+export async function getIntroduction(userName?: string | null): Promise<string> {
     let response = "Здравствуйте! Я PrintLux Helper, ваш AI-ассистент по ремонту принтеров.";
 
     if (userName) {

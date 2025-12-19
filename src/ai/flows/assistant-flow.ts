@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { handleGeneralQuestion } from '../tools/general-questions';
 import { detectAndSaveName } from '../tools/user-profile';
 import { getIntroduction } from '../tools/introduction';
-import { createClient } from '@/lib/supabase/server';
 
 // Define schemas for this flow
 const AssistantInputSchema = z.object({
@@ -28,23 +27,24 @@ const AssistantOutputSchema = z.object({
 type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
 
-// Main exported function for the webhook
+// Main exported function for the webhook.
+// This function now contains the deterministic logic and only calls the AI when necessary.
 export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
-  // 1. Handle the highest priority: a new user. This is deterministic.
+  // 1. Handle the highest priority: a new user. This is deterministic, no AI needed.
   if (input.isNewUser) {
-    const response = getIntroduction(input.userName);
+    const response = await getIntroduction(input.userName);
     return { response };
   }
   
   // 2. Handle a returning user in a new session. Also deterministic.
   if (input.isNewSession) {
     const response = `Здравствуйте, ${input.firstName || input.userName}! Рад вас снова видеть. Чем могу помочь?`;
-    // We can then let the assistant answer the actual query in the same turn.
-    // For simplicity now, we'll just greet. We can chain this with another call later.
+    return { response };
   }
 
-  // 3. For ongoing conversations, use the AI router flow.
-  return assistantRouterFlow(input);
+  // 3. For all other ongoing conversations, use the AI router flow.
+  const aiResponse = await assistantRouterFlow(input);
+  return { response: aiResponse };
 }
 
 
@@ -56,51 +56,37 @@ const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
     inputSchema: AssistantInputSchema,
-    outputSchema: AssistantOutputSchema,
+    outputSchema: z.string(), // The flow now directly returns the string response
   },
   async (input) => {
     
-    // If we don't know the user's name yet, the primary goal is to get it.
-    // We guide the model to prioritize this.
+    // The system prompt now adapts based on whether we know the user's name.
     const systemPrompt = !input.firstName
       ? `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your primary goal is to get the user's name.
 Analyze the user's message ('query').
-- If the message looks like a person's name (e.g., 'Mike', 'Anna', 'Михаил'), call the 'detectAndSaveName' tool.
-- If the message is a question or command (e.g., 'What services do you offer?'), call the 'handleGeneralQuestion' tool to answer it, and then POLITELY remind the user you are waiting for their name in your final response.`
+- If the message looks like a person's name (e.g., 'Mike', 'Anna', 'Михаил'), you MUST call the 'detectAndSaveName' tool. Your final response should confirm their name and ask how you can help.
+- For any other message, question, or command (e.g., 'What services do you offer?', 'hello'), you MUST call the 'handleGeneralQuestion' tool.
+After using the 'handleGeneralQuestion' tool, you MUST POLITELY remind the user you are waiting for their name in your final response.
+Example response after a general question: "Thanks for asking... Btw, I'm still waiting to know how I should address you."`
       : `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your goal is to be helpful, professional, and concise.
-Call the 'handleGeneralQuestion' tool to answer the user's query. Greet the user by their name, '${input.firstName}', if it feels natural.`;
+You MUST call the 'handleGeneralQuestion' tool to answer the user's query. Greet the user by their name, '${input.firstName}', if it feels natural.`;
 
     const response = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-1.5-flash',
       tools,
       prompt: input.query,
       system: systemPrompt,
-      // Pass additional data required by tools via config.
       config: {
+        // Pass the chatId to all tools automatically.
         custom: { chatId: input.chatId }
       },
     });
 
-    const toolResponse = response.toolRequest();
-
-    // If no tool was called, generate a simple response.
-    if (!toolResponse) {
-       const directResponse = await handleGeneralQuestion(input.query);
-       return { response: directResponse };
-    }
-    
-    // Execute the tool chosen by the model
-    const toolResult = await toolResponse.execute();
-
-    // Generate the final, user-facing response based on the tool's output.
-    const finalResponse = await ai.generate({
-       model: 'googleai/gemini-2.5-flash',
-       prompt: `The user said: "${input.query}". A tool was called and it returned the following data: "${toolResult}".
-Formulate a natural, user-facing response in Russian based on this.
-- If the tool was 'detectAndSaveName', the data is the detected name. Confirm with the user and ask how you can help.
-- If the tool was 'handleGeneralQuestion', the data is the answer. Just provide this answer. If you were also asked to remind the user for their name, add that reminder politely at the end.`,
-    });
-
-    return { response: finalResponse.text };
+    // The 'generate' call with tools automatically handles the tool execution
+    // and returns the final text response in a single step.
+    // This is much more efficient.
+    return response.text();
   }
 );
+
+    
