@@ -14,7 +14,7 @@ export const detectAndSaveName = ai.defineTool(
     inputSchema: z.string().describe('The potential name extracted from the user query.'),
     outputSchema: z.string().describe("The detected name that was saved."),
   },
-  async (potentialName, {custom}) => {
+  async (potentialName, { flow: { custom } }) => {
     const { chatId } = custom || {};
 
     if (!chatId) {
