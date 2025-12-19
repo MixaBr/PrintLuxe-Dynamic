@@ -41,5 +41,3 @@ export const detectAndSaveName = ai.defineTool(
     return detectedName;
   }
 );
-
-    

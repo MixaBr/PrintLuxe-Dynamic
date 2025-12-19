@@ -28,5 +28,3 @@ export const handleGeneralQuestion = ai.defineTool(
     return answer;
   }
 );
-
-    
