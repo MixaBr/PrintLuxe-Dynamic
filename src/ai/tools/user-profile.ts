@@ -31,7 +31,7 @@ export const detectAndSaveName = ai.defineTool(
     const supabase = createAdminClient();
     const { error } = await supabase
       .from('chats')
-      .update({ user_first_name: detectedName })
+      .update({ us_first_name: detectedName }) // Corrected column name as per your instruction
       .eq('chat_id', chatId);
 
     if (error) {

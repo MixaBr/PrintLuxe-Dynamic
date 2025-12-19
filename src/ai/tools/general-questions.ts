@@ -1,34 +1,47 @@
-/**
- * @fileOverview A Genkit tool for answering general questions.
- */
-'use server';
-
 import { ai } from '@/ai/genkit';
+import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
 
-export const handleGeneralQuestion = ai.defineTool(
-  {
-    name: 'handleGeneralQuestion',
-    description: "Use this tool for any general question, greeting, or command that is not a person's name.",
-    inputSchema: z.object({
-      question: z.string().describe('The user question or message.'),
-      chatId: z.number().describe("The user's Telegram chat ID."),
-    }),
-    outputSchema: z.string().describe("A direct answer to the user's question."),
-  },
-  async (input) => {
-    const { question, chatId } = input;
+export const generalQuestionsTool = ai.defineTool(
+    {
+        name: 'generalQuestions',
+        description: 'Tool for answering general questions about the company. Use this to get context about the company from the database.',
+        inputSchema: z.object({}), // No parameters needed, it fetches context dynamically.
+        outputSchema: z.string(),
+    },
+    async () => {
+        // This tool is designed to run on the server side, where it has access to the database.
+        console.log('Executing generalQuestionsTool to fetch company context from DB.');
 
-    if (!chatId) {
-      // This is a fallback, but the system prompt should enforce passing it.
-      console.error('handleGeneralQuestion tool was called without a chatId.');
+        const supabase = createAdminClient();
+
+        // The 'settings' table is expected to have 'key' and 'value' columns.
+        // We fetch all settings to build a comprehensive context for the AI.
+        const {
+            data: settings,
+            error,
+        } = await supabase.from('settings').select('key, value');
+
+        if (error) {
+            console.error('Error fetching company settings:', error);
+            return 'К сожалению, я не смог получить информацию о компании. Пожалуйста, попробуйте позже.';
+        }
+
+        if (!settings || settings.length === 0) {
+            return 'Информация о компании не настроена. Не могу ответить на вопрос.';
+        }
+
+        // Dynamically build the context string from all available settings.
+        let context = 'Контекст о компании:\n';
+        for (const setting of settings) {
+            // Replace underscores with spaces and capitalize for better readability in the context.
+            const formattedKey = setting.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+            context += `- ${formattedKey}: ${setting.value}\n`;
+        }
+
+        // This context is not returned to the user directly.
+        // It's passed back to the AI model, which will then use this information
+        // to answer the user's original question.
+        return context;
     }
-
-    // In a real app, you would use a knowledge base (RAG) here to find a real answer.
-    // For now, we return a simple, placeholder answer. The LLM will then format this
-    // into a polite, user-facing response.
-    const answer = `This is a placeholder response for the question: "${question}". A real implementation would use a knowledge base to provide a detailed answer.`;
-    
-    return answer;
-  }
 );

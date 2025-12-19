@@ -1,43 +1,21 @@
 /**
  * @fileOverview A general-purpose AI assistant flow for the Telegram bot.
- * This file implements a sophisticated pipeline for processing incoming messages:
- * 1. Fetches global settings and the user's chat data from Supabase.
- * 2. Creates a new user if one doesn't exist.
- * 3. Performs a series of security and resource checks:
- *    - Blocked status check.
- *    - Daily quota check (resets every 24 hours).
- *    - Rate limit check (using a token bucket algorithm).
- * 4. If all checks pass, it determines if the session is new.
- * 5. Calls the AI assistant (`runAssistant`) with the user's query and session status.
- * 6. Sends the AI's response back to the user.
- * 7. If any check fails, it sends a predefined message to the user.
- * 8. All database writes for a single user are batched into one update call.
  */
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { handleGeneralQuestion } from '../tools/general-questions';
+import { generalQuestionsTool } from '../tools/general-questions';
 import { detectAndSaveName } from '../tools/user-profile';
 import { getIntroduction } from '../tools/introduction';
+import { createAdminClient } from '@/lib/supabase/service';
+import { endConversationTool } from '../tools/end-conversation';
 
-// Define schemas for this flow
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user query from the Telegram chat.'),
   isNewUser: z.boolean().describe('True if this is the very first time the user is interacting with the bot.'),
-  isNewSession: z
-    .boolean()
-    .describe('True if this is the first message in a new conversation session.'),
-  firstName: z
-    .string()
-    .optional()
-    .nullable()
-    .describe("The user's first name, if known."),
-  userName: z
-    .string()
-    .optional()
-    .nullable()
-    .describe("The user's first name from their Telegram profile."),
+  isNewSession: z.boolean().describe('True if this is the first message in a new conversation session.'),
+  userName: z.string().optional().nullable().describe("The user's username from their Telegram profile."),
   chatId: z.number().describe('The telegram chat ID of the user.'),
 });
 type AssistantInput = z.infer<typeof AssistantInputSchema>;
@@ -47,59 +25,50 @@ const AssistantOutputSchema = z.object({
 });
 type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
-// Main exported function for the webhook.
-// This function now contains the deterministic logic and only calls the AI when necessary.
-export async function runAssistant(
-  input: AssistantInput
-): Promise<AssistantOutput> {
-  // 1. Handle the highest priority: a new user. This is deterministic, no AI needed.
+export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
   if (input.isNewUser) {
     const response = await getIntroduction(input.userName);
     return { response };
   }
 
-  // 2. Handle a returning user in a new session. Also deterministic.
-  if (input.isNewSession) {
-    const response = `Здравствуйте, ${
-      input.firstName || input.userName
-    }! Рад вас снова видеть. Чем могу помочь?`;
-    return { response };
-  }
-
-  // 3. For all other ongoing conversations, use the AI router flow.
   const aiResponse = await assistantRouterFlow(input);
   return { response: aiResponse };
 }
 
-// Define the Tools for the AI to use
-const tools = [detectAndSaveName, handleGeneralQuestion];
+const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool];
 
-// Define the main router flow
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
     inputSchema: AssistantInputSchema,
-    outputSchema: z.string(), // The flow now directly returns the string response
+    outputSchema: z.string(),
   },
   async (input) => {
-    // The system prompt now adapts based on whether we know the user's name.
-    const systemPrompt = !input.firstName
-      ? `Ты PrintLux Helper, русскоязычный AI-ассистент компании PrintLux.
-Твоя главная цель — узнать имя пользователя. Ты ДОЛЖЕН отвечать ИСКЛЮЧИТЕЛЬНО на русском языке.
+    // Fetch the user's current name from the database at the beginning of every flow run.
+    // This ensures we always have the most up-to-date information.
+    const supabase = createAdminClient();
+    const { data: chatData, error } = await supabase
+      .from('chats')
+      .select('us_first_name')
+      .eq('chat_id', input.chatId)
+      .single();
 
-ID чата пользователя: ${input.chatId}. Ты ДОЛЖЕН передавать этот ID в любой инструмент, который его требует.
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is not an error here
+      console.error('Error fetching user name:', error);
+      // Fallback response if DB is down
+      return 'Внутренняя ошибка: не удалось получить данные пользователя. Попробуйте позже.';
+    }
 
-Проанализируй сообщение пользователя ('query').
-- Если сообщение похоже на имя (например, 'Майкл', 'Анна', 'Михаил'), ты ДОЛЖЕН вызвать инструмент 'detectAndSaveName'. Передай в него имя и chatId. Твой финальный ответ должен подтвердить имя и спросить, чем ты можешь помочь.
-- Для любого другого сообщения, вопроса или команды (например, 'Какие у вас услуги?', 'привет') ты ДОЛЖЕН вызвать инструмент 'handleGeneralQuestion'. Передай в него запрос пользователя и chatId.
-- После использования 'handleGeneralQuestion' ты ДОЛЖЕН вежливо напомнить пользователю, что ждешь его имя.
-Пример ответа после общего вопроса: "Спасибо за ваш вопрос... Кстати, я все еще жду, чтобы узнать, как мне к вам обращаться."`
-      : `Ты PrintLux Helper, русскоязычный AI-ассистент компании PrintLux. Твоя цель — быть полезным, профессиональным и кратким. Ты ДОЛЖЕН отвечать ИСКЛЮЧИТЕЛЬНО на русском языке.
+    const currentFirstName = chatData?.us_first_name;
 
-ID чата пользователя: ${input.chatId}.
-Ты ДОЛЖЕН вызвать инструмент 'handleGeneralQuestion' для ответа на запрос пользователя. Передай в него запрос и chatId.
-Естественным образом поприветствуй пользователя по имени: '${input.firstName}'.
-Пример: "Здравствуйте, ${input.firstName}! Чем могу помочь?"`;
+    // Special handling for a new session with a known user
+    if (input.isNewSession && currentFirstName) {
+        return `Приветствую Вас, ${currentFirstName}! Рад видеть! Чем могу сегодня Вам помочь?`;
+    }
+
+    const systemPrompt = !currentFirstName
+      ? `Ты PrintLux Helper, русскоязычный AI-ассистент. Твоя главная цель — узнать имя пользователя. Отвечай ИСКЛЮЧИТЕЛЬНО на русском языке.\nID чата: ${input.chatId}. Передавай его в любой инструмент, который его требует.\n\nПроанализируй сообщение:\n1.  **Приветствие** ('привет', 'здравствуй'): Ответь на приветствие и спроси имя. Пример: \"Приветствую Вас! Как я могу к Вам обращаться?\"\n2.  **Похоже на имя** ('Майкл', 'Анна'): Используй инструмент \'detectAndSaveName\'.\n3.  **Вопрос о компании** ('услуги', 'цены'): Используй инструмент \'generalQuestions\'. После этого вежливо напомни, что ждешь имя.\n4.  **Прощание** ('спасибо, до свидания', 'пока', 'это все'): Используй инструмент \'endConversationTool\'.\n5.  **Всё остальное** (просьба поболтать, общие вопросы): Ответь напрямую как дружелюбный собеседник. В конце ответа напомни про имя.`
+      : `Ты PrintLux Helper, русскоязычный AI-ассистент. Ты общаешься с пользователем по имени ${currentFirstName}. Отвечай ИСКЛЮЧИТЕЛЬНО на русском языке.\nID чата: ${input.chatId}. Передавай его в любой инструмент, который его требует.\n\nПроанализируй запрос:\n- Если пользователь хочет закончить разговор ('спасибо', 'до свидания', 'пока', 'я закончил'), используй инструмент \'endConversationTool\'.\n- Если он касается услуг, цен, продукции или заказов PrintLux, используй инструмент \'generalQuestions\'.\n- Если запрос НЕ касается деятельности компании (просьба поболтать, общие знания), ответь на него напрямую как дружелюбный собеседник. После своего ответа, вежливо предложи свою помощь по основной теме. Пример: \"...Кстати, если у вас будут вопросы о наших услугах, я готов помочь!\"`;
 
     const response = await ai.generate({
       tools,
@@ -107,9 +76,8 @@ ID чата пользователя: ${input.chatId}.
       system: systemPrompt,
     });
 
-    // The 'generate' call with tools automatically handles the tool execution
-    // and returns the final text response in a single step.
-    // This is much more efficient.
+    // The genkit flow automatically handles tool execution and resumes the flow.
+    // The final, user-facing text is available in response.text.
     return response.text;
   }
 );
