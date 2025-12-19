@@ -1,6 +1,17 @@
 /**
  * @fileOverview A general-purpose AI assistant flow for the Telegram bot.
- * This flow acts as a router, deciding which specialized tool to call based on the user's query and state.
+ * This file implements a sophisticated pipeline for processing incoming messages:
+ * 1. Fetches global settings and the user's chat data from Supabase.
+ * 2. Creates a new user if one doesn't exist.
+ * 3. Performs a series of security and resource checks:
+ *    - Blocked status check.
+ *    - Daily quota check (resets every 24 hours).
+ *    - Rate limit check (using a token bucket algorithm).
+ * 4. If all checks pass, it determines if the session is new.
+ * 5. Calls the AI assistant (`runAssistant`) with the user's query and session status.
+ * 6. Sends the AI's response back to the user.
+ * 7. If any check fails, it sends a predefined message to the user.
+ * 8. All database writes for a single user are batched into one update call.
  */
 'use server';
 
