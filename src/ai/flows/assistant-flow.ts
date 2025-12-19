@@ -25,9 +25,19 @@ import { getIntroduction } from '../tools/introduction';
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user query from the Telegram chat.'),
   isNewUser: z.boolean().describe('True if this is the very first time the user is interacting with the bot.'),
-  isNewSession: z.boolean().describe('True if this is the first message in a new conversation session.'),
-  firstName: z.string().optional().nullable().describe("The user's first name, if known."),
-  userName: z.string().optional().nullable().describe("The user's first name from their Telegram profile."),
+  isNewSession: z
+    .boolean()
+    .describe('True if this is the first message in a new conversation session.'),
+  firstName: z
+    .string()
+    .optional()
+    .nullable()
+    .describe("The user's first name, if known."),
+  userName: z
+    .string()
+    .optional()
+    .nullable()
+    .describe("The user's first name from their Telegram profile."),
   chatId: z.number().describe('The telegram chat ID of the user.'),
 });
 type AssistantInput = z.infer<typeof AssistantInputSchema>;
@@ -37,19 +47,22 @@ const AssistantOutputSchema = z.object({
 });
 type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
-
 // Main exported function for the webhook.
 // This function now contains the deterministic logic and only calls the AI when necessary.
-export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
+export async function runAssistant(
+  input: AssistantInput
+): Promise<AssistantOutput> {
   // 1. Handle the highest priority: a new user. This is deterministic, no AI needed.
   if (input.isNewUser) {
     const response = await getIntroduction(input.userName);
     return { response };
   }
-  
+
   // 2. Handle a returning user in a new session. Also deterministic.
   if (input.isNewSession) {
-    const response = `Здравствуйте, ${input.firstName || input.userName}! Рад вас снова видеть. Чем могу помочь?`;
+    const response = `Здравствуйте, ${
+      input.firstName || input.userName
+    }! Рад вас снова видеть. Чем могу помочь?`;
     return { response };
   }
 
@@ -57,7 +70,6 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   const aiResponse = await assistantRouterFlow(input);
   return { response: aiResponse };
 }
-
 
 // Define the Tools for the AI to use
 const tools = [detectAndSaveName, handleGeneralQuestion];
@@ -70,7 +82,6 @@ const assistantRouterFlow = ai.defineFlow(
     outputSchema: z.string(), // The flow now directly returns the string response
   },
   async (input) => {
-    
     // The system prompt now adapts based on whether we know the user's name.
     const systemPrompt = !input.firstName
       ? `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your primary goal is to get the user's name.
@@ -85,7 +96,6 @@ Example response after a general question: "Thanks for asking... Btw, I'm still 
 You MUST call the 'handleGeneralQuestion' tool to answer the user's query. Pass the user's query and the chatId. Greet the user by their name, '${input.firstName}', if it feels natural.`;
 
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
       tools,
       prompt: input.query,
       system: systemPrompt,
