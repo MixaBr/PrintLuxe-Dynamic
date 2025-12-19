@@ -85,8 +85,6 @@ You MUST call the 'handleGeneralQuestion' tool to answer the user's query. Greet
     // The 'generate' call with tools automatically handles the tool execution
     // and returns the final text response in a single step.
     // This is much more efficient.
-    return response.text();
+    return response.text;
   }
 );
-
-    
