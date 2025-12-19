@@ -14,8 +14,7 @@ export const handleGeneralQuestion = ai.defineTool(
     outputSchema: z.string().describe("A direct answer to the user's question."),
   },
   async (question, flow) => {
-    const { custom } = flow;
-    const { chatId } = custom || {};
+    const { chatId } = flow.custom || {};
 
     if (!chatId) {
       console.error('handleGeneralQuestion tool was called without a chatId.');

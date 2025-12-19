@@ -15,8 +15,7 @@ export const detectAndSaveName = ai.defineTool(
     outputSchema: z.string().describe("The detected name that was saved."),
   },
   async (potentialName, flow) => {
-    const { custom } = flow;
-    const { chatId } = custom || {};
+    const { chatId } = flow.custom || {};
 
     if (!chatId) {
       console.error('detectAndSaveName tool was called without a chatId.');
