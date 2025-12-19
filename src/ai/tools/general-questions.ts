@@ -10,13 +10,17 @@ export const handleGeneralQuestion = ai.defineTool(
   {
     name: 'handleGeneralQuestion',
     description: "Use this tool for any general question, greeting, or command that is not a person's name.",
-    inputSchema: z.string().describe('The user question or message.'),
+    inputSchema: z.object({
+      question: z.string().describe('The user question or message.'),
+      chatId: z.number().describe("The user's Telegram chat ID."),
+    }),
     outputSchema: z.string().describe("A direct answer to the user's question."),
   },
-  async (question, flow) => {
-    const { chatId } = flow.custom || {};
+  async (input) => {
+    const { question, chatId } = input;
 
     if (!chatId) {
+      // This is a fallback, but the system prompt should enforce passing it.
       console.error('handleGeneralQuestion tool was called without a chatId.');
     }
 

@@ -11,11 +11,14 @@ export const detectAndSaveName = ai.defineTool(
   {
     name: 'detectAndSaveName',
     description: "Use this tool when the user's message is likely a person's name.",
-    inputSchema: z.string().describe('The potential name extracted from the user query.'),
+    inputSchema: z.object({
+        potentialName: z.string().describe('The potential name extracted from the user query.'),
+        chatId: z.number().describe("The user's Telegram chat ID."),
+    }),
     outputSchema: z.string().describe("The detected name that was saved."),
   },
-  async (potentialName, flow) => {
-    const { chatId } = flow.custom || {};
+  async (input) => {
+    const { potentialName, chatId } = input;
 
     if (!chatId) {
       console.error('detectAndSaveName tool was called without a chatId.');

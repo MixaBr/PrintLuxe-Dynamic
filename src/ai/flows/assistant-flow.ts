@@ -74,23 +74,21 @@ const assistantRouterFlow = ai.defineFlow(
     // The system prompt now adapts based on whether we know the user's name.
     const systemPrompt = !input.firstName
       ? `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your primary goal is to get the user's name.
+The user's chat ID is ${input.chatId}. You MUST pass this ID to any tool you call that requires a 'chatId'.
+
 Analyze the user's message ('query').
-- If the message looks like a person's name (e.g., 'Mike', 'Anna', 'Михаил'), you MUST call the 'detectAndSaveName' tool. Your final response should confirm their name and ask how you can help.
-- For any other message, question, or command (e.g., 'What services do you offer?', 'hello'), you MUST call the 'handleGeneralQuestion' tool.
+- If the message looks like a person's name (e.g., 'Mike', 'Anna', 'Михаил'), you MUST call the 'detectAndSaveName' tool. Pass the name and the chatId. Your final response should confirm their name and ask how you can help.
+- For any other message, question, or command (e.g., 'What services do you offer?', 'hello'), you MUST call the 'handleGeneralQuestion' tool. Pass the user's query and the chatId.
 After using the 'handleGeneralQuestion' tool, you MUST POLITELY remind the user you are waiting for their name in your final response.
 Example response after a general question: "Thanks for asking... Btw, I'm still waiting to know how I should address you."`
-      : `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your goal is to be helpful, professional, and concise.
-You MUST call the 'handleGeneralQuestion' tool to answer the user's query. Greet the user by their name, '${input.firstName}', if it feels natural.`;
+      : `You are PrintLux Helper, a specialized AI assistant for PrintLux. Your goal is to be helpful, professional, and concise. The user's chat ID is ${input.chatId}.
+You MUST call the 'handleGeneralQuestion' tool to answer the user's query. Pass the user's query and the chatId. Greet the user by their name, '${input.firstName}', if it feels natural.`;
 
     const response = await ai.generate({
       model: 'googleai/gemini-1.5-flash',
       tools,
       prompt: input.query,
       system: systemPrompt,
-      config: {
-        // Pass the chatId to all tools automatically.
-        custom: { chatId: input.chatId }
-      },
     });
 
     // The 'generate' call with tools automatically handles the tool execution
