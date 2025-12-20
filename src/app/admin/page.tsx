@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export default function AdminDashboardPage() {
     const stats = [
-        { title: "Управление контентом", description: "Редактирование главной страницы, 'О нас' и контактов.", icon: <FileText className="h-8 w-8 text-muted-foreground" />, href: "/admin/content" },
+        { title: "Управление контентом", description: "Редактирование страниц и базы знаний AI.", icon: <FileText className="h-8 w-8 text-muted-foreground" />, href: "/admin/content" },
         { title: "Управление пользователями", description: "Назначение ролей, просмотр и редактирование профилей.", icon: <Users className="h-8 w-8 text-muted-foreground" />, href: "/admin/users" },
         { title: "Управление каталогом", description: "Добавление, изменение и удаление товаров и категорий.", icon: <Database className="h-8 w-8 text-muted-foreground" />, href: "/admin/products" },
         { title: "Системные настройки", description: "Глобальные параметры сайта, интеграции и ключи.", icon: <Settings className="h-8 w-8 text-muted-foreground" />, href: "/admin/settings" },
