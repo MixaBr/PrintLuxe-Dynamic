@@ -84,7 +84,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
 
   // 2. Handle brand new user.
   if (input.isNewUser) {
-    const response = getIntroduction(prompts.bot_welcome_message, input.userName);
+    const response = await getIntroduction(prompts.bot_welcome_message, input.userName);
     return { response };
   }
 
@@ -163,12 +163,12 @@ const assistantRouterFlow = ai.defineFlow(
 
     // 5. Check if the knowledgeBaseTool was used and handle it.
     const kbToolCall = routerResponse.toolRequests?.find(
-      (call) => call.name === 'knowledgeBaseTool'
+      (call) => call.toolRequest.name === 'knowledgeBaseTool'
     );
 
     if (kbToolCall) {
       const knowledgeContext = routerResponse.toolResponses?.find(
-        (response) => response.ref === kbToolCall.ref
+        (response) => response.ref === kbToolCall.toolRequest.ref
       )?.output;
 
       if (!knowledgeContext || (typeof knowledgeContext === 'string' && knowledgeContext.trim() === 'В базе знаний не найдено релемантной информации по вашему вопросу.')) {
