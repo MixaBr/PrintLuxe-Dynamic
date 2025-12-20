@@ -68,8 +68,15 @@ export async function POST(req: Request) {
     };
 
     let chat = chatRes.data;
-    let isNewUser = false;
     const now = new Date();
+
+    // Absolute Priority: Check if the user is already blocked.
+    if (chat && chat.is_blocked) {
+        await sendTelegramMessage(chatId, config.msgBlocked);
+        return NextResponse.json({ status: 'ok' });
+    }
+
+    let isNewUser = false;
 
     if (!chat) {
       isNewUser = true;
@@ -95,11 +102,6 @@ export async function POST(req: Request) {
     }
 
     const updates: Partial<typeof chat> = {};
-
-    if (chat.is_blocked) {
-      await sendTelegramMessage(chatId, config.msgBlocked);
-      return NextResponse.json({ status: 'ok' });
-    }
 
     const quotaResetAt = new Date(chat.quota_reset_at);
     if (now > quotaResetAt) {
