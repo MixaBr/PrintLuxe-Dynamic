@@ -8,7 +8,7 @@ export default function AdminDashboardPage() {
         { title: "Управление контентом", description: "Редактирование страниц и базы знаний AI.", icon: <FileText className="h-8 w-8 text-muted-foreground" />, href: "/admin/content" },
         { title: "Управление пользователями", description: "Назначение ролей, просмотр и редактирование профилей.", icon: <Users className="h-8 w-8 text-muted-foreground" />, href: "/admin/users" },
         { title: "Управление каталогом", description: "Добавление, изменение и удаление товаров и категорий.", icon: <Database className="h-8 w-8 text-muted-foreground" />, href: "/admin/products" },
-        { title: "Системные настройки", description: "Глобальные параметры сайта, интеграции и ключи.", icon: <Settings className="h-8 w-8 text-muted-foreground" />, href: "/admin/settings" },
+        { title: "Системные настройки", description: "Глобальные параметры сайта, интеграции и ключи.", icon: <Settings className="h-8 w-8 text-muted-foreground" />, href: "/admin/settings/bot" },
     ]
 
     const menuItems = [
@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
         { href: "/admin/content", label: "Содержимое" },
         { href: "/admin/products", label: "Товары" },
         { href: "/admin/users", label: "Пользователи" },
-        { href: "/admin/settings", label: "Настройки" },
+        { href: "/admin/settings/bot", label: "Настройки" },
     ]
 
     return (

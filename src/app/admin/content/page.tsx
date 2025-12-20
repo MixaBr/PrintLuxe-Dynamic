@@ -10,7 +10,7 @@ export default function AdminContentPage() {
         { href: "/admin/content", label: "Содержимое" },
         { href: "/admin/products", label: "Товары" },
         { href: "/admin/users", label: "Пользователи" },
-        { href: "/admin/settings", label: "Настройки" },
+        { href: "/admin/settings/bot", label: "Настройки" },
     ]
 
     return (
