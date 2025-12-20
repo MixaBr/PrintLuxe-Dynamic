@@ -177,6 +177,10 @@ const assistantRouterFlow = ai.defineFlow(
 
         // The second call includes the history of the conversation, including the tool request.
         // Genkit will automatically resolve the tool and provide its output as context to the model.
+        if (!routerResponse.message) {
+             return "Произошла внутренняя ошибка при обработке вашего запроса.";
+        }
+        
         const expertResponse = await ai.generate({
           system: expertPrompt,
           messages: [
