@@ -3,8 +3,7 @@
  */
 'use server';
 
-import { embed } from 'genkit';
-import { textEmbeddingGecko } from '@/ai/genkit';
+import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 
@@ -27,10 +26,10 @@ export async function embedAndStoreChunks(chunks: Chunk[]) {
     }
 
     try {
-        // 1. Generate embeddings for all chunks in parallel.
-        const embeddings = await embed({
+        // 1. Generate embeddings for all chunks in parallel using the new ai.embed() method.
+        const embeddings = await ai.embed({
             embedder: textEmbeddingGecko,
-            content: chunks.map(chunk => chunk.content),
+            content: { content: chunks.map(chunk => ({ text: chunk.content })) },
         });
 
         if (embeddings.length !== chunks.length) {

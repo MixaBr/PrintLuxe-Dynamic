@@ -9,4 +9,4 @@ export const ai = genkit({
   ],
 });
 
-export const textEmbeddingGecko = googleAI.model('text-embedding-004');
+export const textEmbeddingGecko = googleAI.embedder('text-embedding-004');

@@ -54,6 +54,9 @@ const nextConfig = {
         fs: false,
       };
     }
+
+    // This alias is necessary for pdf-parse to work in the browser.
+    config.resolve.alias['pdf-parse'] = 'pdf-parse/lib/pdf-parse.js';
     
     return config;
   },

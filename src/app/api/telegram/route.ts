@@ -12,8 +12,15 @@
 
 import { runAssistant } from '@/ai/flows/assistant-flow';
 import { createAdminClient } from '@/lib/supabase/service';
-import { render } from 'genkit';
 import { NextResponse } from 'next/server';
+
+// The 'render' function was removed from the 'genkit' package.
+// This is a simple replacement that handles basic {{variable}} substitution.
+function render({ template, context }: { template: string; context: Record<string, any> }): string {
+    return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        return context[key] !== undefined ? String(context[key]) : match;
+    });
+}
 
 async function sendTelegramMessage(chatId: number, text: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;

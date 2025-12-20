@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { UploadCloud, File as FileIcon, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import pdf from 'pdf-parse/lib/pdf-parse';
+import pdf from 'pdf-parse';
 import { embedAndStoreChunks } from '@/app/admin/content/actions';
 
 // Polyfill for Buffer used by pdf-parse in the browser
@@ -193,13 +193,13 @@ export function KnowledgeBaseUploader() {
                     <p className="text-lg font-semibold">
                         <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файлы
                     </p>
-                    <p className="text-sm text-muted-foreground">Только PDF. До {MAX_FILES} файлов, общий размер до 50 МБ.</p>
+                    <p className="text-sm text-muted-foreground">Только PDF. До ${MAX_FILES} файлов, общий размер до 50 МБ.</p>
                 </div>
             </div>
 
             {files.length > 0 && (
                 <div className="space-y-3">
-                    <h4 className="font-medium">Выбранные файлы ({files.length}):</h4>
+                    <h4 className="font-medium">Выбранные файлы (${files.length}):</h4>
                     <div className="w-full rounded-md border">
                         <ScrollArea className="h-48 w-full">
                             <div className='p-2 space-y-2'>
@@ -208,7 +208,7 @@ export function KnowledgeBaseUploader() {
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <FileIcon className="h-5 w-5 flex-shrink-0" />
                                             <span className="text-sm truncate font-medium">{file.name}</span>
-                                            <span className="text-xs text-muted-foreground flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                            <span className="text-xs text-muted-foreground flex-shrink-0">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -225,8 +225,8 @@ export function KnowledgeBaseUploader() {
                         </ScrollArea>
                     </div>
                      <div className='flex justify-between text-sm text-muted-foreground mt-1'>
-                        <span>Всего файлов: {files.length} / {MAX_FILES}</span>
-                        <span>Общий размер: {(totalSize / 1024 / 1024).toFixed(2)} / 50.00 МБ</span>
+                        <span>Всего файлов: ${files.length} / ${MAX_FILES}</span>
+                        <span>Общий размер: ${(totalSize / 1024 / 1024).toFixed(2)} / 50.00 МБ</span>
                     </div>
                 </div>
             )}
