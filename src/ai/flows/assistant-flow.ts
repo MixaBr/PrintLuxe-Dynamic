@@ -180,7 +180,7 @@ const assistantRouterFlow = ai.defineFlow(
         const expertResponse = await ai.generate({
           system: expertPrompt,
           messages: [
-            routerResponse.candidates[0].message
+            routerResponse.message
           ],
           tools: [knowledgeBaseTool]
         });
