@@ -18,6 +18,7 @@ export const knowledgeBaseTool = ai.defineTool(
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
+        // The output is now the raw context for the expert prompt.
         outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating no relevant information was found.'),
     },
     async ({ query }) => {
@@ -40,6 +41,7 @@ export const knowledgeBaseTool = ai.defineTool(
 
         if (error) {
             console.error('Error searching knowledge base:', error);
+            // Return an error message that the main flow can handle.
             return 'Произошла ошибка при поиске в базе знаний.';
         }
 
@@ -50,10 +52,12 @@ export const knowledgeBaseTool = ai.defineTool(
         console.log(`Found ${documents.length} relevant documents.`);
 
         // 3. Format the found documents into a single context string for the LLM.
+        // This is not a user-facing message, but context for the next AI step.
         const contextText = documents
             .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\n  Содержание: ${doc.content}`)
             .join('\n\n');
 
-        return `Вот релевантная информация из базы знаний:\n\n${contextText}`;
+        // Return only the raw context.
+        return contextText;
     }
 );

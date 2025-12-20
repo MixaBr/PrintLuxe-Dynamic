@@ -11,6 +11,7 @@ import { getIntroduction } from '../tools/introduction';
 import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
 import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
+import { render } from 'genkit';
 
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user query from the Telegram chat.'),
@@ -38,6 +39,30 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
 
 const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, knowledgeBaseTool];
 
+// Helper to fetch prompts from the database
+async function getPrompts() {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+        .from('app_config')
+        .select('key, value')
+        .in('key', [
+            'bot_prompt_unidentified_user',
+            'bot_prompt_identified_user',
+            'bot_prompt_expert'
+        ]);
+
+    if (error) {
+        console.error('Error fetching prompts:', error);
+        throw new Error('Could not load AI prompts from database.');
+    }
+
+    return data.reduce((acc, { key, value }) => {
+        acc[key] = value || '';
+        return acc;
+    }, {} as Record<string, string>);
+}
+
+
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
@@ -45,40 +70,77 @@ const assistantRouterFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Fetch the user's current name from the database at the beginning of every flow run.
-    // This ensures we always have the most up-to-date information.
-    const supabase = createAdminClient();
-    const { data: chatData, error } = await supabase
-      .from('chats')
-      .select('us_first_name')
-      .eq('chat_id', input.chatId)
-      .single();
+    // 1. Fetch user data and all required prompts in parallel
+    const [chatDataResult, prompts] = await Promise.all([
+        createAdminClient().from('chats').select('us_first_name').eq('chat_id', input.chatId).single(),
+        getPrompts()
+    ]);
+    
+    const { data: chatData, error } = chatDataResult;
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is not an error here
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error('Error fetching user name:', error);
-      // Fallback response if DB is down
       return 'Внутренняя ошибка: не удалось получить данные пользователя. Попробуйте позже.';
     }
 
     const currentFirstName = chatData?.us_first_name;
 
-    // Special handling for a new session with a known user
+    // 2. Handle new session for a known user
     if (input.isNewSession && currentFirstName) {
         return `Приветствую Вас, ${currentFirstName}! Рад видеть! Чем могу сегодня Вам помочь?`;
     }
 
-    const systemPrompt = !currentFirstName
-      ? `Ты PrintLux Helper, русскоязычный AI-ассистент. Твоя главная цель — узнать имя пользователя. Отвечай ИСКЛЮЧИТЕЛЬНО на русском языке.\nID чата: ${input.chatId}. Передавай его в любой инструмент, который его требует.\n\nПроанализируй сообщение:\n1.  **Приветствие** ('привет', 'здравствуй'): Ответь на приветствие и спроси имя. Пример: "Приветствую Вас! Как я могу к Вам обращаться?"\n2.  **Похоже на имя** ('Майкл', 'Анна'): Используй инструмент 'detectAndSaveName'.\n3.  **Вопрос о компании** ('услуги', 'цены'): Используй инструмент 'generalQuestions'. После этого вежливо напомни, что ждешь имя.\n4.  **Прощание** ('спасибо, до свидания', 'пока', 'это все'): Используй инструмент 'endConversationTool'.\n5.  **Всё остальное** (просьба поболтать, общие вопросы): Ответь напрямую как дружелюбный собеседник. В конце ответа напомни про имя.`
-      : `Ты PrintLux Helper, русскоязычный AI-ассистент. Ты общаешься с пользователем по имени ${currentFirstName}. Отвечай ИСКЛЮЧИТЕЛЬНО на русском языке.\nID чата: ${input.chatId}. Передавай его в любой инструмент, который его требует.\n\nПроанализируй запрос:\n- Если это технический вопрос по ремонту, обслуживанию, спецификациям или инструкциям, используй 'knowledgeBaseTool', чтобы найти ответ в базе знаний.\n- Если пользователь хочет закончить разговор ('спасибо', 'до свидания', 'пока', 'я закончил'), используй 'endConversationTool'.\n- Если он касается общих вопросов о компании (услуг, цен, продукции или заказов PrintLux), используй 'generalQuestions'.\n- Если запрос НЕ касается деятельности компании (просьба поболтать, общие знания), ответь на него напрямую как дружелюбный собеседник. После своего ответа, вежливо предложи свою помощь по основной теме. Пример: "...Кстати, если у вас будут вопросы о наших услугах, я готов помочь!"`;
+    // 3. Select the appropriate system prompt based on user identification status
+    const routerPromptTemplate = currentFirstName
+      ? prompts.bot_prompt_identified_user
+      : prompts.bot_prompt_unidentified_user;
 
-    const response = await ai.generate({
-      tools,
-      prompt: input.query,
-      system: systemPrompt,
+    const routerPrompt = render({
+        template: routerPromptTemplate,
+        context: {
+            chatId: input.chatId,
+            currentFirstName: currentFirstName,
+        }
     });
 
-    // The genkit flow automatically handles tool execution and resumes the flow.
-    // The final, user-facing text is available in response.text.
-    return response.text;
+    // 4. First LLM call (The Router) - decides which tool to use
+    const routerResponse = await ai.generate({
+      tools,
+      prompt: input.query,
+      system: routerPrompt,
+    });
+
+    // 5. Check if the knowledgeBaseTool was used
+    const kbToolCall = routerResponse.toolCalls?.find(call => call.tool === 'knowledgeBaseTool');
+
+    if (kbToolCall) {
+        // If the knowledge base tool was called, it means the router identified a technical question.
+        // The tool's output (context) is already available in routerResponse.toolOutput().
+        const knowledgeContext = routerResponse.toolOutput(kbToolCall.id);
+        
+        if (!knowledgeContext || knowledgeContext.trim() === 'В базе знаний не найдено релевантной информации по вашему вопросу.') {
+            return knowledgeContext || "Не удалось найти информацию по вашему запросу.";
+        }
+
+        // 6. Second LLM call (The Expert) - generates the final answer based on the context
+        const expertPromptTemplate = prompts.bot_prompt_expert;
+        const expertPrompt = render({
+            template: expertPromptTemplate,
+            context: {
+                query: input.query,
+                contextText: knowledgeContext
+            }
+        });
+        
+        const expertResponse = await ai.generate({
+            prompt: expertPrompt,
+            // No tools are passed here, as the expert's only job is to synthesize an answer.
+        });
+        
+        return expertResponse.text;
+    }
+
+    // 7. If no special tool was used, return the direct text response from the router.
+    return routerResponse.text;
   }
 );

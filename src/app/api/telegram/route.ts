@@ -46,9 +46,9 @@ export async function POST(req: Request) {
 
     const supabase = createAdminClient();
 
-    // Fetch bot configuration from the new `app_config` table
+    // Fetch all bot configurations from the `app_config` table
     const [appConfigRes, chatRes] = await Promise.all([
-      supabase.from('app_config').select('key, value'),
+      supabase.from('app_config').select('key, value').like('key', 'bot_%'),
       supabase.from('chats').select('*').eq('chat_id', chatId).single(),
     ]);
 
