@@ -5,7 +5,7 @@
 
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
-import { embed } from 'genkit';
+import { embed } from '@genkit-ai/ai';
 import { z } from 'zod';
 
 // This is the SQL function we created in Supabase
