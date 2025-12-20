@@ -28,6 +28,7 @@ const AssistantOutputSchema = z.object({
 type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
 export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
+  // RESTORED: For a brand new user, call the dedicated introduction function.
   if (input.isNewUser) {
     const response = await getIntroduction(input.userName);
     return { response };
@@ -118,9 +119,10 @@ const assistantRouterFlow = ai.defineFlow(
         // The tool's output (context) is already available in routerResponse.toolOutput().
         const knowledgeContext = routerResponse.toolOutput(kbToolCall.id);
         
-        if (!knowledgeContext || knowledgeContext.trim() === 'В базе знаний не найдено релевантной информации по вашему вопросу.') {
-            return knowledgeContext || "Не удалось найти информацию по вашему запросу.";
+        if (!knowledgeContext || (typeof knowledgeContext === 'string' && knowledgeContext.trim() === 'В базе знаний не найдено релевантной информации по вашему вопросу.')) {
+            return (knowledgeContext as string) || "Не удалось найти информацию по вашему запросу.";
         }
+
 
         // 6. Second LLM call (The Expert) - generates the final answer based on the context
         const expertPromptTemplate = prompts.bot_prompt_expert;
