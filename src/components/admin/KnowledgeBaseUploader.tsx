@@ -16,6 +16,11 @@ if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
     (window as any).Buffer = require('buffer/').Buffer;
 }
 
+// FIX: Set the workerSrc for pdf.js to prevent "No PDFJS.workerSrc specified" error.
+// This must be done on the client side.
+if (typeof window !== 'undefined') {
+    (pdf as any).workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${(pdf as any).pdfjs.version}/pdf.worker.min.mjs`;
+}
 
 const MAX_FILES = 10;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
