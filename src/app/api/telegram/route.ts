@@ -2,15 +2,17 @@
  * @fileOverview The main webhook endpoint for handling Telegram updates.
  * This file implements a sophisticated pipeline for processing incoming messages:
  * 1. Fetches bot configuration from `app_config` and the user's chat data from `chats`.
- * 2. Creates a new user if one doesn't exist, and logs their first session.
- * 3. Performs a series of security and resource checks.
- * 4. If a session is new (either by timeout or explicit closing), it calls a dedicated Supabase function (`rotate_user_session`) to atomically handle session logging.
- * 5. Calls the AI assistant (`runAssistant`) with the user's query and session status.
- * 6. Sends the AI's response back to the user and updates all relevant chat data in a single batch.
+ * 2. Checks if the user is blocked. If so, halts all further processing.
+ * 3. Creates a new user if one doesn't exist, and logs their first session.
+ * 4. Performs a series of security and resource checks (rate limits, daily quota).
+ * 5. If a session is new (either by timeout or explicit closing), it calls a dedicated Supabase function (`rotate_user_session`) to atomically handle session logging.
+ * 6. Calls the AI assistant (`runAssistant`) which includes a security check before processing the query.
+ * 7. Sends the AI's response back to the user and updates all relevant chat data in a single batch.
  */
 
 import { runAssistant } from '@/ai/flows/assistant-flow';
 import { createAdminClient } from '@/lib/supabase/service';
+import { render } from 'genkit';
 import { NextResponse } from 'next/server';
 
 async function sendTelegramMessage(chatId: number, text: string) {
@@ -64,7 +66,8 @@ export async function POST(req: Request) {
       dailyQuotaMax: parseInt(appConfig.bot_daily_quota_max || '100', 10),
       msgRateLimit: appConfig.bot_message_rate_limit || 'You are sending messages too fast. Please wait.',
       msgDailyQuota: appConfig.bot_message_daily_quota || 'You have reached your daily message limit. Try again tomorrow.',
-      msgBlocked: appConfig.bot_message_blocked || 'Your access to the bot has been restricted.',
+      msgBlockedPermanent: appConfig.bot_message_blocked_permanent || 'Your access to the bot has been permanently restricted. Contact support: {{adminContacts}}',
+      adminContacts: appConfig.bot_admin_contacts || 'No contacts available.'
     };
 
     let chat = chatRes.data;
@@ -72,7 +75,11 @@ export async function POST(req: Request) {
 
     // Absolute Priority: Check if the user is already blocked.
     if (chat && chat.is_blocked) {
-        await sendTelegramMessage(chatId, config.msgBlocked);
+        const blockedMessage = render({
+            template: config.msgBlockedPermanent,
+            context: { adminContacts: config.adminContacts }
+        });
+        await sendTelegramMessage(chatId, blockedMessage);
         return NextResponse.json({ status: 'ok' });
     }
 
@@ -98,7 +105,8 @@ export async function POST(req: Request) {
       if (newChatError) throw newChatError;
       chat = newChat;
 
-      await supabase.from('sessions').insert({ chat_id: chatId, started_at: now.toISOString() });
+      // Also create a session log for the new user
+      await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
     }
 
     const updates: Partial<typeof chat> = {};
@@ -146,7 +154,7 @@ export async function POST(req: Request) {
       updates.is_session_active = true; // Mark the new session as active
       
       const { error: rpcError } = await supabase.rpc('rotate_user_session', {
-        p_chat_id: chatId,
+        p_chat_id: chat.id,
         p_ended_at: lastMessageAt.toISOString(),
         p_started_at: now.toISOString(),
       });

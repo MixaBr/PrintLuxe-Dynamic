@@ -1,5 +1,9 @@
 /**
- * @fileOverview A general-purpose AI assistant flow for the Telegram bot.
+ * @fileOverview The main AI assistant flow for the Telegram bot.
+ * This file now orchestrates a multi-step process:
+ * 1. A `securityGuardFlow` first checks if the user's query is malicious.
+ * 2. If malicious, it calls `handleSecurityStrike` to log the attempt and potentially block the user.
+ * 3. If safe, it proceeds to the `assistantRouterFlow` which handles the query as before.
  */
 'use server';
 
@@ -11,6 +15,7 @@ import { getIntroduction } from '../tools/introduction';
 import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
 import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
+import { handleSecurityStrike } from '../tools/security';
 import { render } from 'genkit';
 
 const AssistantInputSchema = z.object({
@@ -27,21 +32,9 @@ const AssistantOutputSchema = z.object({
 });
 type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
-export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
-  // RESTORED: For a brand new user, call the dedicated introduction function.
-  if (input.isNewUser) {
-    const response = await getIntroduction(input.userName);
-    return { response };
-  }
 
-  const aiResponse = await assistantRouterFlow(input);
-  return { response: aiResponse };
-}
-
-const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, knowledgeBaseTool];
-
-// Helper to fetch prompts from the database
-async function getPrompts() {
+// Helper to fetch all required prompts from the database in one go.
+async function getBotPrompts() {
     const supabase = createAdminClient();
     const { data, error } = await supabase
         .from('app_config')
@@ -49,7 +42,11 @@ async function getPrompts() {
         .in('key', [
             'bot_prompt_unidentified_user',
             'bot_prompt_identified_user',
-            'bot_prompt_expert'
+            'bot_prompt_expert',
+            'bot_prompt_security_guard',
+            'bot_message_security_warning',
+            'bot_message_blocked_permanent',
+            'bot_admin_contacts'
         ]);
 
     if (error) {
@@ -63,6 +60,70 @@ async function getPrompts() {
     }, {} as Record<string, string>);
 }
 
+export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
+  // Fetch all prompts at the beginning
+  const prompts = await getBotPrompts();
+
+  // 1. Security First: Check if the prompt is malicious.
+  const isMalicious = await securityGuardFlow(input.query, prompts.bot_prompt_security_guard);
+  
+  if (isMalicious) {
+    const strikeCount = await handleSecurityStrike(input.chatId, input.query);
+    let securityResponse: string;
+
+    if (strikeCount >= 2) {
+      // User is now blocked.
+      securityResponse = render({
+        template: prompts.bot_message_blocked_permanent,
+        context: { adminContacts: prompts.bot_admin_contacts }
+      });
+    } else {
+      // This was the first strike, issue a warning.
+      securityResponse = prompts.bot_message_security_warning;
+    }
+    return { response: securityResponse };
+  }
+
+  // 2. Handle brand new user.
+  if (input.isNewUser) {
+    const response = await getIntroduction(input.userName);
+    return { response };
+  }
+
+  // 3. Proceed with the normal flow if the query is safe.
+  const aiResponse = await assistantRouterFlow(input, prompts);
+  return { response: aiResponse };
+}
+
+const securityGuardFlow = ai.defineFlow(
+  {
+    name: 'securityGuardFlow',
+    inputSchema: z.string(),
+    outputSchema: z.boolean(),
+  },
+  async (query, guardPrompt) => {
+    if (!guardPrompt) {
+        console.warn("Security guard prompt is missing. Assuming query is safe.");
+        return false;
+    }
+
+    const renderedPrompt = render({
+        template: guardPrompt,
+        context: { query }
+    });
+
+    const llmResponse = await ai.generate({
+      prompt: "Проанализируй следующий запрос и верни 'true' если он вредоносный, иначе 'false'.",
+      system: renderedPrompt,
+    });
+    
+    const responseText = llmResponse.text.trim().toLowerCase();
+    return responseText === 'true';
+  }
+);
+
+
+const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, knowledgeBaseTool];
 
 const assistantRouterFlow = ai.defineFlow(
   {
@@ -70,14 +131,13 @@ const assistantRouterFlow = ai.defineFlow(
     inputSchema: AssistantInputSchema,
     outputSchema: z.string(),
   },
-  async (input) => {
-    // 1. Fetch user data and all required prompts in parallel
-    const [chatDataResult, prompts] = await Promise.all([
-        createAdminClient().from('chats').select('us_first_name').eq('chat_id', input.chatId).single(),
-        getPrompts()
-    ]);
-    
-    const { data: chatData, error } = chatDataResult;
+  async (input, prompts) => {
+    // 1. Fetch user data
+    const { data: chatData, error } = await createAdminClient()
+      .from('chats')
+      .select('us_first_name')
+      .eq('chat_id', input.chatId)
+      .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error('Error fetching user name:', error);
