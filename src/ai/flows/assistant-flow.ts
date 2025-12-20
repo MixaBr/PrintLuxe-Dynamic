@@ -105,6 +105,7 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
+    // Construct a single, clear prompt for the model.
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
@@ -155,10 +156,13 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     // 4. First LLM call (The Router) - decides which tool to use
+    // Updated to use the 'messages' array API
     const routerResponse = await ai.generate({
+      messages: [
+        { role: 'system', content: routerPrompt },
+        { role: 'user', content: input.query }
+      ],
       tools,
-      prompt: input.query,
-      system: routerPrompt,
     });
 
     // 5. Check if the knowledgeBaseTool was used and handle it.
@@ -167,31 +171,25 @@ const assistantRouterFlow = ai.defineFlow(
     );
 
     if (kbToolCall) {
-        // The tool was requested. Now we need to make a second call to get the expert answer.
-        // We provide the original query and the router's response (with the tool request) as context.
-        
+        // The tool was requested. Now we make a second call to get the expert answer.
         const expertPromptTemplate = prompts.bot_prompt_expert;
-        
-        // Note: The '{{contextText}}' will be implicitly handled by Genkit. 
-        // We are passing the history to the next generate call, and Genkit automatically
-        // resolves the tool request and provides its output as context to the model.
         const expertPrompt = expertPromptTemplate
             .replace('{{query}}', input.query)
-            .replace('{{contextText}}', 'Используй информацию из предоставленных инструментов.'); // This is more of a placeholder now.
+            .replace('{{contextText}}', 'Используй информацию из предоставленных инструментов.');
 
+        // The second call includes the history of the conversation, including the tool request.
+        // Genkit will automatically resolve the tool and provide its output as context to the model.
         const expertResponse = await ai.generate({
-            prompt: expertPrompt,
-            history: [
-                { role: 'user', content: input.query },
-                routerResponse.candidates[0].message,
-            ],
-            tools: [knowledgeBaseTool]
+          messages: [
+            { role: 'system', content: expertPrompt },
+            { role: 'user', content: input.query },
+            routerResponse.candidates[0].message, // This contains the tool_code and thoughts
+          ],
+          tools: [knowledgeBaseTool]
         });
 
-        // The final response text should contain the answer synthesized from the tool's output.
         const expertText = expertResponse.text;
 
-        // Check if the expert response is still generic, which might happen if the tool returned no data.
         if (expertText.includes("не найдено релевантной информации")) {
             return "К сожалению, в моей базе знаний нет ответа на ваш вопрос. Могу я помочь чем-то еще?";
         }
@@ -205,4 +203,3 @@ const assistantRouterFlow = ai.defineFlow(
   }
 );
 
-    
