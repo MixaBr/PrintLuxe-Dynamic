@@ -54,11 +54,6 @@ const nextConfig = {
         fs: false,
       };
     }
-
-    // Fixes npm packages that depend on `require`
-    config.externals.push('require-in-the-middle');
-    // Genkit tools may have this as a peer dependency.
-    config.externals.push('firebase-functions');
     
     return config;
   },

@@ -105,6 +105,7 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
+    // Create a single, clear prompt for the model.
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
@@ -155,10 +156,11 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     // 4. First LLM call (The Router) - decides which tool to use
+    // Updated to use the correct GenerateOptions structure
     const routerResponse = await ai.generate({
-        system: routerPrompt,
-        prompt: input.query,
-        tools,
+      system: routerPrompt,
+      prompt: input.query,
+      tools,
     });
 
     // 5. Check if the knowledgeBaseTool was used and handle it.
@@ -177,8 +179,7 @@ const assistantRouterFlow = ai.defineFlow(
         // Genkit will automatically resolve the tool and provide its output as context to the model.
         const expertResponse = await ai.generate({
           system: expertPrompt,
-          prompt: input.query,
-          history: [
+          messages: [
             routerResponse.candidates[0].message
           ],
           tools: [knowledgeBaseTool]
