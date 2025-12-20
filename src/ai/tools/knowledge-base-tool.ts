@@ -25,10 +25,16 @@ export const knowledgeBaseTool = ai.defineTool(
         console.log(`Executing knowledgeBaseTool with query: "${query}"`);
 
         // 1. Generate an embedding for the user's query.
-        const { embedding } = await embed({
+        const embeddings = await embed({
             embedder: textEmbeddingGecko,
-            content: query,
+            content: [query], // The 'embed' function now expects an array.
         });
+
+        const embedding = embeddings[0]?.embedding; // Extract the first embedding from the array.
+
+        if (!embedding) {
+            return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';
+        }
 
         const supabase = createAdminClient();
 
