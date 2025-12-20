@@ -59,7 +59,7 @@ const nextConfig = {
     config.externals.push('require-in-the-middle');
     // Genkit tools may have this as a peer dependency.
     config.externals.push('firebase-functions');
-    config.externals.push('node-fetch');
+    
     return config;
   },
 
