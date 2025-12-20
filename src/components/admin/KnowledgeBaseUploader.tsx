@@ -8,9 +8,20 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { UploadCloud, File as FileIcon, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import pdf from 'pdf-parse/lib/pdf-parse';
+import { embedAndStoreChunks } from '@/app/admin/content/actions';
+
+// Polyfill for Buffer used by pdf-parse in the browser
+if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
+    (window as any).Buffer = require('buffer/').Buffer;
+}
+
 
 const MAX_FILES = 10;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
+const CHUNK_SIZE = 500; // Characters per chunk
+const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
+
 
 export function KnowledgeBaseUploader() {
     const { toast } = useToast();
@@ -47,7 +58,6 @@ export function KnowledgeBaseUploader() {
 
     const removeFile = (index: number) => {
         setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
-        // Reset file input value to allow re-adding the same file
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -77,16 +87,79 @@ export function KnowledgeBaseUploader() {
         }
     };
 
+    const processPdfToText = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = async () => {
+                try {
+                    const buffer = Buffer.from(reader.result as ArrayBuffer);
+                    const data = await pdf(buffer);
+                    resolve(data.text);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    }
+
+    const splitTextIntoChunks = (text: string, filename: string) => {
+        const chunks = [];
+        let index = 0;
+        let chunkNumber = 1;
+        while (index < text.length) {
+            const chunk = text.substring(index, index + CHUNK_SIZE);
+            chunks.push({
+                content: chunk,
+                metadata: {
+                    source_filename: filename,
+                    chunk_number: chunkNumber++,
+                }
+            });
+            index += CHUNK_SIZE - CHUNK_OVERLAP;
+        }
+        return chunks;
+    }
+
+
     const handleProcessFiles = async () => {
         if (files.length === 0) {
             toast({ variant: 'destructive', title: 'Нет файлов', description: 'Пожалуйста, выберите файлы для обработки.' });
             return;
         }
         
-        startTransition(() => {
-            // Placeholder for the actual processing logic
-            console.log("Processing files:", files.map(f => f.name));
-            toast({ title: 'В разработке', description: 'Функционал обработки файлов будет добавлен на следующем шаге.' });
+        startTransition(async () => {
+            try {
+                toast({ title: 'Начало обработки...', description: `Обрабатывается ${files.length} файлов.` });
+
+                let allChunks = [];
+                for (const file of files) {
+                    const text = await processPdfToText(file);
+                    const chunks = splitTextIntoChunks(text, file.name);
+                    allChunks.push(...chunks);
+                }
+
+                if(allChunks.length === 0) {
+                    toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось извлечь текст из файлов.' });
+                    return;
+                }
+
+                toast({ title: 'Текст извлечен', description: `Создано ${allChunks.length} фрагментов. Отправка на сервер...` });
+
+                const result = await embedAndStoreChunks(allChunks);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                toast({ title: 'Успех!', description: result.success });
+                setFiles([]);
+
+
+            } catch(error: any) {
+                toast({ variant: 'destructive', title: 'Ошибка обработки', description: error.message });
+            }
         });
     }
 
@@ -113,6 +186,7 @@ export function KnowledgeBaseUploader() {
                     multiple
                     accept="application/pdf"
                     onChange={(e) => handleFilesChange(e.target.files)}
+                    disabled={isPending}
                 />
                 <div className="flex flex-col items-center justify-center text-center p-4">
                     <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />

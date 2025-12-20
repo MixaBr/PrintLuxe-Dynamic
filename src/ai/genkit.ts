@@ -7,5 +7,6 @@ export const ai = genkit({
       apiKey: process.env.ASSISTANT_API_KEY,
     }),
   ],
-  model: 'googleai/gemini-2.5-flash',
 });
+
+export const textEmbeddingGecko = googleAI.model('text-embedding-004');
