@@ -1,0 +1,59 @@
+/**
+ * @fileOverview A Genkit tool for searching the knowledge base.
+ */
+'use server';
+
+import { ai, textEmbeddingGecko } from '@/ai/genkit';
+import { createAdminClient } from '@/lib/supabase/service';
+import { embed } from 'genkit';
+import { z } from 'zod';
+
+// This is the SQL function we created in Supabase
+const MATCH_FUNCTION = 'match_manual_knowledge';
+
+export const knowledgeBaseTool = ai.defineTool(
+    {
+        name: 'knowledgeBaseTool',
+        description: 'Use this tool to answer user questions about product specifications, troubleshooting, repairs, or user manuals. The tool searches the knowledge base for relevant information.',
+        inputSchema: z.object({
+            query: z.string().describe('The user question to search for in the knowledge base.'),
+        }),
+        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating no relevant information was found.'),
+    },
+    async ({ query }) => {
+        console.log(`Executing knowledgeBaseTool with query: "${query}"`);
+
+        // 1. Generate an embedding for the user's query.
+        const { embedding } = await embed({
+            embedder: textEmbeddingGecko,
+            content: query,
+        });
+
+        const supabase = createAdminClient();
+
+        // 2. Call the Supabase RPC function to find matching documents.
+        const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
+            query_embedding: embedding,
+            match_threshold: 0.7, // Similarity threshold (adjust as needed)
+            match_count: 5,       // Number of documents to return
+        });
+
+        if (error) {
+            console.error('Error searching knowledge base:', error);
+            return 'Произошла ошибка при поиске в базе знаний.';
+        }
+
+        if (!documents || documents.length === 0) {
+            return 'В базе знаний не найдено релевантной информации по вашему вопросу.';
+        }
+        
+        console.log(`Found ${documents.length} relevant documents.`);
+
+        // 3. Format the found documents into a single context string for the LLM.
+        const contextText = documents
+            .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\n  Содержание: ${doc.content}`)
+            .join('\n\n');
+
+        return `Вот релевантная информация из базы знаний:\n\n${contextText}`;
+    }
+);
