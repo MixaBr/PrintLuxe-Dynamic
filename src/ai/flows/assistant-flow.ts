@@ -105,7 +105,6 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
-    // Construct the full prompt for the security check in a single string.
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
@@ -113,7 +112,6 @@ const securityGuardFlow = ai.defineFlow(
     });
     
     const responseText = llmResponse.text.trim().toLowerCase();
-    // Check for a strict "true" response to avoid ambiguity.
     return responseText === 'true';
   }
 );
@@ -169,28 +167,42 @@ const assistantRouterFlow = ai.defineFlow(
     );
 
     if (kbToolCall) {
-      const knowledgeContext = routerResponse.toolResponses?.find(
-        (response) => response.ref === kbToolCall.toolRequest.ref
-      )?.output;
+        // The tool was requested. Now we need to make a second call to get the expert answer.
+        // We provide the original query and the router's response (with the tool request) as context.
+        
+        const expertPromptTemplate = prompts.bot_prompt_expert;
+        
+        // Note: The '{{contextText}}' will be implicitly handled by Genkit. 
+        // We are passing the history to the next generate call, and Genkit automatically
+        // resolves the tool request and provides its output as context to the model.
+        const expertPrompt = expertPromptTemplate
+            .replace('{{query}}', input.query)
+            .replace('{{contextText}}', 'Используй информацию из предоставленных инструментов.'); // This is more of a placeholder now.
 
-      if (!knowledgeContext || (typeof knowledgeContext === 'string' && knowledgeContext.trim() === 'В базе знаний не найдено релемантной информации по вашему вопросу.')) {
-          return (knowledgeContext as string) || "Не удалось найти информацию по вашему запросу.";
-      }
+        const expertResponse = await ai.generate({
+            prompt: expertPrompt,
+            history: [
+                { role: 'user', content: input.query },
+                routerResponse.candidates[0].message,
+            ],
+            tools: [knowledgeBaseTool]
+        });
 
-      // 6. Second LLM call (The Expert)
-      const expertPromptTemplate = prompts.bot_prompt_expert;
-      const expertPrompt = expertPromptTemplate
-          .replace('{{query}}', input.query)
-          .replace('{{contextText}}', String(knowledgeContext));
-      
-      const expertResponse = await ai.generate({
-          prompt: expertPrompt,
-      });
-      
-      return expertResponse.text;
+        // The final response text should contain the answer synthesized from the tool's output.
+        const expertText = expertResponse.text;
+
+        // Check if the expert response is still generic, which might happen if the tool returned no data.
+        if (expertText.includes("не найдено релевантной информации")) {
+            return "К сожалению, в моей базе знаний нет ответа на ваш вопрос. Могу я помочь чем-то еще?";
+        }
+
+        return expertText;
     }
+
 
     // 7. If no special tool was used, return the direct text response from the router.
     return routerResponse.text;
   }
 );
+
+    
