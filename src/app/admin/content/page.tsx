@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { UploadCloud } from "lucide-react"
+import { KnowledgeBaseUploader } from "@/components/admin/KnowledgeBaseUploader"
 
 export default function AdminContentPage() {
     const menuItems = [
@@ -34,13 +34,7 @@ export default function AdminContentPage() {
                     <CardDescription>Загрузка и управление документами (PDF) для AI-ассистента.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center">
-                        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">Загрузчик документов</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Здесь будет размещен интерфейс для выбора и загрузки PDF-файлов с вашего компьютера для обработки и добавления в базу знаний.
-                        </p>
-                    </div>
+                    <KnowledgeBaseUploader />
                 </CardContent>
             </Card>
 
