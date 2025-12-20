@@ -105,13 +105,15 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
-    const finalPrompt = guardPrompt.replace('{{query}}', query);
+    // Construct the full prompt for the security check in a single string.
+    const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
       prompt: finalPrompt,
     });
     
     const responseText = llmResponse.text.trim().toLowerCase();
+    // Check for a strict "true" response to avoid ambiguity.
     return responseText === 'true';
   }
 );
