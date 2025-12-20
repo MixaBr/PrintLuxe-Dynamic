@@ -1,45 +1,26 @@
 /**
  * @fileOverview A simple function to generate a welcome message for new users.
- * This is not a Genkit tool because its logic is deterministic and doesn't require an LLM.
- * It now dynamically fetches the welcome message from the database.
+ * This is a simple formatter, not a Genkit tool or flow.
  */
-'use server';
-
-import { createAdminClient } from "@/lib/supabase/service";
-import { render } from "genkit";
 
 const defaultWelcomeMessage = "Здравствуйте! Я PrintLux Helper, ваш AI-ассистент. Как я могу к вам обращаться?";
 
 /**
- * Generates a standardized welcome message for a new user by fetching a template from the database.
+ * Formats a welcome message for a new user using a template.
+ * @param template - The template string, which can include {{userName}}.
  * @param userName - The user's name from their Telegram profile (optional).
- * @returns A welcome string.
+ * @returns A formatted welcome string.
  */
-export async function getIntroduction(userName?: string | null): Promise<string> {
-    const supabase = createAdminClient();
-    
-    // Fetch the welcome message template from the app_config table.
-    const { data, error } = await supabase
-        .from('app_config')
-        .select('value')
-        .eq('key', 'bot_welcome_message')
-        .single();
-    
-    if (error || !data?.value) {
-        console.error("Could not fetch 'bot_welcome_message' from DB, using default.", error);
-        // Fallback to a hardcoded default if the DB call fails.
-        return render({
-            template: defaultWelcomeMessage,
-            context: { userName }
-        });
+export function getIntroduction(template?: string | null, userName?: string | null): string {
+    const messageTemplate = template || defaultWelcomeMessage;
+
+    // Replace placeholder if userName is provided.
+    if (userName) {
+        // This handles templates that might have a placeholder.
+        return messageTemplate.replace('{{userName}}', userName);
     }
 
-    // Use the template from the database.
-    // The template can contain placeholders like {{userName}}.
-    const welcomeTemplate = data.value;
-
-    return render({
-        template: welcomeTemplate,
-        context: { userName: userName || '' } // Pass userName to be rendered in the template
-    });
+    // If no userName, return the template as is.
+    // It's assumed to be a generic welcome message in this case.
+    return messageTemplate;
 }

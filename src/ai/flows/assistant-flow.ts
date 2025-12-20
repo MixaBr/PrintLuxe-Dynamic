@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview The main AI assistant flow for the Telegram bot.
  * This file now orchestrates a multi-step process:
@@ -16,7 +17,6 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
 import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
 import { handleSecurityStrike } from '../tools/security';
-import { render } from 'genkit';
 
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user query from the Telegram chat.'),
@@ -62,24 +62,21 @@ async function getBotPrompts() {
 }
 
 export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
-  // Fetch all prompts at the beginning
   const prompts = await getBotPrompts();
 
   // 1. Security First: Check if the prompt is malicious.
-  const isMalicious = await securityGuardFlow(input.query, prompts.bot_prompt_security_guard);
+  const isMalicious = await securityGuardFlow({
+    query: input.query,
+    guardPrompt: prompts.bot_prompt_security_guard,
+  });
   
   if (isMalicious) {
     const strikeCount = await handleSecurityStrike(input.chatId, input.query);
     let securityResponse: string;
 
     if (strikeCount >= 2) {
-      // User is now blocked.
-      securityResponse = render({
-        template: prompts.bot_message_blocked_permanent,
-        context: { adminContacts: prompts.bot_admin_contacts }
-      });
+      securityResponse = prompts.bot_message_blocked_permanent.replace('{{adminContacts}}', prompts.bot_admin_contacts);
     } else {
-      // This was the first strike, issue a warning.
       securityResponse = prompts.bot_message_security_warning;
     }
     return { response: securityResponse };
@@ -87,32 +84,28 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
 
   // 2. Handle brand new user.
   if (input.isNewUser) {
-    const response = await getIntroduction(prompts.bot_welcome_message, input.userName);
+    const response = getIntroduction(prompts.bot_welcome_message, input.userName);
     return { response };
   }
 
   // 3. Proceed with the normal flow if the query is safe.
-  const aiResponse = await assistantRouterFlow(input, prompts);
+  const aiResponse = await assistantRouterFlow({ ...input, prompts });
   return { response: aiResponse };
 }
 
 const securityGuardFlow = ai.defineFlow(
   {
     name: 'securityGuardFlow',
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string(), guardPrompt: z.string() }),
     outputSchema: z.boolean(),
   },
-  async (query, guardPrompt) => {
+  async ({ query, guardPrompt }) => {
     if (!guardPrompt) {
         console.warn("Security guard prompt is missing. Assuming query is safe.");
         return false;
     }
     
-    // The entire instruction is now in the rendered prompt.
-    const finalPrompt = render({
-        template: guardPrompt,
-        context: { query }
-    });
+    const finalPrompt = guardPrompt.replace('{{query}}', query);
 
     const llmResponse = await ai.generate({
       prompt: finalPrompt,
@@ -129,10 +122,10 @@ const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, kno
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
-    inputSchema: AssistantInputSchema,
+    inputSchema: AssistantInputSchema.extend({ prompts: z.record(z.string()) }),
     outputSchema: z.string(),
   },
-  async (input, prompts) => {
+  async ({ prompts, ...input }) => {
     // 1. Fetch user data
     const { data: chatData, error } = await createAdminClient()
       .from('chats')
@@ -157,13 +150,9 @@ const assistantRouterFlow = ai.defineFlow(
       ? prompts.bot_prompt_identified_user
       : prompts.bot_prompt_unidentified_user;
 
-    const routerPrompt = render({
-        template: routerPromptTemplate,
-        context: {
-            chatId: input.chatId,
-            currentFirstName: currentFirstName,
-        }
-    });
+    const routerPrompt = routerPromptTemplate
+        .replace('{{chatId}}', String(input.chatId))
+        .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     // 4. First LLM call (The Router) - decides which tool to use
     const routerResponse = await ai.generate({
@@ -172,35 +161,31 @@ const assistantRouterFlow = ai.defineFlow(
       system: routerPrompt,
     });
 
-    // 5. Check if the knowledgeBaseTool was used
-    const kbToolCall = routerResponse.toolCalls?.find(call => call.tool === 'knowledgeBaseTool');
+    // 5. Check if the knowledgeBaseTool was used and handle it.
+    const kbToolCall = routerResponse.toolRequests?.find(
+      (call) => call.name === 'knowledgeBaseTool'
+    );
 
     if (kbToolCall) {
-        // If the knowledge base tool was called, it means the router identified a technical question.
-        // The tool's output (context) is already available in routerResponse.toolOutput().
-        const knowledgeContext = routerResponse.toolOutput(kbToolCall.id);
-        
-        if (!knowledgeContext || (typeof knowledgeContext === 'string' && knowledgeContext.trim() === 'В базе знаний не найдено релевантной информации по вашему вопросу.')) {
-            return (knowledgeContext as string) || "Не удалось найти информацию по вашему запросу.";
-        }
+      const knowledgeContext = routerResponse.toolResponses?.find(
+        (response) => response.ref === kbToolCall.ref
+      )?.output;
 
+      if (!knowledgeContext || (typeof knowledgeContext === 'string' && knowledgeContext.trim() === 'В базе знаний не найдено релемантной информации по вашему вопросу.')) {
+          return (knowledgeContext as string) || "Не удалось найти информацию по вашему запросу.";
+      }
 
-        // 6. Second LLM call (The Expert) - generates the final answer based on the context
-        const expertPromptTemplate = prompts.bot_prompt_expert;
-        const expertPrompt = render({
-            template: expertPromptTemplate,
-            context: {
-                query: input.query,
-                contextText: knowledgeContext
-            }
-        });
-        
-        const expertResponse = await ai.generate({
-            prompt: expertPrompt,
-            // No tools are passed here, as the expert's only job is to synthesize an answer.
-        });
-        
-        return expertResponse.text;
+      // 6. Second LLM call (The Expert)
+      const expertPromptTemplate = prompts.bot_prompt_expert;
+      const expertPrompt = expertPromptTemplate
+          .replace('{{query}}', input.query)
+          .replace('{{contextText}}', String(knowledgeContext));
+      
+      const expertResponse = await ai.generate({
+          prompt: expertPrompt,
+      });
+      
+      return expertResponse.text;
     }
 
     // 7. If no special tool was used, return the direct text response from the router.
