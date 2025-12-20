@@ -46,7 +46,8 @@ async function getBotPrompts() {
             'bot_prompt_security_guard',
             'bot_message_security_warning',
             'bot_message_blocked_permanent',
-            'bot_admin_contacts'
+            'bot_admin_contacts',
+            'bot_welcome_message'
         ]);
 
     if (error) {
@@ -86,7 +87,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
 
   // 2. Handle brand new user.
   if (input.isNewUser) {
-    const response = await getIntroduction(input.userName);
+    const response = await getIntroduction(prompts.bot_welcome_message, input.userName);
     return { response };
   }
 
@@ -106,15 +107,15 @@ const securityGuardFlow = ai.defineFlow(
         console.warn("Security guard prompt is missing. Assuming query is safe.");
         return false;
     }
-
-    const renderedPrompt = render({
+    
+    // The entire instruction is now in the rendered prompt.
+    const finalPrompt = render({
         template: guardPrompt,
         context: { query }
     });
 
     const llmResponse = await ai.generate({
-      prompt: "Проанализируй следующий запрос и верни 'true' если он вредоносный, иначе 'false'.",
-      system: renderedPrompt,
+      prompt: finalPrompt,
     });
     
     const responseText = llmResponse.text.trim().toLowerCase();
