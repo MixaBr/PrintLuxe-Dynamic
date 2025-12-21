@@ -5,7 +5,6 @@
 
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
-// import { embed } from '@genkit-ai/ai'; // REMOVED: Using the new ai.embed() method
 import { z } from 'zod';
 
 // This is the SQL function we created in Supabase
@@ -27,10 +26,11 @@ export const knowledgeBaseTool = ai.defineTool(
         // 1. Generate an embedding for the user's query using the new ai.embed() method.
         const embeddings = await ai.embed({
             embedder: textEmbeddingGecko, 
-            content: query, // Pass the string directly
+            content: query,
         });
 
-        const embedding = embeddings[0]?.embedding; // Extract the first embedding from the array.
+        // The result is an array, even for a single query.
+        const embedding = embeddings[0]?.embedding;
 
         if (!embedding) {
             return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';

@@ -1,7 +1,4 @@
 
-/**
- * @fileOverview Server actions for the content management page.
- */
 'use server';
 
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
