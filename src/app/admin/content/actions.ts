@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Server actions for the content management page.
  */
@@ -16,9 +17,10 @@ interface Chunk {
 }
 
 /**
- * Processes text chunks, generates embeddings for them, and stores them in the database.
- * @param chunks - An array of text chunks with metadata.
- * @returns An object indicating success or failure.
+ * Processes a batch of text chunks, generates embeddings for them in parallel, 
+ * and stores them in the database.
+ * @param chunks - An array of text chunks with metadata (a single batch).
+ * @returns An object indicating the outcome of the operation, including details on any failures.
  */
 export async function embedAndStoreChunks(chunks: Chunk[]) {
     if (!chunks || chunks.length === 0) {
@@ -26,25 +28,20 @@ export async function embedAndStoreChunks(chunks: Chunk[]) {
     }
 
     try {
-        // 1. Generate embeddings for all chunks in parallel using the new ai.embed() method.
+        // 1. Generate embeddings for all chunks in the batch in parallel.
         const embeddings = await ai.embed({
             embedder: textEmbeddingGecko,
-            content: { content: chunks.map(chunk => ({ text: chunk.content })) },
+            content: chunks.map(chunk => chunk.content),
         });
 
-        if (embeddings.length !== chunks.length) {
-            throw new Error('Количество сгенерированных вложений не соответствует количеству фрагментов.');
-        }
-
-        // 2. Prepare data for Supabase insertion.
-        const dataToInsert = chunks.map((chunk, index) => ({
+        // 2. Prepare data for Supabase insertion, matching chunks with their embeddings.
+        const dataToInsert = chunks.map((chunk, i) => ({
             content: chunk.content,
             metadata: chunk.metadata,
-            embedding: embeddings[index],
+            embedding: embeddings[i].embedding,
         }));
 
-        // 3. Insert data into the database.
-        const supabase = createAdminClient();
+        // 3. Insert all prepared data into the database in a single request.
         const { error: insertError } = await supabase
             .from('manual_knowledge')
             .insert(dataToInsert);
@@ -53,13 +50,17 @@ export async function embedAndStoreChunks(chunks: Chunk[]) {
             throw new Error(`Ошибка при сохранении в базу данных: ${insertError.message}`);
         }
 
-        // 4. Revalidate path to reflect changes if needed.
+        // Revalidate path to reflect changes.
         revalidatePath('/admin/content');
 
-        return { success: `Успешно обработано и сохранено ${chunks.length} фрагментов.` };
+        return { successCount: chunks.length };
 
     } catch (error: any) {
-        console.error('Ошибка при обработке и сохранении фрагментов:', error);
-        return { error: error.message || 'Произошла неизвестная ошибка на сервере.' };
+        const errorMessage = `Ошибка при обработке пакета: ${error.message}`;
+        console.error(errorMessage, { chunksCount: chunks.length });
+        return {
+            error: errorMessage,
+            details: chunks.map(chunk => ({ chunk, error: error.message }))
+        };
     }
 }

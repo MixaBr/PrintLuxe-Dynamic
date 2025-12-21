@@ -17,16 +17,17 @@ if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
 }
 
 // FIX: Set the workerSrc for pdf.js to prevent "No PDFJS.workerSrc specified" error.
-// This must be done on the client side.
-if (typeof window !== 'undefined') {
-    (pdf as any).workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${(pdf as any).pdfjs.version}/pdf.worker.min.mjs`;
+// This must be done on the client side by setting a global variable.
+if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
+    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;
 }
+
 
 const MAX_FILES = 10;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
-
+const BATCH_SIZE = 20; // Number of chunks to process per server request
 
 export function KnowledgeBaseUploader() {
     const { toast } = useToast();
@@ -34,6 +35,7 @@ export function KnowledgeBaseUploader() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
+    const [progress, setProgress] = useState({ total: 0, processed: 0 });
 
     const totalSize = files.reduce((acc, file) => acc + file.size, 0);
 
@@ -150,20 +152,41 @@ export function KnowledgeBaseUploader() {
                     return;
                 }
 
-                toast({ title: 'Текст извлечен', description: `Создано ${allChunks.length} фрагментов. Отправка на сервер...` });
+                setProgress({ total: allChunks.length, processed: 0 });
+                toast({ title: 'Текст извлечен', description: `Создано ${allChunks.length} фрагментов. Начинаю пакетную обработку.` });
+                
+                let totalSuccess = 0;
+                let allFailed: any[] = [];
 
-                const result = await embedAndStoreChunks(allChunks);
+                for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
+                    const batch = allChunks.slice(i, i + BATCH_SIZE);
+                    const result = await embedAndStoreChunks(batch);
 
-                if (result.error) {
-                    throw new Error(result.error);
+                    if (result.error) {
+                        toast({ variant: 'destructive', title: `Ошибка в пакете ${i/BATCH_SIZE + 1}`, description: result.error });
+                        if (result.details) {
+                            allFailed.push(...result.details);
+                        }
+                    }
+                    if (result.successCount) {
+                        totalSuccess += result.successCount;
+                    }
+
+                    setProgress(prev => ({ ...prev, processed: Math.min(prev.processed + BATCH_SIZE, allChunks.length) }));
                 }
 
-                toast({ title: 'Успех!', description: result.success });
+                if (allFailed.length > 0) {
+                    throw new Error(`Обработка завершена. Успешно: ${totalSuccess}. Ошибки: ${allFailed.length}.`);
+                }
+
+                toast({ title: 'Успех!', description: `Все ${totalSuccess} фрагментов успешно обработаны и сохранены.` });
                 setFiles([]);
+                setProgress({ total: 0, processed: 0 });
 
 
             } catch(error: any) {
                 toast({ variant: 'destructive', title: 'Ошибка обработки', description: error.message });
+                setProgress({ total: 0, processed: 0 });
             }
         });
     }
@@ -232,6 +255,14 @@ export function KnowledgeBaseUploader() {
                      <div className='flex justify-between text-sm text-muted-foreground mt-1'>
                         <span>Всего файлов: ${files.length} / ${MAX_FILES}</span>
                         <span>Общий размер: ${(totalSize / 1024 / 1024).toFixed(2)} / 50.00 МБ</span>
+                    </div>
+                </div>
+            )}
+             {isPending && progress.total > 0 && (
+                <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Обработано {progress.processed} из {progress.total} фрагментов...</p>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                        <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(progress.processed / progress.total) * 100}%` }}></div>
                     </div>
                 </div>
             )}
