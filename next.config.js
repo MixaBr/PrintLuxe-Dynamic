@@ -47,16 +47,17 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer }) => {
-    // This is the fix for the 'fs' module error
+    // This is the fix for the 'fs' module error and other browser-specific logic.
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
       };
+      
+      // This alias is necessary for pdf-parse to work in the browser.
+      // It should only be applied to the client-side bundle.
+      config.resolve.alias['pdf-parse'] = 'pdf-parse/lib/pdf-parse.js';
     }
-
-    // This alias is necessary for pdf-parse to work in the browser.
-    config.resolve.alias['pdf-parse'] = 'pdf-parse/lib/pdf-parse.js';
     
     return config;
   },
