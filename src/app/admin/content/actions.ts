@@ -28,6 +28,8 @@ export async function embedAndStoreChunks(chunks: Chunk[]) {
     }
 
     try {
+        const supabase = createAdminClient();
+
         // 1. Generate embeddings for all chunks in the batch in parallel.
         const embeddings = await ai.embed({
             embedder: textEmbeddingGecko,
