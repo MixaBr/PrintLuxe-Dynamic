@@ -30,7 +30,7 @@ export async function embedAndStoreChunks(chunks: Chunk[]) {
         // 1. Generate embeddings for all chunks in the batch in parallel.
         const embeddings = await ai.embed({
             embedder: textEmbeddingGecko,
-            content: chunks.map(chunk => chunk.content),
+            content: chunks.map(chunk => ({ content: chunk.content })),
         });
 
         // 2. Prepare data for Supabase insertion, matching chunks with their embeddings.
