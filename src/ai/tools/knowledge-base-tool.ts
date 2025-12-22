@@ -5,7 +5,7 @@
  */
 'use server';
 
-import { ai, textEmbeddingGecko } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/google-genai';
@@ -63,8 +63,9 @@ export const knowledgeBaseTool = ai.defineTool(
         const { matchThreshold, matchCount } = await getSearchConfig();
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
 
-        // 2. Generate an embedding for the user's query.
-        const embeddings = await textEmbeddingGecko.embed({
+        // 2. Generate an embedding for the user's query using the correct, direct method.
+        const textEmbedding = googleAI.embedder('text-embedding-004');
+        const embeddings = await textEmbedding.embed({
             content: query,
         });
 
