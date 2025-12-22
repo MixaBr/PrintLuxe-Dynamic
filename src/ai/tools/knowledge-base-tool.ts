@@ -93,8 +93,19 @@ export const knowledgeBaseTool = ai.defineTool(
             return 'В базе знаний не найдено релевантной информации по вашему вопросу.';
         }
         
-        console.log(`Found ${documents.length} relevant documents.`);
-        console.log(`============================================`);
+        console.log(`Found ${documents.length} relevant documents. (Logging details below)`);
+        // New detailed logging block
+        console.log(`================= FOUND DOCUMENTS (DEBUG) =================`);
+        documents.forEach((doc: any) => {
+            console.log({
+                id: doc.id, // The record ID from Supabase
+                similarity: doc.similarity, // The relevance score
+                metadata: doc.metadata,
+                content_preview: doc.content.substring(0, 100) + '...' // A short preview
+            });
+        });
+        console.log(`===========================================================`);
+
 
         // 4. Format the found documents into a single context string for the LLM.
         const contextText = documents
