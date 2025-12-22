@@ -17,7 +17,6 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
 import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
 import { handleSecurityStrike } from '../tools/security';
-import { googleAI } from '@genkit-ai/google-genai';
 
 const AssistantInputSchema = z.object({
   query: z.string().describe('The user query from the Telegram chat.'),
@@ -110,7 +109,6 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI('gemini-1.5-flash-latest'),
       prompt: finalPrompt,
     });
     
@@ -160,7 +158,6 @@ const assistantRouterFlow = ai.defineFlow(
     // 4. First LLM call (The Router) - decides which tool to use
     // Updated to use the correct GenerateOptions structure
     const routerResponse = await ai.generate({
-      model: googleAI('gemini-1.5-flash-latest'),
       system: routerPrompt,
       prompt: input.query,
       tools,
@@ -185,7 +182,6 @@ const assistantRouterFlow = ai.defineFlow(
         }
         
         const expertResponse = await ai.generate({
-          model: googleAI('gemini-1.5-flash-latest'),
           system: expertPrompt,
           messages: [
             routerResponse.message
