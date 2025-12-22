@@ -166,6 +166,12 @@ const assistantRouterFlow = ai.defineFlow(
       tools,
     });
 
+    // DEBUG LOG: What did the router decide?
+    console.log('=============== ROUTER RESPONSE ===============');
+    console.log('Text Response:', routerResponse.text);
+    console.log('Tool Requests:', JSON.stringify(routerResponse.toolRequests, null, 2));
+    console.log('============================================');
+
     // 5. Check if the knowledgeBaseTool was used and handle it.
     const kbToolCall = routerResponse.toolRequests?.find(
       (call) => call.toolRequest.name === 'knowledgeBaseTool'
@@ -183,6 +189,12 @@ const assistantRouterFlow = ai.defineFlow(
         if (!routerResponse.message) {
              return "Произошла внутренняя ошибка при обработке вашего запроса.";
         }
+        
+        // DEBUG LOG: What are we sending to the expert?
+        console.log('============== EXPERT PROMPT ==============');
+        console.log('System Prompt:', expertPrompt);
+        console.log('Messages:', JSON.stringify(routerResponse.message, null, 2));
+        console.log('===========================================');
         
         const expertResponse = await ai.generate({
           model: googleAI.model('googleai/gemini-2.5-flash'),

@@ -54,7 +54,8 @@ export const knowledgeBaseTool = ai.defineTool(
         outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating no relevant information was found.'),
     },
     async ({ query }) => {
-        console.log(`Executing knowledgeBaseTool with query: "${query}"`);
+        console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
+        console.log(`Searching for: "${query}"`);
 
         // 1. Get search configuration from the database
         const { matchThreshold, matchCount } = await getSearchConfig();
@@ -87,10 +88,13 @@ export const knowledgeBaseTool = ai.defineTool(
         }
 
         if (!documents || documents.length === 0) {
+            console.log(`Found 0 relevant documents.`);
+            console.log(`============================================`);
             return 'В базе знаний не найдено релевантной информации по вашему вопросу.';
         }
         
         console.log(`Found ${documents.length} relevant documents.`);
+        console.log(`============================================`);
 
         // 4. Format the found documents into a single context string for the LLM.
         const contextText = documents
