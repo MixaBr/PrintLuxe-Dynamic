@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 import pdf from 'pdf-parse';
 import * as cheerio from 'cheerio';
+import { ai } from '@/ai/genkit';
 
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
@@ -164,8 +165,8 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
             try {
                 console.log(`[Embedding Start] Processing chunk #${chunk.metadata.chunk_number} for ${file.name}`);
                 
-                const textEmbedding = googleAI.embedder('text-embedding-004');
-                const embeddingResponse = await textEmbedding.embed({
+                const embeddingResponse = await ai.embed({
+                    embedder: googleAI.embedder('text-embedding-004'),
                     content: chunk.text_content,
                 });
                 
