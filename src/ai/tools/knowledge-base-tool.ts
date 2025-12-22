@@ -5,10 +5,9 @@
  */
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
-import { googleAI } from '@genkit-ai/google-genai';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
@@ -65,7 +64,7 @@ export const knowledgeBaseTool = ai.defineTool(
 
         // 2. Generate an embedding for the user's query using the correct, direct method.
         const embeddingResponse = await ai.embed({
-            embedder: googleAI.embedder('text-embedding-004'),
+            embedder: textEmbeddingGecko,
             content: query,
         });
 
