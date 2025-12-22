@@ -1,10 +1,10 @@
 
 /**
  * @fileOverview The main AI assistant flow for the Telegram bot.
- * This file now orchestrates a multi-step process:
+ * This file orchestrates a multi-step process:
  * 1. A `securityGuardFlow` first checks if the user's query is malicious.
- * 2. If malicious, it calls `handleSecurityStrike` to log the attempt and potentially block the user.
- * 3. If safe, it proceeds to the `assistantRouterFlow` which handles the query as before.
+ * 2. If safe, it handles new users with an introduction.
+ * 3. For existing users, it proceeds to the `assistantRouterFlow` which uses a single, powerful prompt from the database (`bot_prompt_router`) to decide which tool to use (knowledge base, general questions, etc.) and generate a final answer.
  */
 'use server';
 
@@ -41,9 +41,7 @@ async function getBotPrompts() {
         .from('app_config')
         .select('key, value')
         .in('key', [
-            'bot_prompt_unidentified_user',
-            'bot_prompt_identified_user',
-            'bot_prompt_expert',
+            'bot_prompt_router', // The new unified router prompt
             'bot_prompt_security_guard',
             'bot_message_security_warning',
             'bot_message_blocked_permanent',
@@ -90,7 +88,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   }
 
   // 3. Proceed with the normal flow if the query is safe.
-  const aiResponse = await assistantRouterFlow({ ...input, prompts });
+  const aiResponse = await assistantRouterFlow({ ...input, routerPrompt: prompts.bot_prompt_router });
   return { response: aiResponse };
 }
 
@@ -110,7 +108,7 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
+      model: googleAI.model('gemini-1.5-flash-latest'),
       prompt: finalPrompt,
     });
     
@@ -125,11 +123,16 @@ const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, kno
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
-    inputSchema: AssistantInputSchema.extend({ prompts: z.record(z.string()) }),
+    inputSchema: AssistantInputSchema.extend({ routerPrompt: z.string() }),
     outputSchema: z.string(),
   },
-  async ({ prompts, ...input }) => {
-    // 1. Fetch user data
+  async ({ routerPrompt, ...input }) => {
+     if (!routerPrompt) {
+        console.error("CRITICAL: bot_prompt_router is missing from the database.");
+        return "Произошла критическая ошибка: не удалось загрузить основной промпт. Пожалуйста, обратитесь к администратору.";
+    }
+
+    // 1. Fetch user data to get their name
     const { data: chatData, error } = await createAdminClient()
       .from('chats')
       .select('us_first_name')
@@ -138,84 +141,35 @@ const assistantRouterFlow = ai.defineFlow(
 
     if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error('Error fetching user name:', error);
-      return 'Внутренняя ошибка: не удалось получить данные пользователя. Попробуйте позже.';
+      // Don't fail the whole flow, just proceed without the name.
     }
 
     const currentFirstName = chatData?.us_first_name;
-
+    
     // 2. Handle new session for a known user
     if (input.isNewSession && currentFirstName) {
         return `Приветствую Вас, ${currentFirstName}! Рад видеть! Чем могу сегодня Вам помочь?`;
     }
 
-    // 3. Select the appropriate system prompt based on user identification status
-    const routerPromptTemplate = currentFirstName
-      ? prompts.bot_prompt_identified_user
-      : prompts.bot_prompt_unidentified_user;
-
-    const routerPrompt = routerPromptTemplate
+    // 3. Prepare the final router prompt by injecting real-time data.
+    const finalRouterPrompt = routerPrompt
         .replace('{{chatId}}', String(input.chatId))
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
-    // 4. First LLM call (The Router) - decides which tool to use
-    // Updated to use the correct GenerateOptions structure
-    const routerResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
-      system: routerPrompt,
+    // 4. Execute the main AI call with all tools available.
+    // The AI will use the powerful system prompt to decide which tool to use (or none).
+    const llmResponse = await ai.generate({
+      model: googleAI.model('gemini-1.5-flash-latest'),
+      system: finalRouterPrompt,
       prompt: input.query,
       tools,
+      toolChoice: 'auto'
     });
 
-    // DEBUG LOG: What did the router decide?
-    console.log('=============== ROUTER RESPONSE ===============');
-    console.log('Text Response:', routerResponse.text);
-    console.log('Tool Requests:', JSON.stringify(routerResponse.toolRequests, null, 2));
-    console.log('============================================');
-
-    // 5. Check if the knowledgeBaseTool was used and handle it.
-    const kbToolCall = routerResponse.toolRequests?.find(
-      (call) => call.toolRequest.name === 'knowledgeBaseTool'
-    );
-
-    if (kbToolCall) {
-        // The tool was requested. Now we make a second call to get the expert answer.
-        const expertPromptTemplate = prompts.bot_prompt_expert;
-        const expertPrompt = expertPromptTemplate
-            .replace('{{query}}', input.query)
-            .replace('{{contextText}}', 'Используй информацию из предоставленных инструментов.');
-
-        // The second call includes the history of the conversation, including the tool request.
-        // Genkit will automatically resolve the tool and provide its output as context to the model.
-        if (!routerResponse.message) {
-             return "Произошла внутренняя ошибка при обработке вашего запроса.";
-        }
-        
-        // DEBUG LOG: What are we sending to the expert?
-        console.log('============== EXPERT PROMPT ==============');
-        console.log('System Prompt:', expertPrompt);
-        console.log('Messages:', JSON.stringify(routerResponse.message, null, 2));
-        console.log('===========================================');
-        
-        const expertResponse = await ai.generate({
-          model: googleAI.model('googleai/gemini-2.5-flash'),
-          system: expertPrompt,
-          messages: [
-            routerResponse.message
-          ],
-          tools: [knowledgeBaseTool]
-        });
-
-        const expertText = expertResponse.text;
-
-        if (expertText.includes("не найдено релевантной информации")) {
-            return "К сожалению, в моей базе знаний нет ответа на ваш вопрос. Могу я помочь чем-то еще?";
-        }
-
-        return expertText;
-    }
-
-
-    // 7. If no special tool was used, return the direct text response from the router.
-    return routerResponse.text;
+    // 5. Return the final text response from the model.
+    // Genkit v1.x handles the tool-calling loop automatically. If a tool was called,
+    // its output is fed back into the model in a subsequent call, and `llmResponse.text`
+    // will contain the final, synthesized answer. If no tool was called, it's the direct answer.
+    return llmResponse.text;
   }
 );
