@@ -5,12 +5,11 @@
  */
 'use server';
 
-import { ai, textEmbeddingGecko } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 import pdf from 'pdf-parse';
 import * as cheerio from 'cheerio';
-import { googleAI } from '@genkit-ai/google-genai';
 
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
@@ -165,11 +164,13 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
             try {
                 console.log(`[Embedding Start] Processing chunk #${chunk.metadata.chunk_number} for ${file.name}`);
                 
-                const embeddings = await textEmbeddingGecko.embed({
+                const textEmbedding = googleAI.embedder('text-embedding-004');
+                const embeddingResponse = await textEmbedding.embed({
                     content: chunk.text_content,
                 });
                 
-                const embedding = embeddings[0]?.embedding;
+                const embedding = embeddingResponse.embedding;
+
                 if (!embedding) {
                     throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
                 }

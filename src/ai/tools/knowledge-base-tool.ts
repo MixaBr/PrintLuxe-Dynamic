@@ -65,11 +65,11 @@ export const knowledgeBaseTool = ai.defineTool(
 
         // 2. Generate an embedding for the user's query using the correct, direct method.
         const textEmbedding = googleAI.embedder('text-embedding-004');
-        const embeddings = await textEmbedding.embed({
+        const embeddingResponse = await textEmbedding.embed({
             content: query,
         });
 
-        const embedding = embeddings[0]?.embedding;
+        const embedding = embeddingResponse.embedding;
 
         if (!embedding) {
             return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';
