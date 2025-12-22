@@ -9,14 +9,6 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 import pdf from 'pdf-parse';
 
-// These polyfills are necessary for pdf-parse to work in the Next.js Edge/Serverless environment.
-if (typeof (global as any).Buffer === 'undefined') {
-    (global as any).Buffer = require('buffer/').Buffer;
-}
-if (typeof (global as any).btoa === 'undefined') {
-    (global as any).btoa = (str: string) => Buffer.from(str, 'binary').toString('base64');
-}
-
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
 const BATCH_SIZE = 20;  // Number of chunks to process per server request
@@ -107,10 +99,12 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
             
             try {
                 // 3a. Generate embeddings for the current batch
+                const contentToEmbed = batch.map(chunk => chunk.content);
                 const embeddingsResponse = await ai.embed({
                     embedder: textEmbeddingGecko,
-                    content: batch.map(chunk => ({ content: chunk.content })),
+                    content: contentToEmbed,
                 });
+
 
                 if (embeddingsResponse.length !== batch.length) {
                     throw new Error("Количество полученных вложений не соответствует количеству фрагментов в пакете.");
