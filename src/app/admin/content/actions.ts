@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Server actions for the content management page.
  * Implements a robust, batch-oriented processing pipeline for PDF files.
@@ -8,7 +7,7 @@
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
-import pdf from 'pdf-parse/lib/pdf-parse';
+import pdf from 'pdf-parse';
 
 // These polyfills are necessary for pdf-parse to work in the Next.js Edge/Serverless environment.
 if (typeof (global as any).Buffer === 'undefined') {
