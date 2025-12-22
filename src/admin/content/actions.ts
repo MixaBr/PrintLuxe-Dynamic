@@ -5,12 +5,12 @@
  */
 'use server';
 
-import { googleAI } from '@genkit-ai/google-genai';
 import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 import pdf from 'pdf-parse';
 import * as cheerio from 'cheerio';
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
@@ -170,7 +170,7 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
                     content: chunk.text_content,
                 });
                 
-                const embedding = embeddingResponse.embedding;
+                const embedding = embeddingResponse[0]?.embedding;
 
                 if (!embedding) {
                     throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
@@ -228,3 +228,5 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
         };
     }
 }
+
+    

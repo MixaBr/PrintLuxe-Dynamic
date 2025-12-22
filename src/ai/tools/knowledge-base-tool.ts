@@ -69,7 +69,7 @@ export const knowledgeBaseTool = ai.defineTool(
             content: query,
         });
 
-        const embedding = embeddingResponse.embedding;
+        const embedding = embeddingResponse[0]?.embedding;
 
         if (!embedding) {
             return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';
@@ -117,3 +117,5 @@ export const knowledgeBaseTool = ai.defineTool(
         return contextText;
     }
 );
+
+    
