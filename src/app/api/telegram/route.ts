@@ -161,7 +161,7 @@ export async function POST(req: Request) {
       updates.is_session_active = true; // Mark the new session as active
       
       const { error: rpcError } = await supabase.rpc('rotate_user_session', {
-        p_chat_id: chat.id,
+        p_chat_id: chat.chat_id,
         p_ended_at: lastMessageAt.toISOString(),
         p_started_at: now.toISOString()
       });
