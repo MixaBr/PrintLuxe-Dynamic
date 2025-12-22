@@ -14,7 +14,6 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
-const BATCH_SIZE = 20;  // Number of chunks to process per server request
 
 interface Chunk {
     content: string; // For HTML, this will be the HTML content of the chunk
@@ -97,6 +96,27 @@ function splitHtmlIntoChunks(html: string, filename: string): Chunk[] {
     return chunks;
 }
 
+/**
+ * Deletes all documents from the knowledge base.
+ */
+export async function clearKnowledgeBase(): Promise<{ success: boolean; message: string }> {
+    try {
+        const supabase = createAdminClient();
+        const { error } = await supabase.from('manual_knowledge').delete().gt('id', 0); // Deletes all rows
+
+        if (error) {
+            throw new Error(`Ошибка Supabase: ${error.message}`);
+        }
+        
+        revalidatePath('/admin/content');
+        return { success: true, message: 'База знаний успешно очищена!' };
+
+    } catch (e: any) {
+        console.error('Failed to clear knowledge base:', e);
+        return { success: false, message: `Не удалось очистить базу знаний: ${e.message}` };
+    }
+}
+
 
 /**
  * Receives a file (PDF or HTML), parses it, splits it into chunks, and processes them
@@ -140,52 +160,42 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
         let totalFailed = 0;
         const failedChunksDetails: ActionResult['details'] = [];
 
-        // 2. Process chunks in batches
-        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-            const batch = chunks.slice(i, i + BATCH_SIZE);
-            
+        // 2. Process chunks one by one to avoid rate limiting
+        for (const chunk of chunks) {
             try {
-                // Create an array of embedding generation promises for the current batch
-                const embeddingPromises = batch.map(chunk => 
-                    ai.embed({
-                        embedder: googleAI.embedder('text-embedding-004'),
-                        content: chunk.text_content, // Use plain text for embedding
-                    })
-                );
+                console.log(`[Embedding Start] Processing chunk #${chunk.metadata.chunk_number} for ${file.name}`);
                 
-                const embeddingsResponses = await Promise.all(embeddingPromises);
-
-                const dataToInsert = batch.map((chunk, index) => {
-                     const embedding = embeddingsResponses[index]?.[0]?.embedding;
-                     if (!embedding) {
-                        throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
-                     }
-                     return {
-                        content: chunk.content, // Store the original content (HTML or text)
-                        metadata: chunk.metadata,
-                        embedding: embedding,
-                    }
+                const embeddings = await textEmbeddingGecko.embed({
+                    content: chunk.text_content,
                 });
+                
+                const embedding = embeddings[0]?.embedding;
+                if (!embedding) {
+                    throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
+                }
 
-                // Insert the batch into the database
                 const { error: insertError } = await supabase
                     .from('manual_knowledge')
-                    .insert(dataToInsert);
+                    .insert({
+                        content: chunk.content,
+                        metadata: chunk.metadata,
+                        embedding: embedding,
+                    });
 
                 if (insertError) {
-                    throw new Error(`Ошибка при сохранении пакета в базу данных: ${insertError.message}`);
+                    throw new Error(`Ошибка при сохранении в базу данных: ${insertError.message}`);
                 }
                 
-                totalSuccess += batch.length;
+                totalSuccess++;
 
-            } catch (batchError: any) {
-                totalFailed += batch.length;
-                batch.forEach(chunk => {
-                    const { text_content, ...chunkForDetails } = chunk;
-                    failedChunksDetails.push({
-                        chunk: chunkForDetails,
-                        error: batchError.message || 'Неизвестная ошибка при обработке пакета.',
-                    });
+            } catch (chunkError: any) {
+                console.error(`[Embedding Failed] Chunk #${chunk.metadata.chunk_number} Error Details:`, JSON.stringify(chunkError, null, 2));
+                totalFailed++;
+                const { text_content, ...chunkForDetails } = chunk;
+                const errorMessage = chunkError.cause?.message || chunkError.message || 'Неизвестная ошибка при обработке фрагмента.';
+                failedChunksDetails.push({
+                    chunk: chunkForDetails,
+                    error: errorMessage,
                 });
             }
         }

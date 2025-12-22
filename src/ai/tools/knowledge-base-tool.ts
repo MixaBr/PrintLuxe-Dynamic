@@ -64,8 +64,7 @@ export const knowledgeBaseTool = ai.defineTool(
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
 
         // 2. Generate an embedding for the user's query.
-        const embeddings = await ai.embed({
-            embedder: googleAI.embedder('text-embedding-004'),
+        const embeddings = await textEmbeddingGecko.embed({
             content: query,
         });
 
