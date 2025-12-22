@@ -2,32 +2,24 @@
 'use client';
 
 import { useState, useRef, useTransition } from 'react';
+import { useFormState } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { UploadCloud, File as FileIcon, X, Loader2 } from 'lucide-react';
+import { UploadCloud, File as FileIcon, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import pdf from 'pdf-parse';
-import { embedAndStoreChunks } from '@/app/admin/content/actions';
-
-// Polyfill for Buffer used by pdf-parse in the browser
-if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
-    (window as any).Buffer = require('buffer/').Buffer;
-}
-
-// FIX: Set the workerSrc for pdf.js to prevent "No PDFJS.workerSrc specified" error.
-// This must be done on the client side by setting a global variable.
-if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
-    (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;
-}
-
+import { processAndEmbedFile, type ActionResult } from '@/app/admin/content/actions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
 const MAX_FILES = 10;
-const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
-const CHUNK_SIZE = 500; // Characters per chunk
-const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
-const BATCH_SIZE = 20; // Number of chunks to process per server request
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
+
+const initialState: ActionResult = {
+    successfulCount: 0,
+    failedCount: 0,
+    message: ''
+};
 
 export function KnowledgeBaseUploader() {
     const { toast } = useToast();
@@ -35,34 +27,41 @@ export function KnowledgeBaseUploader() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
-    const [progress, setProgress] = useState({ total: 0, processed: 0 });
-
-    const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+    
+    // State to hold results for each processed file
+    const [processResults, setProcessResults] = useState<({ fileName: string } & ActionResult)[]>([]);
 
     const handleFilesChange = (newFiles: FileList | null) => {
         if (!newFiles) return;
 
-        const filesArray = Array.from(newFiles).filter(file => file.type === 'application/pdf');
+        let addedFiles: File[] = [];
+        let errorOccurred = false;
 
-        if (filesArray.length === 0) {
-            toast({ variant: "destructive", title: "Ошибка", description: `Можно загружать только PDF файлы.` });
+        for (const file of Array.from(newFiles)) {
+            if (file.type !== 'application/pdf') {
+                toast({ variant: "destructive", title: "Неверный тип файла", description: `"${file.name}" не является PDF.` });
+                errorOccurred = true;
+                continue;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                toast({ variant: "destructive", title: "Файл слишком большой", description: `"${file.name}" превышает лимит в 25 МБ.` });
+                errorOccurred = true;
+                continue;
+            }
+            addedFiles.push(file);
+        }
+
+        if (files.length + addedFiles.length > MAX_FILES) {
+            toast({ variant: "destructive", title: "Слишком много файлов", description: `Можно выбрать не более ${MAX_FILES} файлов.` });
             return;
         }
 
-        if (files.length + filesArray.length > MAX_FILES) {
-            toast({ variant: "destructive", title: "Ошибка", description: `Можно загрузить не более ${MAX_FILES} файлов за раз.` });
-            return;
+        setFiles(prevFiles => [...prevFiles, ...addedFiles]);
+        if (errorOccurred && fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
-
-        const combinedSize = files.reduce((acc, f) => acc + f.size, 0) + filesArray.reduce((acc, f) => acc + f.size, 0);
-        if (combinedSize > MAX_TOTAL_SIZE) {
-            toast({ variant: "destructive", title: "Ошибка", description: `Общий размер файлов не должен превышать 50 МБ.` });
-            return;
-        }
-
-        setFiles(prevFiles => [...prevFiles, ...filesArray]);
     };
-
+    
     const removeFile = (index: number) => {
         setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
         if (fileInputRef.current) {
@@ -70,20 +69,9 @@ export function KnowledgeBaseUploader() {
         }
     }
 
-    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); };
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -93,106 +81,42 @@ export function KnowledgeBaseUploader() {
             e.dataTransfer.clearData();
         }
     };
-
-    const processPdfToText = async (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsArrayBuffer(file);
-            reader.onload = async () => {
-                try {
-                    const buffer = Buffer.from(reader.result as ArrayBuffer);
-                    const data = await pdf(buffer);
-                    resolve(data.text);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            reader.onerror = (error) => reject(error);
-        });
-    }
-
-    const splitTextIntoChunks = (text: string, filename: string) => {
-        const chunks = [];
-        let index = 0;
-        let chunkNumber = 1;
-        while (index < text.length) {
-            const chunk = text.substring(index, index + CHUNK_SIZE);
-            chunks.push({
-                content: chunk,
-                metadata: {
-                    source_filename: filename,
-                    chunk_number: chunkNumber++,
-                }
-            });
-            index += CHUNK_SIZE - CHUNK_OVERLAP;
-        }
-        return chunks;
-    }
-
-
-    const handleProcessFiles = async () => {
+    
+    const handleProcessFiles = () => {
         if (files.length === 0) {
             toast({ variant: 'destructive', title: 'Нет файлов', description: 'Пожалуйста, выберите файлы для обработки.' });
             return;
         }
-        
+
         startTransition(async () => {
-            try {
-                toast({ title: 'Начало обработки...', description: `Обрабатывается ${files.length} файлов.` });
-
-                let allChunks = [];
-                for (const file of files) {
-                    const text = await processPdfToText(file);
-                    const chunks = splitTextIntoChunks(text, file.name);
-                    allChunks.push(...chunks);
-                }
-
-                if(allChunks.length === 0) {
-                    toast({ variant: 'destructive', title: 'Ошибка', description: 'Не удалось извлечь текст из файлов.' });
-                    return;
-                }
-
-                setProgress({ total: allChunks.length, processed: 0 });
-                toast({ title: 'Текст извлечен', description: `Создано ${allChunks.length} фрагментов. Начинаю пакетную обработку.` });
+            setProcessResults([]); // Clear previous results
+            const results: ({ fileName: string } & ActionResult)[] = [];
+            
+            for (const file of files) {
+                toast({ title: `Начало обработки файла: ${file.name}` });
+                const formData = new FormData();
+                formData.append('file', file);
                 
-                let totalSuccess = 0;
-                let allFailed: any[] = [];
+                // We are not using useFormState here to handle multiple calls in a loop
+                const result = await processAndEmbedFile(initialState, formData);
 
-                for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
-                    const batch = allChunks.slice(i, i + BATCH_SIZE);
-                    const result = await embedAndStoreChunks(batch);
-
-                    if (result.error) {
-                        toast({ variant: 'destructive', title: `Ошибка в пакете ${i/BATCH_SIZE + 1}`, description: result.error });
-                        if (result.details) {
-                            allFailed.push(...result.details);
-                        }
-                    }
-                    if (result.successCount) {
-                        totalSuccess += result.successCount;
-                    }
-
-                    setProgress(prev => ({ ...prev, processed: Math.min(prev.processed + BATCH_SIZE, allChunks.length) }));
+                if (result.failedCount > 0) {
+                     toast({ variant: 'destructive', title: `Ошибки в файле ${file.name}`, description: result.message });
+                     console.error(`Ошибки обработки файла ${file.name}:`, result.details);
+                } else {
+                     toast({ title: 'Успех!', description: result.message });
                 }
-
-                if (allFailed.length > 0) {
-                    throw new Error(`Обработка завершена. Успешно: ${totalSuccess}. Ошибки: ${allFailed.length}.`);
-                }
-
-                toast({ title: 'Успех!', description: `Все ${totalSuccess} фрагментов успешно обработаны и сохранены.` });
-                setFiles([]);
-                setProgress({ total: 0, processed: 0 });
-
-
-            } catch(error: any) {
-                toast({ variant: 'destructive', title: 'Ошибка обработки', description: error.message });
-                setProgress({ total: 0, processed: 0 });
+                
+                results.push({ fileName: file.name, ...result });
+                setProcessResults([...results]); // Update state after each file
             }
+            
+            setFiles([]); // Clear file list after processing is done
         });
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -207,7 +131,6 @@ export function KnowledgeBaseUploader() {
             >
                 <Input
                     id="file-upload"
-                    name="file"
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
@@ -221,22 +144,22 @@ export function KnowledgeBaseUploader() {
                     <p className="text-lg font-semibold">
                         <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файлы
                     </p>
-                    <p className="text-sm text-muted-foreground">Только PDF. До ${MAX_FILES} файлов, общий размер до 50 МБ.</p>
+                    <p className="text-sm text-muted-foreground">Только PDF. До ${MAX_FILES} файлов, каждый до 25 МБ.</p>
                 </div>
             </div>
 
             {files.length > 0 && (
                 <div className="space-y-3">
-                    <h4 className="font-medium">Выбранные файлы (${files.length}):</h4>
+                    <h4 className="font-medium">Выбранные файлы ({files.length}):</h4>
                     <div className="w-full rounded-md border">
                         <ScrollArea className="h-48 w-full">
                             <div className='p-2 space-y-2'>
                                 {files.map((file, index) => (
-                                    <div key={index} className="relative flex items-center justify-between p-2 bg-muted/50 rounded-md">
+                                    <div key={file.name + index} className="relative flex items-center justify-between p-2 bg-muted/50 rounded-md">
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <FileIcon className="h-5 w-5 flex-shrink-0" />
                                             <span className="text-sm truncate font-medium">{file.name}</span>
-                                            <span className="text-xs text-muted-foreground flex-shrink-0">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                            <span className="text-xs text-muted-foreground flex-shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -252,21 +175,9 @@ export function KnowledgeBaseUploader() {
                             </div>
                         </ScrollArea>
                     </div>
-                     <div className='flex justify-between text-sm text-muted-foreground mt-1'>
-                        <span>Всего файлов: ${files.length} / ${MAX_FILES}</span>
-                        <span>Общий размер: ${(totalSize / 1024 / 1024).toFixed(2)} / 50.00 МБ</span>
-                    </div>
                 </div>
             )}
-             {isPending && progress.total > 0 && (
-                <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Обработано {progress.processed} из {progress.total} фрагментов...</p>
-                    <div className="w-full bg-muted rounded-full h-2.5">
-                        <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(progress.processed / progress.total) * 100}%` }}></div>
-                    </div>
-                </div>
-            )}
-
+            
             <div className="flex justify-end">
                 <Button onClick={handleProcessFiles} disabled={isPending || files.length === 0} size="lg">
                     {isPending ? (
@@ -277,6 +188,37 @@ export function KnowledgeBaseUploader() {
                     ) : 'Обработать и добавить в БЗ'}
                 </Button>
             </div>
+            
+             {processResults.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Результаты обработки</CardTitle>
+                        <CardDescription>Отчет о последней сессии загрузки файлов.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-60">
+                            <div className="space-y-2">
+                                {processResults.map((result, index) => (
+                                    <div key={index} className={cn(
+                                        "flex items-start gap-4 p-3 rounded-lg",
+                                        result.failedCount > 0 ? "bg-destructive/10" : "bg-green-500/10"
+                                    )}>
+                                        {result.failedCount > 0 
+                                            ? <AlertCircle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
+                                            : <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                                        }
+                                        <div>
+                                            <p className="font-semibold text-sm">{result.fileName}</p>
+                                            <p className="text-xs">{result.message}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+            )}
+
         </div>
     )
 }
