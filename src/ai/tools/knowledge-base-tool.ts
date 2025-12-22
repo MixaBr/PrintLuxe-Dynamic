@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview A Genkit tool for searching the knowledge base.
  * This tool is now configurable via the `app_config` table in Supabase.
@@ -7,6 +8,7 @@
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
@@ -63,7 +65,7 @@ export const knowledgeBaseTool = ai.defineTool(
 
         // 2. Generate an embedding for the user's query.
         const embeddings = await ai.embed({
-            embedder: textEmbeddingGecko,
+            embedder: googleAI.embedder('text-embedding-004'),
             content: query,
         });
 
