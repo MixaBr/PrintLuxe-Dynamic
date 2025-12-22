@@ -42,9 +42,12 @@ function splitTextIntoChunks(text: string, filename: string): Chunk[] {
     const chunks: Chunk[] = [];
     let index = 0;
     let chunkNumber = 1;
-    while (index < text.length) {
+    // Sanitize text by removing excessive newlines and spaces
+    const sanitizedText = text.replace(/(\r\n|\n|\r)/gm, " ").replace(/\s\s+/g, ' ');
+
+    while (index < sanitizedText.length) {
         const end = index + CHUNK_SIZE;
-        const chunkContent = text.substring(index, end);
+        const chunkContent = sanitizedText.substring(index, end);
         chunks.push({
             content: chunkContent,
             metadata: {
@@ -99,31 +102,35 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
             const batch = chunks.slice(i, i + BATCH_SIZE);
             
             try {
-                // 3a. Generate embeddings for the current batch
-                const contentToEmbed = batch.map(chunk => chunk.content);
-                const embeddingsResponse = await ai.embed({
-                    embedder: textEmbeddingGecko,
-                    content: contentToEmbed,
+                // Create an array of promises for embedding generation for the current batch
+                const embeddingPromises = batch.map(chunk => 
+                    ai.embed({
+                        embedder: textEmbeddingGecko,
+                        content: chunk.content,
+                    })
+                );
+                
+                const embeddingsResponses = await Promise.all(embeddingPromises);
+
+                const dataToInsert = batch.map((chunk, index) => {
+                     const embedding = embeddingsResponses[index]?.[0]?.embedding;
+                     if (!embedding) {
+                        // This case should be rare, but good to handle
+                        throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
+                     }
+                     return {
+                        content: chunk.content,
+                        metadata: chunk.metadata,
+                        embedding: embedding,
+                    }
                 });
 
-                if (embeddingsResponse.length !== batch.length) {
-                    throw new Error("Количество полученных вложений не соответствует количеству фрагментов в пакете.");
-                }
-
-                // 3b. Prepare data for insertion
-                const dataToInsert = batch.map((chunk, index) => ({
-                    content: chunk.content,
-                    metadata: chunk.metadata,
-                    embedding: embeddingsResponse[index].embedding,
-                }));
-
-                // 3c. Insert the batch into the database
+                // Insert the batch into the database
                 const { error: insertError } = await supabase
                     .from('manual_knowledge')
                     .insert(dataToInsert);
 
                 if (insertError) {
-                    // If the whole batch fails, log it and move to the next
                     throw new Error(`Ошибка при сохранении пакета в базу данных: ${insertError.message}`);
                 }
                 
@@ -131,7 +138,6 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
 
             } catch (batchError: any) {
                 totalFailed += batch.length;
-                // Add all chunks from the failed batch to the details
                 batch.forEach(chunk => {
                     failedChunksDetails.push({
                         chunk: chunk,
