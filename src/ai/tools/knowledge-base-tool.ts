@@ -25,7 +25,7 @@ export const knowledgeBaseTool = ai.defineTool(
 
         // 1. Generate an embedding for the user's query using the new ai.embed() method.
         const embeddings = await ai.embed({
-            embedder: textEmbeddingGecko, 
+            embedder: textEmbeddingGecko,
             content: query,
         });
 

@@ -106,7 +106,6 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
                     content: contentToEmbed,
                 });
 
-
                 if (embeddingsResponse.length !== batch.length) {
                     throw new Error("Количество полученных вложений не соответствует количеству фрагментов в пакете.");
                 }
