@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useRef, useTransition } from 'react';
-import { useFormState } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
+const ACCEPTED_FILE_TYPES = ['application/pdf', 'text/html'];
 
 const initialState: ActionResult = {
     successfulCount: 0,
@@ -38,8 +38,8 @@ export function KnowledgeBaseUploader() {
         let errorOccurred = false;
 
         for (const file of Array.from(newFiles)) {
-            if (file.type !== 'application/pdf') {
-                toast({ variant: "destructive", title: "Неверный тип файла", description: `"${file.name}" не является PDF.` });
+            if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+                toast({ variant: "destructive", title: "Неверный тип файла", description: `"${file.name}" имеет недопустимый тип. Разрешены PDF и HTML.` });
                 errorOccurred = true;
                 continue;
             }
@@ -135,7 +135,7 @@ export function KnowledgeBaseUploader() {
                     ref={fileInputRef}
                     className="hidden"
                     multiple
-                    accept="application/pdf"
+                    accept="application/pdf,text/html"
                     onChange={(e) => handleFilesChange(e.target.files)}
                     disabled={isPending}
                 />
@@ -144,7 +144,7 @@ export function KnowledgeBaseUploader() {
                     <p className="text-lg font-semibold">
                         <span className="text-primary">Нажмите, чтобы выбрать</span> или перетащите файлы
                     </p>
-                    <p className="text-sm text-muted-foreground">Только PDF. До ${MAX_FILES} файлов, каждый до 25 МБ.</p>
+                    <p className="text-sm text-muted-foreground">PDF и HTML. До ${MAX_FILES} файлов, каждый до 25 МБ.</p>
                 </div>
             </div>
 
