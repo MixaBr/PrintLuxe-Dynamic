@@ -5,7 +5,7 @@
  * 2. Checks if the user is blocked. If so, halts all further processing.
  * 3. Creates a new user if one doesn't exist, and logs their first session.
  * 4. Performs a series of security and resource checks (rate limits, daily quota).
- * 5. If a session is new (either by timeout or explicit closing), it calls a dedicated Supabase function (`rotate_user_session`) to atomically handle session logging.
+ * 5. If a session is new (either by timeout or explicit closing), it now directly updates the `sessions` table to end the old session and create a new one.
  * 6. Calls the AI assistant (`runAssistant`) which includes a security check before processing the query.
  * 7. Sends the AI's response back to the user and updates all relevant chat data in a single batch.
  */
@@ -160,13 +160,22 @@ export async function POST(req: Request) {
       updates.session_start_at = now.toISOString();
       updates.is_session_active = true; // Mark the new session as active
       
-      const { error: rpcError } = await supabase.rpc('rotate_user_session', {
-        p_chat_id: chat.id,
-        p_ended_at: lastMessageAt.toISOString(),
-        p_started_at: now.toISOString(),
-      });
+      // FIX: Replace missing RPC call with direct SQL operations
+      // 1. End the previous session
+      const { error: updateSessionError } = await supabase
+        .from('sessions')
+        .update({ ended_at: lastMessageAt.toISOString() })
+        .eq('chat_id', chat.id)
+        .is('ended_at', null); // Ensure we only close active sessions
+      
+      if (updateSessionError) throw updateSessionError;
 
-      if (rpcError) throw rpcError;
+      // 2. Start a new session
+      const { error: insertSessionError } = await supabase
+        .from('sessions')
+        .insert({ chat_id: chat.id, started_at: now.toISOString() });
+        
+      if (insertSessionError) throw insertSessionError;
     }
 
     if (Object.keys(updates).length > 0) {
