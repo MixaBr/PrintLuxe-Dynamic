@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { revalidatePath } from 'next/cache';
 import pdf from 'pdf-parse';
 
+
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
 const BATCH_SIZE = 20;  // Number of chunks to process per server request
