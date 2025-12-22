@@ -110,7 +110,7 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash-latest'),
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       prompt: finalPrompt,
     });
     
@@ -160,7 +160,7 @@ const assistantRouterFlow = ai.defineFlow(
     // 4. First LLM call (The Router) - decides which tool to use
     // Updated to use the correct GenerateOptions structure
     const routerResponse = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash-latest'),
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       system: routerPrompt,
       prompt: input.query,
       tools,
@@ -185,7 +185,7 @@ const assistantRouterFlow = ai.defineFlow(
         }
         
         const expertResponse = await ai.generate({
-          model: googleAI.model('gemini-1.5-flash-latest'),
+          model: googleAI.model('googleai/gemini-2.5-flash'),
           system: expertPrompt,
           messages: [
             routerResponse.message

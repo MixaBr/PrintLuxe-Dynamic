@@ -1,5 +1,6 @@
 /**
  * @fileOverview A Genkit tool for searching the knowledge base.
+ * This tool is now configurable via the `app_config` table in Supabase.
  */
 'use server';
 
@@ -9,6 +10,38 @@ import { z } from 'zod';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
+
+// Helper to get search configuration from the database
+async function getSearchConfig() {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+        .from('app_config')
+        .select('key, value')
+        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count']);
+
+    if (error) {
+        console.error("Error fetching knowledge base config:", error.message);
+        // Return safe defaults in case of DB error
+        return {
+            matchThreshold: 0.5,
+            matchCount: 5,
+        };
+    }
+
+    const config = data.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+    }, {} as Record<string, string | null>);
+    
+    const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.5');
+    const matchCount = parseInt(config.bot_kb_match_count || '5', 10);
+
+    return {
+        matchThreshold: isNaN(matchThreshold) ? 0.5 : matchThreshold,
+        matchCount: isNaN(matchCount) ? 5 : matchCount,
+    };
+}
+
 
 export const knowledgeBaseTool = ai.defineTool(
     {
@@ -23,13 +56,16 @@ export const knowledgeBaseTool = ai.defineTool(
     async ({ query }) => {
         console.log(`Executing knowledgeBaseTool with query: "${query}"`);
 
-        // 1. Generate an embedding for the user's query using the new ai.embed() method.
+        // 1. Get search configuration from the database
+        const { matchThreshold, matchCount } = await getSearchConfig();
+        console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
+
+        // 2. Generate an embedding for the user's query.
         const embeddings = await ai.embed({
             embedder: textEmbeddingGecko,
             content: query,
         });
 
-        // The result is an array, even for a single query.
         const embedding = embeddings[0]?.embedding;
 
         if (!embedding) {
@@ -38,16 +74,15 @@ export const knowledgeBaseTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
-        // 2. Call the Supabase RPC function to find matching documents.
+        // 3. Call the Supabase RPC function with configurable parameters.
         const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
             query_embedding: embedding,
-            match_threshold: 0.7, // Similarity threshold (adjust as needed)
-            match_count: 5,       // Number of documents to return
+            match_threshold: matchThreshold,
+            match_count: matchCount,
         });
 
         if (error) {
             console.error('Error searching knowledge base:', error);
-            // Return an error message that the main flow can handle.
             return 'Произошла ошибка при поиске в базе знаний.';
         }
 
@@ -57,13 +92,11 @@ export const knowledgeBaseTool = ai.defineTool(
         
         console.log(`Found ${documents.length} relevant documents.`);
 
-        // 3. Format the found documents into a single context string for the LLM.
-        // This is not a user-facing message, but context for the next AI step.
+        // 4. Format the found documents into a single context string for the LLM.
         const contextText = documents
             .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\n  Содержание: ${doc.content}`)
             .join('\n\n');
 
-        // Return only the raw context.
         return contextText;
     }
 );
