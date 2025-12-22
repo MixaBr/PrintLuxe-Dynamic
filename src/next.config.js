@@ -50,8 +50,15 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     // This alias prevents Webpack from trying to bundle the 'canvas' module.
     // It's a server-side dependency of pdfjs-dist that we don't use, and it causes build errors.
-    // We apply it to both server and client builds to be safe.
     config.resolve.alias.canvas = false;
+
+    // Fixes for client-side bundles only
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false, // Don't bundle 'fs' for the browser
+      };
+    }
     
     return config;
   },
