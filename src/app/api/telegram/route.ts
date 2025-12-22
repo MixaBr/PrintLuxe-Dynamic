@@ -160,22 +160,13 @@ export async function POST(req: Request) {
       updates.session_start_at = now.toISOString();
       updates.is_session_active = true; // Mark the new session as active
       
-      // FIX: Replace missing RPC call with direct SQL operations
-      // 1. End the previous session
-      const { error: updateSessionError } = await supabase
-        .from('sessions')
-        .update({ ended_at: lastMessageAt.toISOString() })
-        .eq('chat_id', chat.id)
-        .is('ended_at', null); // Ensure we only close active sessions
+      const { error: rpcError } = await supabase.rpc('rotate_user_session', {
+        p_chat_id: chat.id,
+        p_ended_at: lastMessageAt.toISOString(),
+        p_started_at: now.toISOString()
+      });
       
-      if (updateSessionError) throw updateSessionError;
-
-      // 2. Start a new session
-      const { error: insertSessionError } = await supabase
-        .from('sessions')
-        .insert({ chat_id: chat.id, started_at: now.toISOString() });
-        
-      if (insertSessionError) throw insertSessionError;
+      if (rpcError) throw rpcError;
     }
 
     if (Object.keys(updates).length > 0) {
