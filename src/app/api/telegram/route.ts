@@ -166,7 +166,10 @@ export async function POST(req: Request) {
         p_started_at: now.toISOString()
       });
       
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        console.error('Error calling rotate_user_session RPC:', rpcError);
+        throw rpcError;
+      }
     }
 
     if (Object.keys(updates).length > 0) {
