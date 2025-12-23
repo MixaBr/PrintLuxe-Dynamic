@@ -18,15 +18,15 @@ export async function handleSecurityStrike(chatId: number, maliciousPrompt: stri
 
     try {
         // 1. Log the new strike regardless.
-        // CORRECTED: Using 'last_malicious_prompt' to match the database schema.
+        // This will now work since the UNIQUE constraint is removed.
         const { error: logError } = await supabase.from('security_strikes').insert({
             chat_id: chatId,
             last_malicious_prompt: maliciousPrompt,
         });
 
         if (logError) {
+            // We still log the error, but we will proceed to count, as there might be old strikes.
             console.error('Error logging security strike:', logError);
-            // Decide if we should proceed. For now, we will, but this is a potential failure point.
         }
 
         // 2. Get the new total count of strikes for this user.
@@ -37,27 +37,21 @@ export async function handleSecurityStrike(chatId: number, maliciousPrompt: stri
 
         if (countError) {
             console.error('Error counting security strikes:', countError);
-            return 99; // Return a high number to ensure blocking if counting fails.
+            // On failure, return a high number to ensure user is blocked as a safety measure.
+            return 99;
         }
 
         const strikeCount = count || 0;
 
-        // 3. If the strike count reaches the threshold, block the user in the 'chats' table.
-        if (strikeCount >= 2) {
-            const { error: blockError } = await supabase
-                .from('chats')
-                .update({ is_blocked: true })
-                .eq('chat_id', chatId);
-            
-            if (blockError) {
-                 console.error('Error blocking user:', blockError);
-            }
-        }
+        // 3. The blocking logic is handled in the calling flow (`assistant-flow.ts`)
+        // which will check if strikeCount >= 2 and then update the `chats` table.
+        // This function's only job is to log the event and return the new total count.
         
         return strikeCount;
 
     } catch (e: any) {
         console.error('Critical error in handleSecurityStrike:', e.message);
-        return 99; // Return a high number on critical failure.
+        // Return a high number on any unexpected critical failure to be safe.
+        return 99;
     }
 }
