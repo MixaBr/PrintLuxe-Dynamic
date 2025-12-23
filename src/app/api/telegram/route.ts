@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   try {
     const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
     if (secretToken !== process.env.TELEGRAM_SECRET_TOKEN) {
-      console.log('--- [LOG] Unauthorized: Secret token does not match. ---');
+      console.warn('--- [WARN] Unauthorized: Secret token mismatch. ---');
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -64,11 +64,11 @@ export async function POST(req: Request) {
       supabase.from('chats').select('*').eq('chat_id', chatId).single(),
     ]);
     
-    // --- CRITICAL LOG ---
+    // --- CRITICAL DEBUG LOG ---
     // Этот лог покажет, что именно вернула база данных при поиске пользователя
-    console.log('--- [LOG] Database response for chat query:');
+    console.log('--- [DEBUG] Raw database response for chat query:');
     console.log(JSON.stringify(chatRes, null, 2));
-    // --- END CRITICAL LOG ---
+    // --- END CRITICAL DEBUG LOG ---
 
     const appConfig = appConfigRes.data?.reduce((acc, { key, value }) => {
       acc[key] = value ?? '';
@@ -102,7 +102,10 @@ export async function POST(req: Request) {
     let isNewUser = false;
 
     if (!chat) {
-      console.log(`--- [LOG] User ${chatId} not found. Creating new user... ---`);
+      // --- DEBUG LOG for New User Path ---
+      console.log(`--- [DEBUG] 'chat' is null or undefined. Entering new user creation path for chatId: ${chatId}. ---`);
+      // --- END DEBUG LOG ---
+
       isNewUser = true;
       const { data: newChat, error: newChatError } = await supabase
         .from('chats')
@@ -117,16 +120,23 @@ export async function POST(req: Request) {
           rate_limit_tokens: config.rateLimitMax,
           session_strike_count: 0,
         })
-        .select('*')
+        .select()
         .single();
 
-      if (newChatError) throw newChatError;
+      if (newChatError) {
+        // --- DEBUG LOG for Insert Error ---
+        console.error('--- [CRITICAL DEBUG] Error during new user INSERTION:', JSON.stringify(newChatError, null, 2));
+        // --- END DEBUG LOG ---
+        throw newChatError;
+      }
       chat = newChat;
 
       console.log(`--- [LOG] New user created with ID: ${chat.id}. Creating initial session... ---`);
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
     } else {
-      console.log(`--- [LOG] Found existing user with ID: ${chat.id}. ---`);
+      // --- DEBUG LOG for Existing User Path ---
+      console.log(`--- [DEBUG] Found existing user with ID: ${chat.id}. Proceeding as existing user. ---`);
+      // --- END DEBUG LOG ---
     }
 
     const updates: Partial<typeof chat> = {};
@@ -211,7 +221,8 @@ export async function POST(req: Request) {
     console.log('--- [LOG] TELEGRAM WEBHOOK END ---');
 
   } catch (err: any) {
-    console.error('--- [CRITICAL ERROR] Error in Telegram webhook:', err.message || err);
+    console.error('--- [CRITICAL ERROR] Uncaught error in Telegram webhook:', err.message || err);
+    console.error('--- [CRITICAL ERROR] Full error stack:', err.stack);
   }
 
   return NextResponse.json({ status: 'ok' });
