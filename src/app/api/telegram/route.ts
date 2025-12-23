@@ -36,9 +36,11 @@ async function sendTelegramMessage(chatId: number, text: string) {
 }
 
 export async function POST(req: Request) {
+  console.log('--- [LOG] TELEGRAM WEBHOOK START ---');
   try {
     const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
     if (secretToken !== process.env.TELEGRAM_SECRET_TOKEN) {
+      console.log('--- [LOG] Unauthorized: Secret token does not match. ---');
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -46,18 +48,27 @@ export async function POST(req: Request) {
     const message = body.message;
 
     if (!message || !message.text || !message.chat || !message.chat.id) {
+      console.log('--- [LOG] Ignoring non-text message or invalid payload. ---');
       return NextResponse.json({ status: 'ok' });
     }
 
     const chatId = message.chat.id;
     const query = message.text;
+    console.log(`--- [LOG] Received message from chatId: ${chatId}, query: "${query}" ---`);
 
     const supabase = createAdminClient();
 
+    console.log('--- [LOG] Fetching app_config and chat data... ---');
     const [appConfigRes, chatRes] = await Promise.all([
       supabase.from('app_config').select('key, value').like('key', 'bot_%'),
       supabase.from('chats').select('*').eq('chat_id', chatId).single(),
     ]);
+    
+    // --- CRITICAL LOG ---
+    // Этот лог покажет, что именно вернула база данных при поиске пользователя
+    console.log('--- [LOG] Database response for chat query:');
+    console.log(JSON.stringify(chatRes, null, 2));
+    // --- END CRITICAL LOG ---
 
     const appConfig = appConfigRes.data?.reduce((acc, { key, value }) => {
       acc[key] = value ?? '';
@@ -79,6 +90,7 @@ export async function POST(req: Request) {
     const now = new Date();
 
     if (chat && chat.is_blocked) {
+        console.log(`--- [LOG] User ${chatId} is blocked. Halting processing. ---`);
         const blockedMessage = render({
             template: config.msgBlockedPermanent,
             context: { adminContacts: config.adminContacts }
@@ -90,6 +102,7 @@ export async function POST(req: Request) {
     let isNewUser = false;
 
     if (!chat) {
+      console.log(`--- [LOG] User ${chatId} not found. Creating new user... ---`);
       isNewUser = true;
       const { data: newChat, error: newChatError } = await supabase
         .from('chats')
@@ -110,19 +123,23 @@ export async function POST(req: Request) {
       if (newChatError) throw newChatError;
       chat = newChat;
 
-      // Now chat.id will be defined
+      console.log(`--- [LOG] New user created with ID: ${chat.id}. Creating initial session... ---`);
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
+    } else {
+      console.log(`--- [LOG] Found existing user with ID: ${chat.id}. ---`);
     }
 
     const updates: Partial<typeof chat> = {};
 
     const quotaResetAt = new Date(chat.quota_reset_at);
     if (now > quotaResetAt) {
+      console.log('--- [LOG] Daily quota reset. ---');
       updates.daily_quota_used = 0;
       updates.quota_reset_at = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
     }
 
     if ((updates.daily_quota_used ?? chat.daily_quota_used) >= config.dailyQuotaMax && !isNewUser) {
+      console.log(`--- [LOG] User ${chatId} has reached daily quota. ---`);
       await sendTelegramMessage(chatId, config.msgDailyQuota);
       return NextResponse.json({ status: 'ok' });
     }
@@ -137,6 +154,7 @@ export async function POST(req: Request) {
     }
 
     if (currentTokens < 1 && !isNewUser) {
+       console.log(`--- [LOG] User ${chatId} is rate limited. ---`);
       await sendTelegramMessage(chatId, config.msgRateLimit);
       if (currentTokens !== chat.rate_limit_tokens) {
         await supabase.from('chats').update({ rate_limit_tokens: currentTokens }).eq('chat_id', chatId);
@@ -154,10 +172,12 @@ export async function POST(req: Request) {
     const isNewSession = !isNewUser && (sessionTimedOut || sessionWasClosed);
 
     if (isNewSession) {
+      console.log(`--- [LOG] New session started for user ${chatId}. Reason: ${sessionTimedOut ? 'timeout' : 'explicitly closed'}. ---`);
       updates.session_start_at = now.toISOString();
       updates.is_session_active = true;
       updates.session_strike_count = 0; // Reset strike count on new session
       
+      console.log('--- [LOG] Calling rotate_user_session RPC... ---');
       const { error: rpcError } = await supabase.rpc('rotate_user_session', {
         p_chat_id: chat.chat_id,
         p_ended_at: lastMessageAt.toISOString(),
@@ -165,16 +185,19 @@ export async function POST(req: Request) {
       });
       
       if (rpcError) {
-        console.error('Error calling rotate_user_session RPC:', rpcError);
+        console.error('--- [CRITICAL ERROR] Error calling rotate_user_session RPC:', rpcError);
         throw rpcError;
       }
+      console.log('--- [LOG] RPC rotate_user_session finished successfully. ---');
     }
 
     if (Object.keys(updates).length > 0) {
+        console.log('--- [LOG] Updating chat data in DB... ---');
         const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
         if (updateError) throw updateError;
     }
-
+    
+    console.log('--- [LOG] Running AI assistant... ---');
     const assistantResponse = await runAssistant({
       query,
       isNewUser,
@@ -183,10 +206,12 @@ export async function POST(req: Request) {
       chatId: chat.chat_id,
     });
     
+    console.log('--- [LOG] Sending response to Telegram... ---');
     await sendTelegramMessage(chatId, assistantResponse.response);
+    console.log('--- [LOG] TELEGRAM WEBHOOK END ---');
 
   } catch (err: any) {
-    console.error('Error in Telegram webhook:', err.message || err);
+    console.error('--- [CRITICAL ERROR] Error in Telegram webhook:', err.message || err);
   }
 
   return NextResponse.json({ status: 'ok' });
