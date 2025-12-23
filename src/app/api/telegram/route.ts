@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview The main webhook endpoint for handling Telegram updates.
  * This file implements a sophisticated pipeline for processing incoming messages:
@@ -101,7 +102,6 @@ export async function POST(req: Request) {
           is_session_active: true,
           quota_reset_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
           rate_limit_tokens: config.rateLimitMax,
-          session_strike_count: 0, // Initialize strike count
         })
         .select()
         .single();
@@ -154,7 +154,9 @@ export async function POST(req: Request) {
     if (isNewSession) {
       updates.session_start_at = now.toISOString();
       updates.is_session_active = true;
-      updates.session_strike_count = 0; // Reset strike count for the new session
+      
+      // Clear security strikes for the new session
+      await supabase.from('security_strikes').delete().eq('chat_id', chat.chat_id);
       
       const { error: rpcError } = await supabase.rpc('rotate_user_session', {
         p_chat_id: chat.chat_id,
@@ -189,3 +191,5 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ status: 'ok' });
 }
+
+    

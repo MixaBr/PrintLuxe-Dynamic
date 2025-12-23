@@ -75,17 +75,19 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
     // Log the event first.
     await logSecurityStrike(input.chatId, input.query);
     
-    // Atomically increment the session strike count and get the new value.
-    const { data: updatedChat, error: incrementError } = await supabase
-      .rpc('increment_session_strikes', { p_chat_id: input.chatId });
+    // Get the new total strike count for the session
+    const { count: strikeCount, error: countError } = await supabase
+        .from('security_strikes')
+        .select('*', { count: 'exact', head: true })
+        .eq('chat_id', input.chatId);
 
-    if (incrementError) {
-      console.error('Error incrementing session strikes:', incrementError);
-      // Fail safe: return a generic security warning if we can't increment.
-      return { response: prompts.bot_message_security_warning };
+    if (countError) {
+        console.error('Error counting security strikes:', countError);
+        // Fail safe: return a generic security warning if we can't count.
+        return { response: prompts.bot_message_security_warning };
     }
-
-    const newStrikeCount = updatedChat;
+    
+    const newStrikeCount = strikeCount || 0;
     
     if (newStrikeCount >= 2) {
       // Block the user in the chats table.
@@ -183,3 +185,5 @@ const assistantRouterFlow = ai.defineFlow(
     return llmResponse.text;
   }
 );
+
+    
