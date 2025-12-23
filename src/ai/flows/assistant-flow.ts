@@ -3,7 +3,7 @@
  * @fileOverview The main AI assistant flow for the Telegram bot.
  * This file orchestrates a multi-step process:
  * 1. A `securityGuardFlow` first checks if the user's query is malicious.
- * 2. If malicious, it handles a security strike. After two strikes, the user is permanently blocked.
+ * 2. If malicious, it handles a security strike. After two strikes in the same session, the user is permanently blocked.
  * 3. If safe, it handles new users with an introduction.
  * 4. For existing users, it proceeds to the `assistantRouterFlow` which uses a single, powerful prompt from the database (`bot_prompt_router`) to decide which tool to use (knowledge base, general questions, etc.) and generate a final answer.
  */
@@ -74,20 +74,20 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   if (isMalicious) {
     // Log the event first.
     await logSecurityStrike(input.chatId, input.query);
-    
-    // Get the new total strike count for the session
-    const { count: strikeCount, error: countError } = await supabase
-        .from('security_strikes')
-        .select('*', { count: 'exact', head: true })
-        .eq('chat_id', input.chatId);
 
-    if (countError) {
-        console.error('Error counting security strikes:', countError);
-        // Fail safe: return a generic security warning if we can't count.
-        return { response: prompts.bot_message_security_warning };
+    // Atomically increment the strike count and get the new value.
+    const { data: updatedChat, error: incrementError } = await supabase
+      .rpc('increment_session_strikes', { p_chat_id: input.chatId })
+      .select('session_strike_count')
+      .single();
+
+    if (incrementError) {
+      console.error('Error incrementing session strikes:', incrementError);
+      // Fail safe: return a generic security warning if we can't count.
+      return { response: prompts.bot_message_security_warning };
     }
     
-    const newStrikeCount = strikeCount || 0;
+    const newStrikeCount = updatedChat?.session_strike_count || 0;
     
     if (newStrikeCount >= 2) {
       // Block the user in the chats table.
@@ -185,5 +185,3 @@ const assistantRouterFlow = ai.defineFlow(
     return llmResponse.text;
   }
 );
-
-    
