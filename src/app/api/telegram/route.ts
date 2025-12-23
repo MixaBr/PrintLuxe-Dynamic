@@ -120,7 +120,7 @@ export async function POST(req: Request) {
           rate_limit_tokens: config.rateLimitMax,
           session_strike_count: 0,
         })
-        .select('*')
+        .select()
         .single();
 
       if (newChatError) {
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
       }
       chat = newChat;
 
-      console.log(`--- [LOG] New user created with ID: ${chat.id}. Creating initial session... ---`);
+      console.log(`--- [LOG] New user created with ID: ${chat?.id}. Creating initial session... ---`);
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
     } else {
       // --- DEBUG LOG for Existing User Path ---
