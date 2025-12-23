@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview A server-side tool for handling security-related actions.
  */
@@ -6,33 +7,58 @@
 import { createAdminClient } from "@/lib/supabase/service";
 
 /**
- * Calls a Supabase RPC function to log a security strike against a user
- * and returns the new strike count.
- * This function will automatically block the user in the 'chats' table
- * if the strike count threshold is met (as defined in the RPC function).
+ * Logs a security strike and, if the threshold is met, blocks the user.
  * 
  * @param chatId The Telegram chat ID of the user.
  * @param maliciousPrompt The prompt that was flagged as malicious.
  * @returns The user's new total strike count.
  */
 export async function handleSecurityStrike(chatId: number, maliciousPrompt: string): Promise<number> {
+    const supabase = createAdminClient();
+
     try {
-        const supabase = createAdminClient();
-        const { data, error } = await supabase.rpc('handle_security_strike', {
-            p_chat_id: chatId,
-            p_malicious_prompt: maliciousPrompt
+        // 1. Log the new strike regardless.
+        const { error: logError } = await supabase.from('security_strikes').insert({
+            chat_id: chatId,
+            malicious_prompt: maliciousPrompt,
         });
 
-        if (error) {
-            console.error('Error calling handle_security_strike RPC:', error);
-            // Return a high number to ensure blocking logic proceeds if RPC fails
-            return 99; 
+        if (logError) {
+            console.error('Error logging security strike:', logError);
+            // Decide if we should proceed. For now, we will, but this is a potential failure point.
         }
 
-        return data;
+        // 2. Get the new total count of strikes for this user.
+        const { count, error: countError } = await supabase
+            .from('security_strikes')
+            .select('*', { count: 'exact', head: true })
+            .eq('chat_id', chatId);
+
+        if (countError) {
+            console.error('Error counting security strikes:', countError);
+            return 99; // Return a high number to ensure blocking if counting fails.
+        }
+
+        const strikeCount = count || 0;
+
+        // 3. If the strike count reaches the threshold, block the user.
+        if (strikeCount >= 2) {
+            const { error: blockError } = await supabase
+                .from('chats')
+                .update({ is_blocked: true })
+                .eq('chat_id', chatId);
+            
+            if (blockError) {
+                console.error('CRITICAL: Failed to set is_blocked=true for chat_id:', chatId, blockError);
+            } else {
+                console.log(`User with chat_id ${chatId} has been blocked.`);
+            }
+        }
+
+        return strikeCount;
 
     } catch (e: any) {
         console.error('Critical error in handleSecurityStrike:', e.message);
-        return 99;
+        return 99; // Return a high number on critical failure.
     }
 }

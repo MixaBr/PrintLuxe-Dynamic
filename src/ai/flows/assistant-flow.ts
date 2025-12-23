@@ -3,8 +3,9 @@
  * @fileOverview The main AI assistant flow for the Telegram bot.
  * This file orchestrates a multi-step process:
  * 1. A `securityGuardFlow` first checks if the user's query is malicious.
- * 2. If safe, it handles new users with an introduction.
- * 3. For existing users, it proceeds to the `assistantRouterFlow` which uses a single, powerful prompt from the database (`bot_prompt_router`) to decide which tool to use (knowledge base, general questions, etc.) and generate a final answer.
+ * 2. If malicious, it handles a security strike. After two strikes, the user is permanently blocked.
+ * 3. If safe, it handles new users with an introduction.
+ * 4. For existing users, it proceeds to the `assistantRouterFlow` which uses a single, powerful prompt from the database (`bot_prompt_router`) to decide which tool to use (knowledge base, general questions, etc.) and generate a final answer.
  */
 'use server';
 
@@ -41,7 +42,7 @@ async function getBotPrompts() {
         .from('app_config')
         .select('key, value')
         .in('key', [
-            'bot_prompt_router', // The new unified router prompt
+            'bot_prompt_router', 
             'bot_prompt_security_guard',
             'bot_message_security_warning',
             'bot_message_blocked_permanent',
@@ -70,11 +71,13 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   });
   
   if (isMalicious) {
+    // This function now logs the strike AND returns the new total count.
     const strikeCount = await handleSecurityStrike(input.chatId, input.query);
     let securityResponse: string;
 
     if (strikeCount >= 2) {
       securityResponse = prompts.bot_message_blocked_permanent.replace('{{adminContacts}}', prompts.bot_admin_contacts);
+      // The user is now blocked in the database, subsequent requests will be caught by the webhook.
     } else {
       securityResponse = prompts.bot_message_security_warning;
     }
