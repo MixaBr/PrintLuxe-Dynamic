@@ -102,14 +102,15 @@ export async function POST(req: Request) {
           is_session_active: true,
           quota_reset_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
           rate_limit_tokens: config.rateLimitMax,
-          session_strike_count: 0, // Initialize strike count
+          session_strike_count: 0,
         })
-        .select()
+        .select('*')
         .single();
 
       if (newChatError) throw newChatError;
       chat = newChat;
 
+      // Now chat.id will be defined
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
     }
 
