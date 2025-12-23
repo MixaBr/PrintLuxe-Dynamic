@@ -9,6 +9,7 @@
 import { ai, textEmbeddingGecko } from '@/ai/genkit';
 import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
@@ -76,6 +77,7 @@ export const knowledgeBaseTool = ai.defineTool(
                 const finalClarifyingPrompt = clarifyingPrompt.replace('{{query}}', query);
 
                 const llmResponse = await ai.generate({
+                    model: googleAI.model('googleai/gemini-2.5-flash'),
                     prompt: finalClarifyingPrompt,
                 });
 
@@ -136,5 +138,3 @@ export const knowledgeBaseTool = ai.defineTool(
         return contextText;
     }
 );
-
-
