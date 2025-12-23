@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     const [appConfigRes, chatRes] = await Promise.all([
       supabase.from('app_config').select('key, value').like('key', 'bot_%'),
-      supabase.from('chats').select('*, id').eq('chat_id', chatId).single(),
+      supabase.from('chats').select('*').eq('chat_id', chatId).single(),
     ]);
 
     const appConfig = appConfigRes.data?.reduce((acc, { key, value }) => {
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
           rate_limit_tokens: config.rateLimitMax,
           session_strike_count: 0,
         })
-        .select()
+        .select('*')
         .single();
 
       if (newChatError) throw newChatError;
