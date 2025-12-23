@@ -20,7 +20,7 @@ export async function handleSecurityStrike(chatId: number, maliciousPrompt: stri
         // 1. Log the new strike regardless.
         const { error: logError } = await supabase.from('security_strikes').insert({
             chat_id: chatId,
-            malicious_prompt: maliciousPrompt,
+            prompt_text: maliciousPrompt, // CORRECTED column name
         });
 
         if (logError) {
@@ -42,19 +42,8 @@ export async function handleSecurityStrike(chatId: number, maliciousPrompt: stri
         const strikeCount = count || 0;
 
         // 3. If the strike count reaches the threshold, block the user.
-        if (strikeCount >= 2) {
-            const { error: blockError } = await supabase
-                .from('chats')
-                .update({ is_blocked: true })
-                .eq('chat_id', chatId);
-            
-            if (blockError) {
-                console.error('CRITICAL: Failed to set is_blocked=true for chat_id:', chatId, blockError);
-            } else {
-                console.log(`User with chat_id ${chatId} has been blocked.`);
-            }
-        }
-
+        // This logic is now handled in the main assistant flow to ensure it's explicit.
+        
         return strikeCount;
 
     } catch (e: any) {
