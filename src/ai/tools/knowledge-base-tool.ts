@@ -13,14 +13,14 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
-const SHORT_QUERY_WORD_COUNT = 4; // Queries with fewer words will trigger question generation
+const SHORT_QUERY_WORD_COUNT = 3; // Queries with fewer words will trigger question generation
 
 // Helper to get search configuration from the database
 async function getSearchConfig() {
     const supabase = createAdminClient();
     const { data, error } = await supabase
         .from('app_config')
-        .select('key', 'value')
+        .select('key, value')
         .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count', 'bot_kb_clarifying_prompt']);
 
     if (error) {
