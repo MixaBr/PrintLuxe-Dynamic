@@ -17,7 +17,7 @@ import { getIntroduction } from '../tools/introduction';
 import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
 import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
-import { handleSecurityStrike } from '../tools/security';
+import { logSecurityStrike } from '../tools/security';
 import { googleAI } from '@genkit-ai/google-genai';
 
 const AssistantInputSchema = z.object({
@@ -63,6 +63,7 @@ async function getBotPrompts() {
 
 export async function runAssistant(input: AssistantInput): Promise<AssistantOutput> {
   const prompts = await getBotPrompts();
+  const supabase = createAdminClient();
 
   // 1. Security First: Check if the prompt is malicious.
   const isMalicious = await securityGuardFlow({
@@ -71,17 +72,34 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   });
   
   if (isMalicious) {
-    // This function now logs the strike AND returns the new total count.
-    const strikeCount = await handleSecurityStrike(input.chatId, input.query);
-    let securityResponse: string;
+    // Log the event first.
+    await logSecurityStrike(input.chatId, input.query);
+    
+    // Atomically increment the session strike count and get the new value.
+    const { data: updatedChat, error: incrementError } = await supabase
+      .rpc('increment_session_strikes', { p_chat_id: input.chatId });
 
-    if (strikeCount >= 2) {
-      securityResponse = prompts.bot_message_blocked_permanent.replace('{{adminContacts}}', prompts.bot_admin_contacts);
-      // The user is now blocked in the database, subsequent requests will be caught by the webhook.
-    } else {
-      securityResponse = prompts.bot_message_security_warning;
+    if (incrementError) {
+      console.error('Error incrementing session strikes:', incrementError);
+      // Fail safe: return a generic security warning if we can't increment.
+      return { response: prompts.bot_message_security_warning };
     }
-    return { response: securityResponse };
+
+    const newStrikeCount = updatedChat;
+    
+    if (newStrikeCount >= 2) {
+      // Block the user in the chats table.
+      await supabase
+        .from('chats')
+        .update({ is_blocked: true })
+        .eq('chat_id', input.chatId);
+      
+      const blockedMessage = prompts.bot_message_blocked_permanent.replace('{{adminContacts}}', prompts.bot_admin_contacts);
+      return { response: blockedMessage };
+    } else {
+      // If it's the first strike in the session, just issue a warning.
+      return { response: prompts.bot_message_security_warning };
+    }
   }
 
   // 2. Handle brand new user.
@@ -107,7 +125,6 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
-    // Create a single, clear prompt for the model.
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
@@ -135,32 +152,26 @@ const assistantRouterFlow = ai.defineFlow(
         return "Произошла критическая ошибка: не удалось загрузить основной промпт. Пожалуйста, обратитесь к администратору.";
     }
 
-    // 1. Fetch user data to get their name
     const { data: chatData, error } = await createAdminClient()
       .from('chats')
       .select('us_first_name')
       .eq('chat_id', input.chatId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+    if (error && error.code !== 'PGRST116') {
       console.error('Error fetching user name:', error);
-      // Don't fail the whole flow, just proceed without the name.
     }
 
     const currentFirstName = chatData?.us_first_name;
     
-    // 2. Handle new session for a known user
     if (input.isNewSession && currentFirstName) {
         return `Приветствую Вас, ${currentFirstName}! Рад видеть! Чем могу сегодня Вам помочь?`;
     }
 
-    // 3. Prepare the final router prompt by injecting real-time data.
     const finalRouterPrompt = routerPrompt
         .replace('{{chatId}}', String(input.chatId))
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
-    // 4. Execute the main AI call with all tools available.
-    // The AI will use the powerful system prompt to decide which tool to use (or none).
     const llmResponse = await ai.generate({
       model: googleAI.model('googleai/gemini-2.5-flash'),
       system: finalRouterPrompt,
@@ -169,10 +180,6 @@ const assistantRouterFlow = ai.defineFlow(
       toolChoice: 'auto'
     });
 
-    // 5. Return the final text response from the model.
-    // Genkit v1.x handles the tool-calling loop automatically. If a tool was called,
-    // its output is fed back into the model in a subsequent call, and `llmResponse.text`
-    // will contain the final, synthesized answer. If no tool was called, it's the direct answer.
     return llmResponse.text;
   }
 );

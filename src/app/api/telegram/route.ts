@@ -5,7 +5,7 @@
  * 2. Checks if the user is blocked. If so, halts all further processing.
  * 3. Creates a new user if one doesn't exist, and logs their first session.
  * 4. Performs a series of security and resource checks (rate limits, daily quota).
- * 5. If a session is new (either by timeout or explicit closing), it now directly updates the `sessions` table to end the old session and create a new one.
+ * 5. If a session is new (either by timeout or explicit closing), it now directly updates the `sessions` table to end the old session and create a new one. It also resets the session strike counter.
  * 6. Calls the AI assistant (`runAssistant`) which includes a security check before processing the query.
  * 7. Sends the AI's response back to the user and updates all relevant chat data in a single batch.
  */
@@ -14,8 +14,6 @@ import { runAssistant } from '@/ai/flows/assistant-flow';
 import { createAdminClient } from '@/lib/supabase/service';
 import { NextResponse } from 'next/server';
 
-// The 'render' function was removed from the 'genkit' package.
-// This is a simple replacement that handles basic {{variable}} substitution.
 function render({ template, context }: { template: string; context: Record<string, any> }): string {
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
         return context[key] !== undefined ? String(context[key]) : match;
@@ -55,7 +53,6 @@ export async function POST(req: Request) {
 
     const supabase = createAdminClient();
 
-    // Fetch all bot configurations from the `app_config` table
     const [appConfigRes, chatRes] = await Promise.all([
       supabase.from('app_config').select('key, value').like('key', 'bot_%'),
       supabase.from('chats').select('*').eq('chat_id', chatId).single(),
@@ -80,7 +77,6 @@ export async function POST(req: Request) {
     let chat = chatRes.data;
     const now = new Date();
 
-    // Absolute Priority: Check if the user is already blocked.
     if (chat && chat.is_blocked) {
         const blockedMessage = render({
             template: config.msgBlockedPermanent,
@@ -102,9 +98,10 @@ export async function POST(req: Request) {
           first_name: message.chat.first_name,
           last_message_at: now.toISOString(),
           session_start_at: now.toISOString(),
-          is_session_active: true, // Explicitly set for new users
+          is_session_active: true,
           quota_reset_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
           rate_limit_tokens: config.rateLimitMax,
+          session_strike_count: 0, // Initialize strike count
         })
         .select()
         .single();
@@ -112,7 +109,6 @@ export async function POST(req: Request) {
       if (newChatError) throw newChatError;
       chat = newChat;
 
-      // Also create a session log for the new user
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
     }
 
@@ -150,7 +146,6 @@ export async function POST(req: Request) {
     updates.daily_quota_used = ((updates.daily_quota_used ?? chat.daily_quota_used) ?? 0) + 1;
     updates.last_message_at = now.toISOString();
 
-    // New session detection logic
     const minutesSinceLast = isNewUser ? Infinity : secondsPassed / 60;
     const sessionTimedOut = minutesSinceLast > config.sessionTimeout;
     const sessionWasClosed = chat.is_session_active === false;
@@ -158,7 +153,8 @@ export async function POST(req: Request) {
 
     if (isNewSession) {
       updates.session_start_at = now.toISOString();
-      updates.is_session_active = true; // Mark the new session as active
+      updates.is_session_active = true;
+      updates.session_strike_count = 0; // Reset strike count for the new session
       
       const { error: rpcError } = await supabase.rpc('rotate_user_session', {
         p_chat_id: chat.chat_id,
