@@ -19,15 +19,16 @@ async function getSearchConfig() {
     const supabase = createAdminClient();
     const { data, error } = await supabase
         .from('app_config')
-        .select('key, value')
-        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count']);
+        .select('key', 'value')
+        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count', 'bot_kb_clarifying_prompt']);
 
     if (error) {
         console.error("Error fetching knowledge base config:", error.message);
         // Return safe defaults in case of DB error
         return {
-            matchThreshold: 0.8, // Increased default threshold
+            matchThreshold: 0.8,
             matchCount: 5,
+            clarifyingPrompt: '' // Return empty prompt on error
         };
     }
 
@@ -36,12 +37,14 @@ async function getSearchConfig() {
         return acc;
     }, {} as Record<string, string | null>);
     
-    const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.8'); // Increased default
+    const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.8');
     const matchCount = parseInt(config.bot_kb_match_count || '5', 10);
+    const clarifyingPrompt = config.bot_kb_clarifying_prompt || '';
 
     return {
         matchThreshold: isNaN(matchThreshold) ? 0.8 : matchThreshold,
         matchCount: isNaN(matchCount) ? 5 : matchCount,
+        clarifyingPrompt: clarifyingPrompt
     };
 }
 
@@ -59,37 +62,29 @@ export const knowledgeBaseTool = ai.defineTool(
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
+        const { matchThreshold, matchCount, clarifyingPrompt } = await getSearchConfig();
         const words = query.trim().split(/\s+/);
 
         // 1. Handle short/ambiguous queries by generating clarifying questions
         if (words.length < SHORT_QUERY_WORD_COUNT) {
             console.log(`Query is short. Generating clarifying questions.`);
-            
-            const questionGenPrompt = `
-                Ты — AI-ассистент в компании по ремонту принтеров. Пользователь задал очень короткий, неоднозначный вопрос. 
-                Твоя задача — не отвечать на вопрос, а помочь пользователю уточнить его, сгенерировав 2-3 коротких, ясных вопроса. 
-                Эти вопросы должны быть основаны на наиболее вероятных темах, которые пользователь мог иметь в виду, в контексте ремонта и обслуживания принтеров.
 
-                Например, если пользователь спрашивает "прокладка", хорошие уточняющие вопросы:
-                - Вас интересует, как заменить прокладку, впитывающую чернила?
-                - Вы хотите узнать артикул этой детали для заказа?
-                - Вы ищете информацию о другой детали?
+            if (!clarifyingPrompt) {
+                 console.warn('Clarifying prompt is not configured in app_config. Skipping question generation.');
+                 // Fallback to direct search
+            } else {
+                const finalClarifyingPrompt = clarifyingPrompt.replace('{{query}}', query);
 
-                Сформулируй свой ответ как прямое обращение к пользователю. Начни с фразы, подтверждающей, что ты готов помочь, а затем предложи варианты.
+                const llmResponse = await ai.generate({
+                    prompt: finalClarifyingPrompt,
+                });
 
-                Запрос пользователя: "${query}"
-            `;
-
-            const llmResponse = await ai.generate({
-                prompt: questionGenPrompt,
-            });
-
-            return llmResponse.text;
+                return llmResponse.text;
+            }
         }
 
         // 2. Proceed with vector search for detailed queries
         console.log(`Query is detailed enough. Proceeding with vector search.`);
-        const { matchThreshold, matchCount } = await getSearchConfig();
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
 
         const embeddingResponse = await ai.embed({
@@ -141,3 +136,4 @@ export const knowledgeBaseTool = ai.defineTool(
         return contextText;
     }
 );
+
