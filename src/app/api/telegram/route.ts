@@ -104,7 +104,7 @@ export async function POST(req: Request) {
           rate_limit_tokens: config.rateLimitMax,
           session_strike_count: 0,
         })
-        .select('*')
+        .select()
         .single();
 
       if (newChatError) throw newChatError;
