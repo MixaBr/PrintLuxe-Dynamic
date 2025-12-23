@@ -2,6 +2,7 @@
 /**
  * @fileOverview A Genkit tool for searching the knowledge base.
  * This tool is now configurable via the `app_config` table in Supabase.
+ * It also handles short/ambiguous queries by generating clarifying questions.
  */
 'use server';
 
@@ -11,6 +12,7 @@ import { z } from 'zod';
 
 // This is the SQL function we created in Supabase
 const MATCH_FUNCTION = 'match_manual_knowledge';
+const SHORT_QUERY_WORD_COUNT = 4; // Queries with fewer words will trigger question generation
 
 // Helper to get search configuration from the database
 async function getSearchConfig() {
@@ -24,7 +26,7 @@ async function getSearchConfig() {
         console.error("Error fetching knowledge base config:", error.message);
         // Return safe defaults in case of DB error
         return {
-            matchThreshold: 0.5,
+            matchThreshold: 0.8, // Increased default threshold
             matchCount: 5,
         };
     }
@@ -34,11 +36,11 @@ async function getSearchConfig() {
         return acc;
     }, {} as Record<string, string | null>);
     
-    const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.5');
+    const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.8'); // Increased default
     const matchCount = parseInt(config.bot_kb_match_count || '5', 10);
 
     return {
-        matchThreshold: isNaN(matchThreshold) ? 0.5 : matchThreshold,
+        matchThreshold: isNaN(matchThreshold) ? 0.8 : matchThreshold,
         matchCount: isNaN(matchCount) ? 5 : matchCount,
     };
 }
@@ -51,18 +53,45 @@ export const knowledgeBaseTool = ai.defineTool(
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
-        // The output is now the raw context for the expert prompt.
-        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating no relevant information was found.'),
+        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, clarifying questions for an ambiguous query, or a message indicating no relevant information was found.'),
     },
     async ({ query }) => {
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
-        // 1. Get search configuration from the database
+        const words = query.trim().split(/\s+/);
+
+        // 1. Handle short/ambiguous queries by generating clarifying questions
+        if (words.length < SHORT_QUERY_WORD_COUNT) {
+            console.log(`Query is short. Generating clarifying questions.`);
+            
+            const questionGenPrompt = `
+                Ты — AI-ассистент в компании по ремонту принтеров. Пользователь задал очень короткий, неоднозначный вопрос. 
+                Твоя задача — не отвечать на вопрос, а помочь пользователю уточнить его, сгенерировав 2-3 коротких, ясных вопроса. 
+                Эти вопросы должны быть основаны на наиболее вероятных темах, которые пользователь мог иметь в виду, в контексте ремонта и обслуживания принтеров.
+
+                Например, если пользователь спрашивает "прокладка", хорошие уточняющие вопросы:
+                - Вас интересует, как заменить прокладку, впитывающую чернила?
+                - Вы хотите узнать артикул этой детали для заказа?
+                - Вы ищете информацию о другой детали?
+
+                Сформулируй свой ответ как прямое обращение к пользователю. Начни с фразы, подтверждающей, что ты готов помочь, а затем предложи варианты.
+
+                Запрос пользователя: "${query}"
+            `;
+
+            const llmResponse = await ai.generate({
+                prompt: questionGenPrompt,
+            });
+
+            return llmResponse.text;
+        }
+
+        // 2. Proceed with vector search for detailed queries
+        console.log(`Query is detailed enough. Proceeding with vector search.`);
         const { matchThreshold, matchCount } = await getSearchConfig();
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
 
-        // 2. Generate an embedding for the user's query using the correct, direct method.
         const embeddingResponse = await ai.embed({
             embedder: textEmbeddingGecko,
             content: query,
@@ -76,7 +105,6 @@ export const knowledgeBaseTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
-        // 3. Call the Supabase RPC function with configurable parameters.
         const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
             query_embedding: embedding,
             match_threshold: matchThreshold,
@@ -95,20 +123,17 @@ export const knowledgeBaseTool = ai.defineTool(
         }
         
         console.log(`Found ${documents.length} relevant documents. (Logging details below)`);
-        // New detailed logging block
         console.log(`================= FOUND DOCUMENTS (DEBUG) =================`);
         documents.forEach((doc: any) => {
             console.log({
-                id: doc.id, // The record ID from Supabase
-                similarity: doc.similarity, // The relevance score
+                id: doc.id,
+                similarity: doc.similarity,
                 metadata: doc.metadata,
-                content_preview: doc.content.substring(0, 100) + '...' // A short preview
+                content_preview: doc.content.substring(0, 100) + '...'
             });
         });
         console.log(`===========================================================`);
 
-
-        // 4. Format the found documents into a single context string for the LLM.
         const contextText = documents
             .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\n  Содержание: ${doc.content}`)
             .join('\n\n');
@@ -116,5 +141,3 @@ export const knowledgeBaseTool = ai.defineTool(
         return contextText;
     }
 );
-
-    
