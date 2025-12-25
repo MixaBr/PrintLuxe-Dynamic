@@ -132,11 +132,11 @@ export async function POST(req: Request) {
       }
       chat = newChat;
 
-      console.log(`--- [LOG] New user created with ID: ${chat?.id}. Creating initial session... ---`);
-      await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
+      console.log(`--- [LOG] New user created with chat_id: ${chat?.chat_id}. Creating initial session... ---`);
+      await supabase.from('sessions').insert({ chat_id: chat.chat_id, started_at: now.toISOString() });
       console.log('--- [DEBUG] Initial session created.');
     } else {
-      console.log(`--- [DEBUG] Found existing user with ID: ${chat.id}. Proceeding as existing user. ---`);
+      console.log(`--- [DEBUG] Found existing user with chat_id: ${chat.chat_id}. Proceeding as existing user. ---`);
     }
 
     const updates: Partial<typeof chat> = {};

@@ -16,6 +16,6 @@ To get started, take a look at src/app/page.tsx.
 #  a3e9f8b2-c1d4-4e5f-9a6d-7b8c9d0e1f2a:TelegaBot
 
 #  curl "https://api.telegram.org/bot7248210692:AAFOuF4tyXAtLciy60rmDqIvp7djWgKa5tw/setWebhook" \
-     --form "url=https://unrotative-unappreciated-diane.ngrok-free.dev/api/telegram" \
+     --form "url=https://remontprintlux.by/api/telegram" \
      --form "secret_token=a3e9f8b2-c1d4-4e5f-9a6d-7b8c9d0e1f2a-TelegaBot"
 
