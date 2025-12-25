@@ -16,12 +16,12 @@ export const endConversationTool = ai.defineTool(
         name: 'endConversationTool',
         description: 'Use this tool to end the conversation when the user says goodbye or indicates they are finished.',
         inputSchema: z.object({
-            chatId: z.number().describe('The user\'s telegram chat ID.'),
+            p_chat_id: z.number().describe('The user\'s telegram chat ID.'),
         }),
         outputSchema: z.string(),
     },
-    async ({ chatId }) => {
-        console.log(`Executing endConversationTool for chat ID: ${chatId}`);
+    async ({ p_chat_id }) => {
+        console.log(`Executing endConversationTool for chat ID: ${p_chat_id}`);
 
         const supabase = createAdminClient();
 
@@ -29,7 +29,7 @@ export const endConversationTool = ai.defineTool(
         const { error } = await supabase
             .from('chats')
             .update({ is_session_active: false })
-            .eq('chat_id', chatId);
+            .eq('chat_id', p_chat_id);
 
         if (error) {
             console.error('Error updating session to inactive:', error);
