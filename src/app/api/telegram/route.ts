@@ -25,13 +25,15 @@ async function sendTelegramMessage(chatId: number, text: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   try {
+    console.log(`--- [DEBUG] Preparing to send message to chatId: ${chatId}`);
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text }),
     });
+    console.log(`--- [DEBUG] Successfully sent message to chatId: ${chatId}`);
   } catch (error) {
-    console.error('Failed to send Telegram message:', error);
+    console.error('--- [CRITICAL ERROR] Failed to send Telegram message:', error);
   }
 }
 
@@ -44,7 +46,10 @@ export async function POST(req: Request) {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    console.log('--- [DEBUG] Awaiting request body...');
     const body = await req.json();
+    console.log('--- [DEBUG] Request body received.');
+
     const message = body.message;
 
     if (!message || !message.text || !message.chat || !message.chat.id) {
@@ -63,12 +68,10 @@ export async function POST(req: Request) {
       supabase.from('app_config').select('key, value').like('key', 'bot_%'),
       supabase.from('chats').select('*').eq('chat_id', chatId).single(),
     ]);
+    console.log('--- [DEBUG] Fetched app_config and chat data.');
     
-    // --- CRITICAL DEBUG LOG ---
-    // Этот лог покажет, что именно вернула база данных при поиске пользователя
     console.log('--- [DEBUG] Raw database response for chat query:');
     console.log(JSON.stringify(chatRes, null, 2));
-    // --- END CRITICAL DEBUG LOG ---
 
     const appConfig = appConfigRes.data?.reduce((acc, { key, value }) => {
       acc[key] = value ?? '';
@@ -102,11 +105,10 @@ export async function POST(req: Request) {
     let isNewUser = false;
 
     if (!chat) {
-      // --- DEBUG LOG for New User Path ---
       console.log(`--- [DEBUG] 'chat' is null or undefined. Entering new user creation path for chatId: ${chatId}. ---`);
-      // --- END DEBUG LOG ---
-
       isNewUser = true;
+
+      console.log('--- [DEBUG] Inserting new user into DB...');
       const { data: newChat, error: newChatError } = await supabase
         .from('chats')
         .insert({
@@ -122,21 +124,19 @@ export async function POST(req: Request) {
         })
         .select()
         .single();
+      console.log('--- [DEBUG] New user insertion finished.');
 
       if (newChatError) {
-        // --- DEBUG LOG for Insert Error ---
         console.error('--- [CRITICAL DEBUG] Error during new user INSERTION:', JSON.stringify(newChatError, null, 2));
-        // --- END DEBUG LOG ---
         throw newChatError;
       }
       chat = newChat;
 
       console.log(`--- [LOG] New user created with ID: ${chat?.id}. Creating initial session... ---`);
       await supabase.from('sessions').insert({ chat_id: chat.id, started_at: now.toISOString() });
+      console.log('--- [DEBUG] Initial session created.');
     } else {
-      // --- DEBUG LOG for Existing User Path ---
       console.log(`--- [DEBUG] Found existing user with ID: ${chat.id}. Proceeding as existing user. ---`);
-      // --- END DEBUG LOG ---
     }
 
     const updates: Partial<typeof chat> = {};
@@ -193,6 +193,7 @@ export async function POST(req: Request) {
         p_ended_at: lastMessageAt.toISOString(),
         p_started_at: now.toISOString()
       });
+      console.log('--- [DEBUG] RPC rotate_user_session finished.');
       
       if (rpcError) {
         console.error('--- [CRITICAL ERROR] Error calling rotate_user_session RPC:', rpcError);
@@ -204,6 +205,7 @@ export async function POST(req: Request) {
     if (Object.keys(updates).length > 0) {
         console.log('--- [LOG] Updating chat data in DB... ---');
         const { error: updateError } = await supabase.from('chats').update(updates).eq('chat_id', chatId);
+        console.log('--- [DEBUG] Chat data update finished.');
         if (updateError) throw updateError;
     }
     
@@ -215,9 +217,11 @@ export async function POST(req: Request) {
       userName: chat.username,
       chatId: chat.chat_id,
     });
+    console.log('--- [DEBUG] AI assistant finished.');
     
     console.log('--- [LOG] Sending response to Telegram... ---');
     await sendTelegramMessage(chatId, assistantResponse.response);
+    console.log('--- [DEBUG] Response sent to Telegram.');
     console.log('--- [LOG] TELEGRAM WEBHOOK END ---');
 
   } catch (err: any) {
