@@ -2,6 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
+  # Keep at least one instance running to avoid cold starts.
+  # This is crucial for webhook integrations like Telegram.
+  minInstances: 1
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1

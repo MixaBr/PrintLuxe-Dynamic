@@ -24,17 +24,10 @@ curl "https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/setWebhook" \
      --form "secret_token=<YOUR_TELEGRAM_SECRET_TOKEN>"
 ```
 
-### Где взять значения:
 
-1.  **`<YOUR_TELEGRAM_BOT_TOKEN>`**: Ваш токен, полученный от @BotFather. Он хранится в переменных окружения как `TELEGRAM_BOT_TOKEN`.
-2.  **`<YOUR_NGROK_URL>`**: Ваш уникальный URL от ngrok. Судя по вашему скриншоту, ваш текущий URL: `https://unrotative-unappreciated-diane.ngrok-free.dev`.
-3.  **`<YOUR_TELEGRAM_SECRET_TOKEN>`**: Ваш секретный токен для верификации запросов. Он хранится в переменных окружения как `TELEGRAM_SECRET_TOKEN`.
 
 ### Пример заполненной команды для вашей текущей сессии:
 
-```bash
-# ЭТО ПРИМЕР! ЗАМЕНИТЕ ПЛЕЙСХОЛДЕРЫ ВАШИМИ РЕАЛЬНЫМИ ТОКЕНАМИ
-curl "https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/setWebhook" \
-     --form "url=https://unrotative-unappreciated-diane.ngrok-free.dev/api/telegram" \
-     --form "secret_token=<YOUR_TELEGRAM_SECRET_TOKEN>"
+
 ```
+#  curl -F "url=https://remontprintlux.by/api/telegram" -F "secret_token=a3e9f8b2-c1d4-4e5f-9a6d-7b8c9d0e1f2a-TelegaBot" "https://api.telegram.org/bot7248210692:AAFOuF4tyXAtLciy60rmDqIvp7djWgKa5tw/setWebhook"
