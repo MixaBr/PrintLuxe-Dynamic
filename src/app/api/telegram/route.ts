@@ -43,12 +43,22 @@ export async function POST(req: Request) {
     const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
     if (secretToken !== process.env.TELEGRAM_SECRET_TOKEN) {
       console.warn('--- [WARN] Unauthorized: Secret token mismatch. ---');
+      // Log headers for debugging unauthorized requests
+      const headersObject: { [key: string]: string } = {};
+      req.headers.forEach((value, key) => {
+        headersObject[key] = value;
+      });
+      console.log('--- [DEBUG] Unauthorized request headers:', JSON.stringify(headersObject));
       return new Response('Unauthorized', { status: 401 });
     }
 
-    console.log('--- [DEBUG] Awaiting request body...');
-    const body = await req.json();
-    console.log('--- [DEBUG] Request body received.');
+    console.log('--- [DEBUG] Awaiting request body clone...');
+    // Clone the request to safely read the body
+    const reqClone = req.clone();
+    const rawBody = await reqClone.text();
+    console.log('--- [DEBUG] Raw request body received:', rawBody);
+
+    const body = JSON.parse(rawBody);
 
     const message = body.message;
 
