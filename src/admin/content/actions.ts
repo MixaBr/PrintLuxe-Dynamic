@@ -34,31 +34,100 @@ export interface ActionResult {
 }
 
 /**
- * Splits a long text into smaller, overlapping chunks.
- * @param text The full text content.
- * @param filename The name of the source file for metadata.
+ * Recursively splits a text into semantic chunks.
+ * Starts by splitting into paragraphs, then sentences, then by sliding window as a fallback.
+ * @param text The text to split.
+ * @param filename The name of the source file.
+ * @param chunkNumber The starting chunk number.
  * @returns An array of text chunks.
  */
-function splitTextIntoChunks(text: string, filename: string): Chunk[] {
+function recursiveSplitText(text: string, filename: string, chunkNumber: number = 1): Chunk[] {
     const chunks: Chunk[] = [];
-    let index = 0;
-    let chunkNumber = 1;
-    // Sanitize text by removing excessive newlines and spaces
-    const sanitizedText = text.replace(/(\r\n|\n|\r)/gm, " ").replace(/\s\s+/g, ' ');
+    const sanitizedText = text.replace(/\s\s+/g, ' ').trim();
 
+    if (sanitizedText.length === 0) {
+        return [];
+    }
+
+    // 1. If the text is smaller than the chunk size, it's a perfect chunk.
+    if (sanitizedText.length <= CHUNK_SIZE) {
+        chunks.push({
+            content: sanitizedText,
+            text_content: sanitizedText,
+            metadata: {
+                source_filename: filename,
+                chunk_number: chunkNumber,
+            },
+        });
+        return chunks;
+    }
+
+    // 2. Try splitting by paragraphs (double newlines).
+    const paragraphs = sanitizedText.split(/(\r\n|\n){2,}/);
+    if (paragraphs.length > 1) {
+        let currentChunkNumber = chunkNumber;
+        for (const p of paragraphs) {
+            const paragraphChunks = recursiveSplitText(p, filename, currentChunkNumber);
+            chunks.push(...paragraphChunks);
+            currentChunkNumber += paragraphChunks.length;
+        }
+        return chunks;
+    }
+
+    // 3. If no paragraphs, try splitting by sentences.
+    const sentences = sanitizedText.match(/[^.!?]+[.!?]+/g) || [];
+    if (sentences.length > 1) {
+        let currentChunkNumber = chunkNumber;
+        let tempChunk = '';
+        for (const sentence of sentences) {
+            if ((tempChunk + sentence).length > CHUNK_SIZE) {
+                if (tempChunk) {
+                     chunks.push({
+                        content: tempChunk,
+                        text_content: tempChunk,
+                        metadata: { source_filename: filename, chunk_number: currentChunkNumber++ },
+                    });
+                }
+                tempChunk = sentence;
+            } else {
+                tempChunk += sentence;
+            }
+        }
+        if (tempChunk) { // Add the last remaining part
+            chunks.push({
+                content: tempChunk,
+                text_content: tempChunk,
+                metadata: { source_filename: filename, chunk_number: currentChunkNumber++ },
+            });
+        }
+
+        // If after sentence splitting, some chunks are still too big, recurse on them
+        const finalChunks: Chunk[] = [];
+        let finalChunkNumber = chunkNumber;
+        for (const chunk of chunks) {
+            const subChunks = recursiveSplitText(chunk.text_content, filename, finalChunkNumber);
+            finalChunks.push(...subChunks);
+            finalChunkNumber += subChunks.length;
+        }
+        return finalChunks;
+    }
+
+    // 4. Fallback to the original sliding window method if no other splits are possible.
+    let index = 0;
     while (index < sanitizedText.length) {
         const end = index + CHUNK_SIZE;
         const chunkContent = sanitizedText.substring(index, end);
         chunks.push({
             content: chunkContent,
-            text_content: chunkContent, // For plain text, they are the same
+            text_content: chunkContent,
             metadata: {
                 source_filename: filename,
                 chunk_number: chunkNumber++,
-            }
+            },
         });
         index += CHUNK_SIZE - CHUNK_OVERLAP;
     }
+
     return chunks;
 }
 
@@ -127,10 +196,22 @@ export async function clearKnowledgeBase(): Promise<{ success: boolean; message:
  */
 export async function processAndEmbedFile(prevState: ActionResult, formData: FormData): Promise<ActionResult> {
     const file = formData.get('file') as File;
+    const clearKB = formData.get('clear_kb') === 'true';
+
 
     if (!file || file.size === 0) {
         return { successfulCount: 0, failedCount: 0, message: 'Файл не найден или пуст.' };
     }
+    
+    if (clearKB) {
+        console.log('Clearing knowledge base before embedding...');
+        const clearResult = await clearKnowledgeBase();
+        if (!clearResult.success) {
+            return { successfulCount: 0, failedCount: 0, message: `Ошибка очистки базы знаний: ${clearResult.message}` };
+        }
+        console.log('Knowledge base cleared successfully.');
+    }
+
 
     try {
         const fileBuffer = Buffer.from(await file.arrayBuffer());
@@ -142,7 +223,7 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
             if (!pdfData.text) {
                  return { successfulCount: 0, failedCount: 0, message: `Не удалось извлечь текст из PDF файла ${file.name}.` };
             }
-            chunks = splitTextIntoChunks(pdfData.text, file.name);
+            chunks = recursiveSplitText(pdfData.text, file.name);
         } else if (file.type === 'text/html') {
             const htmlContent = fileBuffer.toString('utf-8');
             chunks = splitHtmlIntoChunks(htmlContent, file.name);

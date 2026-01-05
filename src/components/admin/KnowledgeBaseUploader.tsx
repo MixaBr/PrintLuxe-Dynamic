@@ -6,10 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { UploadCloud, File as FileIcon, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { UploadCloud, File as FileIcon, X, Loader2, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { processAndEmbedFile, type ActionResult } from '@/app/admin/content/actions';
+import { processAndEmbedFile, clearKnowledgeBase, type ActionResult } from '@/app/admin/content/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Checkbox } from '../ui/checkbox';
+import { Label } from '../ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
@@ -27,6 +41,7 @@ export function KnowledgeBaseUploader() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
+    const [clearKB, setClearKB] = useState(false);
     
     // State to hold results for each processed file
     const [processResults, setProcessResults] = useState<({ fileName: string } & ActionResult)[]>([]);
@@ -96,6 +111,10 @@ export function KnowledgeBaseUploader() {
                 toast({ title: `Начало обработки файла: ${file.name}` });
                 const formData = new FormData();
                 formData.append('file', file);
+                 if (clearKB) {
+                    formData.append('clear_kb', 'true');
+                }
+
                 
                 // We are not using useFormState here to handle multiple calls in a loop
                 const result = await processAndEmbedFile(initialState, formData);
@@ -112,6 +131,18 @@ export function KnowledgeBaseUploader() {
             }
             
             setFiles([]); // Clear file list after processing is done
+            setClearKB(false);
+        });
+    }
+
+    const handleClearKnowledgeBase = () => {
+        startTransition(async () => {
+            const result = await clearKnowledgeBase();
+             if (result.success) {
+                toast({ title: 'Успех!', description: result.message });
+            } else {
+                toast({ variant: 'destructive', title: 'Ошибка', description: result.message });
+            }
         });
     }
 
@@ -178,15 +209,44 @@ export function KnowledgeBaseUploader() {
                 </div>
             )}
             
-            <div className="flex justify-end">
-                <Button onClick={handleProcessFiles} disabled={isPending || files.length === 0} size="lg">
-                    {isPending ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Обработка...
-                        </>
-                    ) : 'Обработать и добавить в БЗ'}
-                </Button>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="clear-kb" checked={clearKB} onCheckedChange={(checked) => setClearKB(!!checked)} disabled={files.length === 0} />
+                    <Label htmlFor="clear-kb" className={cn(files.length === 0 && 'text-muted-foreground')}>Очистить базу знаний перед загрузкой</Label>
+                </div>
+                <div className='flex items-center gap-2'>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" disabled={isPending}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Очистить БЗ
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Вы уверены, что хотите очистить Базу Знаний?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Это действие приведет к полному удалению всех загруженных ранее документов и их фрагментов. Восстановить их будет невозможно.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearKnowledgeBase} disabled={isPending}>
+                                 {isPending ? 'Очистка...' : 'Да, очистить'}
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                    <Button onClick={handleProcessFiles} disabled={isPending || files.length === 0} size="lg">
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Обработка...
+                            </>
+                        ) : 'Обработать и добавить в БЗ'}
+                    </Button>
+                </div>
             </div>
             
              {processResults.length > 0 && (
@@ -222,3 +282,5 @@ export function KnowledgeBaseUploader() {
         </div>
     )
 }
+
+    
