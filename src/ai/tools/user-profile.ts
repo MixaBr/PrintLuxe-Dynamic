@@ -18,9 +18,9 @@ export const detectAndSaveName = ai.defineTool(
     outputSchema: z.string().describe("The detected name that was saved."),
   },
   // The full 'input' from the main flow is available as the second argument (context)
-  async ({ potentialName }, flowInput: any) => {
+  async ({ potentialName }, flowContext) => {
     
-    const chatId = flowInput?.chatId;
+    const chatId = (flowContext as any)?.chatId;
 
     if (!chatId) {
       console.error('detectAndSaveName tool was called without a chatId in context.');
@@ -46,3 +46,5 @@ export const detectAndSaveName = ai.defineTool(
     return detectedName;
   }
 );
+
+    

@@ -80,7 +80,7 @@ export const knowledgeBaseTool = ai.defineTool(
                 const finalClarifyingPrompt = clarifyingPrompt.replace('{{query}}', query);
 
                 const llmResponse = await ai.generate({
-                    model: googleAI.model('googleai/gemini-2.5-flash'),
+                    model: 'googleai/gemini-2.5-flash',
                     prompt: finalClarifyingPrompt,
                 });
 
@@ -92,15 +92,14 @@ export const knowledgeBaseTool = ai.defineTool(
         let filterMetadata = {};
         if (extractModelPrompt) {
             const modelExtractionLlmResponse = await ai.generate({
-                model: googleAI.model('googleai/gemini-2.5-flash'),
+                model: 'googleai/gemini-2.5-flash',
                 prompt: extractModelPrompt.replace('{{query}}', query),
             });
             const extractedModel = modelExtractionLlmResponse.text.trim();
             
             if (extractedModel && extractedModel.toLowerCase() !== 'null') {
                 console.log(`Extracted device model for filtering: "${extractedModel}"`);
-                // We will filter by filename for now, assuming a convention like `manual_MODEL.pdf`
-                filterMetadata = { source_filename_ilike: `%${extractedModel}%` };
+                filterMetadata = { device_model: extractedModel }; // Use the new, precise filter
             } else {
                 console.log('No specific device model found in query.');
             }
@@ -156,9 +155,11 @@ export const knowledgeBaseTool = ai.defineTool(
         console.log(`===========================================================`);
 
         const contextText = documents
-            .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\n  Содержание: ${doc.content}`)
+            .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'} (Модель: ${doc.metadata?.device_model || 'N/A'})\n  Содержание: ${doc.content}`)
             .join('\n\n');
 
         return contextText;
     }
 );
+
+    

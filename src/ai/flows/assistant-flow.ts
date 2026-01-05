@@ -123,10 +123,10 @@ const securityGuardFlow = ai.defineFlow(
         return false;
     }
     
-    const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
+    const finalPrompt = `${guardPrompt}\n\nUser Query: \"${query}\"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
+      model: 'googleai/gemini-2.5-flash',
       prompt: finalPrompt,
     });
     
@@ -171,16 +171,19 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
+      model: 'googleai/gemini-2.5-flash',
       system: finalRouterPrompt,
       prompt: input.query,
       tools,
       toolChoice: 'auto',
       config: {
-        context: input
-      }
+        // Pass the entire input as context to all tools
+        context: input,
+      },
     });
 
     return llmResponse.text;
   }
 );
+
+    
