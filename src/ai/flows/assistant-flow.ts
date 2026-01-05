@@ -126,7 +126,7 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
+      model: googleAI.model('gemini-1.5-flash-latest'),
       prompt: finalPrompt,
     });
     
@@ -171,14 +171,14 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('googleai/gemini-2.5-flash'),
+      model: googleAI.model('gemini-1.5-flash-latest'),
       system: finalRouterPrompt,
       prompt: input.query,
       tools,
       toolChoice: 'auto',
       // Pass the full input to the tool, so it has access to chatId etc.
-      toolConfig: {
-        custom: input
+      config: {
+        context: input
       }
     });
 
