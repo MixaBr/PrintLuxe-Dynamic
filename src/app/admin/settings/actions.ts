@@ -52,3 +52,24 @@ export async function updateSettings(prevState: FormState, formData: FormData): 
         };
     }
 }
+
+/**
+ * Deletes all documents from the knowledge base.
+ */
+export async function clearKnowledgeBase(): Promise<{ success: boolean; message: string }> {
+    try {
+        const supabase = createAdminClient();
+        const { error } = await supabase.from('manual_knowledge').delete().gt('id', 0); // Deletes all rows
+
+        if (error) {
+            throw new Error(`Ошибка Supabase: ${error.message}`);
+        }
+        
+        revalidatePath('/admin/content');
+        return { success: true, message: 'База знаний успешно очищена!' };
+
+    } catch (e: any) {
+        console.error('Failed to clear knowledge base:', e);
+        return { success: false, message: `Не удалось очистить базу знаний: ${e.message}` };
+    }
+}
