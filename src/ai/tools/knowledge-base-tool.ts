@@ -161,5 +161,3 @@ export const knowledgeBaseTool = ai.defineTool(
         return contextText;
     }
 );
-
-    

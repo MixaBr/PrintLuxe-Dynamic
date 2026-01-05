@@ -107,7 +107,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   }
 
   // 3. Proceed with the normal flow if the query is safe.
-  const aiResponse = await assistantRouterFlow({ ...input, routerPrompt: prompts.bot_prompt_router });
+  const aiResponse = await assistantRouterFlow(input);
   return { response: aiResponse };
 }
 
@@ -141,23 +141,34 @@ const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, kno
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
-    inputSchema: AssistantInputSchema.extend({ routerPrompt: z.string() }),
+    inputSchema: AssistantInputSchema,
     outputSchema: z.string(),
   },
-  async ({ routerPrompt, ...input }) => {
-     if (!routerPrompt) {
-        console.error("CRITICAL: bot_prompt_router is missing from the database.");
+  async (input, flowContext) => {
+    const supabase = createAdminClient();
+    
+    // We fetch the router prompt inside the flow, using the admin client.
+    const { data: promptData, error: promptError } = await supabase
+        .from('app_config')
+        .select('value')
+        .eq('key', 'bot_prompt_router')
+        .single();
+        
+    if (promptError || !promptData?.value) {
+        console.error("CRITICAL: bot_prompt_router is missing from the database or failed to fetch.", promptError);
         return "Произошла критическая ошибка: не удалось загрузить основной промпт. Пожалуйста, обратитесь к администратору.";
     }
+    const routerPrompt = promptData.value;
 
-    const { data: chatData, error } = await createAdminClient()
+
+    const { data: chatData, error: userError } = await supabase
       .from('chats')
       .select('us_first_name')
       .eq('chat_id', input.chatId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching user name:', error);
+    if (userError && userError.code !== 'PGRST116') {
+      console.error('Error fetching user name:', userError);
     }
 
     const currentFirstName = chatData?.us_first_name;
@@ -176,14 +187,8 @@ const assistantRouterFlow = ai.defineFlow(
       prompt: input.query,
       tools,
       toolChoice: 'auto',
-      config: {
-        // Pass the entire input as context to all tools
-        context: input,
-      },
     });
 
     return llmResponse.text;
   }
 );
-
-    
