@@ -126,7 +126,7 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: "${query}"`;
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash-latest'),
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       prompt: finalPrompt,
     });
     
@@ -171,7 +171,7 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     const llmResponse = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash-latest'),
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       system: finalRouterPrompt,
       prompt: input.query,
       tools,
