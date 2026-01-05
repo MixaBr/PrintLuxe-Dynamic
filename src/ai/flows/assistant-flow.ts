@@ -107,7 +107,7 @@ export async function runAssistant(input: AssistantInput): Promise<AssistantOutp
   }
 
   // 3. Proceed with the normal flow if the query is safe.
-  const aiResponse = await assistantRouterFlow(input);
+  const aiResponse = await assistantRouterFlow({ ...input, routerPrompt: prompts.bot_prompt_router });
   return { response: aiResponse };
 }
 
@@ -126,7 +126,7 @@ const securityGuardFlow = ai.defineFlow(
     const finalPrompt = `${guardPrompt}\n\nUser Query: \"${query}\"`;
 
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       prompt: finalPrompt,
     });
     
@@ -141,34 +141,23 @@ const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, kno
 const assistantRouterFlow = ai.defineFlow(
   {
     name: 'assistantRouterFlow',
-    inputSchema: AssistantInputSchema,
+    inputSchema: AssistantInputSchema.extend({ routerPrompt: z.string() }),
     outputSchema: z.string(),
   },
-  async (input, flowContext) => {
-    const supabase = createAdminClient();
-    
-    // We fetch the router prompt inside the flow, using the admin client.
-    const { data: promptData, error: promptError } = await supabase
-        .from('app_config')
-        .select('value')
-        .eq('key', 'bot_prompt_router')
-        .single();
-        
-    if (promptError || !promptData?.value) {
-        console.error("CRITICAL: bot_prompt_router is missing from the database or failed to fetch.", promptError);
+  async ({ routerPrompt, ...input }) => {
+     if (!routerPrompt) {
+        console.error("CRITICAL: bot_prompt_router is missing from the database.");
         return "Произошла критическая ошибка: не удалось загрузить основной промпт. Пожалуйста, обратитесь к администратору.";
     }
-    const routerPrompt = promptData.value;
 
-
-    const { data: chatData, error: userError } = await supabase
+    const { data: chatData, error } = await createAdminClient()
       .from('chats')
       .select('us_first_name')
       .eq('chat_id', input.chatId)
       .single();
 
-    if (userError && userError.code !== 'PGRST116') {
-      console.error('Error fetching user name:', userError);
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching user name:', error);
     }
 
     const currentFirstName = chatData?.us_first_name;
@@ -182,11 +171,11 @@ const assistantRouterFlow = ai.defineFlow(
         .replace('{{currentFirstName}}', currentFirstName || 'null');
 
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: googleAI.model('googleai/gemini-2.5-flash'),
       system: finalRouterPrompt,
       prompt: input.query,
       tools,
-      toolChoice: 'auto',
+      toolChoice: 'auto'
     });
 
     return llmResponse.text;
