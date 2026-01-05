@@ -80,7 +80,7 @@ export const knowledgeBaseTool = ai.defineTool(
                 const finalClarifyingPrompt = clarifyingPrompt.replace('{{query}}', query);
 
                 const llmResponse = await ai.generate({
-                    model: googleAI.model('googleai/gemini-2.5-flash'),
+                    model: googleAI.model('gemini-1.5-flash-latest'),
                     prompt: finalClarifyingPrompt,
                 });
 
@@ -92,7 +92,7 @@ export const knowledgeBaseTool = ai.defineTool(
         let filterMetadata = {};
         if (extractModelPrompt) {
             const modelExtractionLlmResponse = await ai.generate({
-                model: googleAI.model('googleai/gemini-2.5-flash'),
+                model: googleAI.model('gemini-1.5-flash-latest'),
                 prompt: extractModelPrompt.replace('{{query}}', query),
             });
             const extractedModel = modelExtractionLlmResponse.text.trim();

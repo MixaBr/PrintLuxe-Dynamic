@@ -176,7 +176,6 @@ const assistantRouterFlow = ai.defineFlow(
       prompt: input.query,
       tools,
       toolChoice: 'auto',
-      // Pass the full input to the tool, so it has access to chatId etc.
       config: {
         context: input
       }
