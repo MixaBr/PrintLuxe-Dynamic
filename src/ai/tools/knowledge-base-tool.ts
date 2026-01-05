@@ -21,7 +21,7 @@ async function getSearchConfig() {
     const { data, error } = await supabase
         .from('app_config')
         .select('key, value')
-        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count', 'bot_kb_clarifying_prompt']);
+        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count', 'bot_kb_clarifying_prompt', 'bot_prompt_extract_model']);
 
     if (error) {
         console.error("Error fetching knowledge base config:", error.message);
@@ -29,7 +29,8 @@ async function getSearchConfig() {
         return {
             matchThreshold: 0.8,
             matchCount: 5,
-            clarifyingPrompt: '' // Return empty prompt on error
+            clarifyingPrompt: '',
+            extractModelPrompt: ''
         };
     }
 
@@ -41,11 +42,13 @@ async function getSearchConfig() {
     const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.8');
     const matchCount = parseInt(config.bot_kb_match_count || '5', 10);
     const clarifyingPrompt = config.bot_kb_clarifying_prompt || '';
+    const extractModelPrompt = config.bot_prompt_extract_model || '';
 
     return {
         matchThreshold: isNaN(matchThreshold) ? 0.8 : matchThreshold,
         matchCount: isNaN(matchCount) ? 5 : matchCount,
-        clarifyingPrompt: clarifyingPrompt
+        clarifyingPrompt,
+        extractModelPrompt
     };
 }
 
@@ -59,11 +62,11 @@ export const knowledgeBaseTool = ai.defineTool(
         }),
         outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, clarifying questions for an ambiguous query, or a message indicating no relevant information was found.'),
     },
-    async ({ query }) => {
+    async ({ query }, context) => {
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
-        const { matchThreshold, matchCount, clarifyingPrompt } = await getSearchConfig();
+        const { matchThreshold, matchCount, clarifyingPrompt, extractModelPrompt } = await getSearchConfig();
         const words = query.trim().split(/\s+/);
 
         // 1. Handle short/ambiguous queries by generating clarifying questions
@@ -85,9 +88,28 @@ export const knowledgeBaseTool = ai.defineTool(
             }
         }
 
-        // 2. Proceed with vector search for detailed queries
+        // 2. Extract device model from query for filtering
+        let filterMetadata = {};
+        if (extractModelPrompt) {
+            const modelExtractionLlmResponse = await ai.generate({
+                model: googleAI.model('googleai/gemini-2.5-flash'),
+                prompt: extractModelPrompt.replace('{{query}}', query),
+            });
+            const extractedModel = modelExtractionLlmResponse.text.trim();
+            
+            if (extractedModel && extractedModel.toLowerCase() !== 'null') {
+                console.log(`Extracted device model for filtering: "${extractedModel}"`);
+                // We will filter by filename for now, assuming a convention like `manual_MODEL.pdf`
+                filterMetadata = { source_filename_ilike: `%${extractedModel}%` };
+            } else {
+                console.log('No specific device model found in query.');
+            }
+        }
+
+        // 3. Proceed with vector search for detailed queries
         console.log(`Query is detailed enough. Proceeding with vector search.`);
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
+        console.log(`Using filter: ${JSON.stringify(filterMetadata)}`);
 
         const embeddingResponse = await ai.embed({
             embedder: textEmbeddingGecko,
@@ -102,10 +124,12 @@ export const knowledgeBaseTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
+        // The RPC function is now called with the filter object
         const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
             query_embedding: embedding,
             match_threshold: matchThreshold,
             match_count: matchCount,
+            filter_metadata: filterMetadata
         });
 
         if (error) {

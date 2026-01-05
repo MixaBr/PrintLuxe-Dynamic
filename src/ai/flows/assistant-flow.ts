@@ -175,7 +175,11 @@ const assistantRouterFlow = ai.defineFlow(
       system: finalRouterPrompt,
       prompt: input.query,
       tools,
-      toolChoice: 'auto'
+      toolChoice: 'auto',
+      // Pass the full input to the tool, so it has access to chatId etc.
+      toolConfig: {
+        custom: input
+      }
     });
 
     return llmResponse.text;

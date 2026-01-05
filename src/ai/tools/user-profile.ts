@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview A Genkit tool for detecting and saving a user's name.
  */
@@ -13,17 +14,18 @@ export const detectAndSaveName = ai.defineTool(
     description: "Use this tool when the user's message is likely a person's name.",
     inputSchema: z.object({
         potentialName: z.string().describe('The potential name extracted from the user query.'),
-        chatId: z.number().describe("The user's Telegram chat ID."),
     }),
     outputSchema: z.string().describe("The detected name that was saved."),
   },
-  async (input) => {
-    const { potentialName, chatId } = input;
+  // The full 'input' from the main flow is available as the second argument (context)
+  async ({ potentialName }, flowInput: any) => {
+    
+    const chatId = flowInput?.chatId;
 
     if (!chatId) {
-      console.error('detectAndSaveName tool was called without a chatId.');
+      console.error('detectAndSaveName tool was called without a chatId in context.');
       // Return the name so the AI can still use it, even if saving failed.
-      return `I'll call you ${potentialName}, but I couldn't save it to your profile.`;
+      return `Я буду называть вас ${potentialName}, но не смог сохранить это в профиль.`;
     }
 
     const detectedName = potentialName.trim();
@@ -37,7 +39,7 @@ export const detectAndSaveName = ai.defineTool(
     if (error) {
       console.error('Failed to save user name:', error);
       // Let the AI know the save failed but we can still use the name for the conversation.
-      return `Failed to save name to profile, but I'll call you ${detectedName} for now.`;
+      return `Не удалось сохранить имя в профиль, но я буду называть вас ${detectedName}.`;
     }
 
     // Return just the name on success. The LLM will formulate the final response.
