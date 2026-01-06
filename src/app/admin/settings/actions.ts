@@ -20,7 +20,6 @@ export async function updateSettings(prevState: FormState, formData: FormData): 
     }
 
     try {
-        // Обновляем каждую настройку по ее ключу
         const updatePromises = settingsToUpdate.map(setting =>
             supabase
                 .from('app_config')
@@ -30,13 +29,11 @@ export async function updateSettings(prevState: FormState, formData: FormData): 
 
         const results = await Promise.all(updatePromises);
         
-        // Проверяем на наличие ошибок в результатах
         const firstError = results.find(result => result.error);
         if (firstError?.error) {
             throw firstError.error;
         }
 
-        // Перепроверка пути, чтобы новые настройки вступили в силу
         revalidatePath('/', 'layout');
         
         return {
@@ -54,19 +51,22 @@ export async function updateSettings(prevState: FormState, formData: FormData): 
 }
 
 /**
- * Deletes all documents from the knowledge base.
+ * Deletes all documents from the knowledge base and resets the ID sequence.
+ * This is now done by calling the `truncate_manual_knowledge` RPC function in the database.
  */
 export async function clearKnowledgeBase(): Promise<{ success: boolean; message: string }> {
     try {
         const supabase = createAdminClient();
-        const { error } = await supabase.from('manual_knowledge').delete().gt('id', 0); // Deletes all rows
+        // Instead of deleting, we call a stored procedure (RPC) to truncate the table
+        // and reset the primary key sequence. This is more efficient and cleaner.
+        const { error } = await supabase.rpc('truncate_manual_knowledge');
 
         if (error) {
-            throw new Error(`Ошибка Supabase: ${error.message}`);
+            throw new Error(`Ошибка Supabase RPC: ${error.message}. Убедитесь, что вы создали функцию truncate_manual_knowledge в вашей базе данных.`);
         }
         
         revalidatePath('/admin/content');
-        return { success: true, message: 'База знаний успешно очищена!' };
+        return { success: true, message: 'База знаний успешно очищена, счетчик ID сброшен!' };
 
     } catch (e: any) {
         console.error('Failed to clear knowledge base:', e);

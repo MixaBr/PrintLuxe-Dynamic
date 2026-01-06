@@ -30,11 +30,6 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB per file
 const ACCEPTED_FILE_TYPES = ['application/pdf', 'text/html'];
 
-const initialState: ActionResult = {
-    successfulCount: 0,
-    failedCount: 0,
-    message: ''
-};
 
 export function KnowledgeBaseUploader() {
     const { toast } = useToast();
@@ -115,10 +110,16 @@ export function KnowledgeBaseUploader() {
                  if (clearKB) {
                     formData.append('clear_kb', 'true');
                 }
-
                 
-                // We are not using useFormState here to handle multiple calls in a loop
-                const result = await processAndEmbedFile(initialState, formData);
+                const result = await processAndEmbedFile(formData);
+
+                if (!result) {
+                    const errorResult = { fileName: file.name, successfulCount: 0, failedCount: 1, message: 'Не удалось получить ответ от сервера.' };
+                    toast({ variant: 'destructive', title: `Критическая ошибка при обработке ${file.name}`, description: errorResult.message });
+                    results.push(errorResult);
+                    setProcessResults([...results]);
+                    continue; 
+                }
 
                 if (result.failedCount > 0) {
                      toast({ variant: 'destructive', title: `Ошибки в файле ${file.name}`, description: result.message });

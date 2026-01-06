@@ -46,6 +46,13 @@ const nextConfig = {
     ]
   },
 
+  experimental: {
+    // This option allows us to specify which packages should be treated as external
+    // by the server-side bundler. By adding '@supabase/supabase-js', we tell Next.js
+    // not to bundle it, resolving the 'Cannot find module' error.
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+  },
+
   webpack: (config, { isServer }) => {
     // This alias prevents Webpack from trying to bundle the 'canvas' module.
     // It's a server-side dependency of pdfjs-dist that we don't use, and it causes build errors.

@@ -1,27 +1,50 @@
 
-
 import HomePageClient from '@/components/layout/HomePageClient';
-import { getHomePageData } from '@/lib/slide-data';
+import { getHomePageData, type HomePageData } from '@/lib/slide-data';
 import { getFeaturedProducts } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { getRecentNews } from '@/lib/news-data';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const isAuthenticated = !!user;
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const isAuthenticated = !!user;
 
-  // Fetch page structure and featured product IDs
-  const homePageData = await getHomePageData();
-  const recentNews = await getRecentNews(10);
+    const homePageData = await getHomePageData();
+    const recentNews = await getRecentNews(10);
+    
+    if (!homePageData || !homePageData.featured || !homePageData.featured.ids) {
+        throw new Error("Не удалось загрузить структуру главной страницы.");
+    }
 
-  // Fetch the actual product data based on the IDs,
-  // providing the auth status so the server can prepare the correct price.
-  const featuredProductsData = await getFeaturedProducts(homePageData.featured.ids, isAuthenticated);
+    const featuredProductsData = await getFeaturedProducts(homePageData.featured.ids, isAuthenticated);
 
-  // FIX: Replace description with name to avoid serialization issues with '$'
-  const featuredProducts = featuredProductsData.map(p => ({ ...p, description: p.name }));
+    const featuredProducts = featuredProductsData.map(p => ({ ...p, description: p.name }));
 
+    return <HomePageClient homePageData={homePageData} featuredProducts={featuredProducts} recentNews={recentNews} />;
 
-  return <HomePageClient homePageData={homePageData} featuredProducts={featuredProducts} recentNews={recentNews} />;
+  } catch (error) {
+    console.error("Ошибка при загрузке данных для главной страницы:", error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Произошла непредвиденная ошибка.';
+    
+    const fallbackData: HomePageData = {
+        hero: { title: 'Сервис в ремонте', subtitle: 'Мы скоро вернемся' },
+        featured: { title: 'Популярные товары', subtitle: 'Раздел временно недоступен', ids: [] },
+        services: { title: 'Наши услуги', subtitle: 'Раздел временно недоступен', list: [] },
+        benefits: { title: 'Наши преимущества', subtitle: 'Раздел временно недоступен', list: [] },
+    };
+
+    return (
+      <HomePageClient
+        homePageData={fallbackData}
+        featuredProducts={[]}
+        recentNews={[]}
+        error={errorMessage}
+      />
+    );
+  }
 }

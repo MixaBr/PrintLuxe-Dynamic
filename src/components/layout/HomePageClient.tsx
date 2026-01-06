@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,9 +26,10 @@ interface HomePageClientProps {
   homePageData: HomePageData;
   featuredProducts: Product[];
   recentNews: News[];
+  error?: string; 
 }
 
-export default function HomePageClient({ homePageData, featuredProducts, recentNews }: HomePageClientProps) {
+export default function HomePageClient({ homePageData, featuredProducts, recentNews, error }: HomePageClientProps) {
   const [contactData, setContactData] = useState<Awaited<ReturnType<typeof getContactPageData>> | null>(null);
   const { addToCart } = useCartStore();
   const { toast } = useToast();
@@ -76,10 +76,10 @@ export default function HomePageClient({ homePageData, featuredProducts, recentN
         </aside>
 
         <main className="md:col-span-3 lg:col-span-4 flex flex-col px-4 md:px-8 space-y-8 py-8">
-            {homePageData?.error ? (
+            {error ? (
                 <div className="text-center text-white bg-red-500/20 p-8 rounded-lg">
                     <h2 className="text-2xl font-bold font-headline">Ошибка загрузки</h2>
-                    <p className="mt-2">{typeof homePageData.error === 'string' ? homePageData.error : JSON.stringify(homePageData.error)}</p>
+                    <p className="mt-2">{error}</p>
                 </div>
             ) : (
                 <>

@@ -2,6 +2,7 @@
 /**
  * @fileOverview Server actions for the content management page.
  * Implements a robust, batch-oriented processing pipeline for PDF and HTML files.
+ * Now includes logic to extract the manufacturer and multiple device models from filenames.
  */
 'use server';
 
@@ -13,19 +14,22 @@ import { ai, textEmbeddingGecko } from '@/ai/genkit';
 
 const CHUNK_SIZE = 500; // Characters per chunk
 const CHUNK_OVERLAP = 50; // Characters to overlap between chunks
+const BATCH_SIZE = 50; // Number of chunks to process in parallel
 
 interface Chunk {
-    content: string; // For HTML, this will be the HTML content of the chunk
-    text_content: string; // This will be the plain text version for embedding
+    content: string; 
+    text_content: string; 
     metadata: {
         source_filename: string;
         chunk_number: number;
+        manufacturer?: string;
+        device_models?: string[];
     }
 }
 
-/**
- * Defines the unified return structure for the processAndEmbedFile function.
- */
+// Defines the base metadata structure before chunk-specific details are added.
+type BaseMetadata = Omit<Chunk['metadata'], 'chunk_number'>;
+
 export interface ActionResult {
     successfulCount: number;
     failedCount: number;
@@ -33,86 +37,78 @@ export interface ActionResult {
     details?: { chunk: Omit<Chunk, 'text_content'>, error: string }[];
 }
 
-/**
- * Recursively splits a text into semantic chunks.
- * Starts by splitting into paragraphs, then sentences, then by sliding window as a fallback.
- * @param text The text to split.
- * @param filename The name of the source file.
- * @param chunkNumber The starting chunk number.
- * @returns An array of text chunks.
- */
-function recursiveSplitText(text: string, filename: string, chunkNumber: number = 1): Chunk[] {
+function extractMetadataFromFilename(filename: string): { manufacturer?: string; models?: string[] } {
+    const nameWithoutExt = filename.split('.').slice(0, -1).join('.');
+    const parts = nameWithoutExt.split('_').filter(p => p.toLowerCase() !== 'manual' && p.toLowerCase() !== 'series');
+    
+    if (parts.length === 0) {
+        return {};
+    }
+
+    const manufacturer = parts[0]; 
+    const models = parts.slice(1).filter(part => /\d/.test(part));
+    
+    return {
+        manufacturer: manufacturer,
+        models: models.length > 0 ? models : undefined,
+    };
+}
+
+function recursiveSplitText(text: string, filename: string, metadata: BaseMetadata, chunkNumber: number = 1): Chunk[] {
     const chunks: Chunk[] = [];
     const sanitizedText = text.replace(/\s\s+/g, ' ').trim();
 
-    if (sanitizedText.length === 0) {
-        return [];
-    }
+    if (sanitizedText.length === 0) return [];
 
-    // 1. If the text is smaller than the chunk size, it's a perfect chunk.
     if (sanitizedText.length <= CHUNK_SIZE) {
         chunks.push({
             content: sanitizedText,
             text_content: sanitizedText,
-            metadata: {
-                source_filename: filename,
-                chunk_number: chunkNumber,
-            },
+            metadata: { ...metadata, chunk_number: chunkNumber },
         });
         return chunks;
     }
 
-    // 2. Try splitting by paragraphs (double newlines).
     const paragraphs = sanitizedText.split(/(\r\n|\n){2,}/);
     if (paragraphs.length > 1) {
         let currentChunkNumber = chunkNumber;
         for (const p of paragraphs) {
-            const paragraphChunks = recursiveSplitText(p, filename, currentChunkNumber);
-            chunks.push(...paragraphChunks);
-            currentChunkNumber += paragraphChunks.length;
+            if (p.trim().length > 0) {
+                const paragraphChunks = recursiveSplitText(p, filename, metadata, currentChunkNumber);
+                chunks.push(...paragraphChunks);
+                currentChunkNumber += paragraphChunks.length;
+            }
         }
-        return chunks;
+        if (chunks.length > 0) return chunks;
     }
 
-    // 3. If no paragraphs, try splitting by sentences.
     const sentences = sanitizedText.match(/[^.!?]+[.!?]+/g) || [];
     if (sentences.length > 1) {
-        let currentChunkNumber = chunkNumber;
         let tempChunk = '';
+        const sentenceChunks: string[] = [];
         for (const sentence of sentences) {
-            if ((tempChunk + sentence).length > CHUNK_SIZE) {
-                if (tempChunk) {
-                     chunks.push({
-                        content: tempChunk,
-                        text_content: tempChunk,
-                        metadata: { source_filename: filename, chunk_number: currentChunkNumber++ },
-                    });
-                }
+            if ((tempChunk + sentence).length > CHUNK_SIZE && tempChunk.length > 0) {
+                sentenceChunks.push(tempChunk);
                 tempChunk = sentence;
             } else {
                 tempChunk += sentence;
             }
         }
-        if (tempChunk) { // Add the last remaining part
-            chunks.push({
-                content: tempChunk,
-                text_content: tempChunk,
-                metadata: { source_filename: filename, chunk_number: currentChunkNumber++ },
+        if (tempChunk.length > 0) {
+            sentenceChunks.push(tempChunk);
+        }
+
+        let currentChunkNumber = chunkNumber;
+        for (const sentenceChunk of sentenceChunks) {
+             chunks.push({
+                content: sentenceChunk,
+                text_content: sentenceChunk,
+                metadata: { ...metadata, chunk_number: currentChunkNumber++ },
             });
         }
-
-        // If after sentence splitting, some chunks are still too big, recurse on them
-        const finalChunks: Chunk[] = [];
-        let finalChunkNumber = chunkNumber;
-        for (const chunk of chunks) {
-            const subChunks = recursiveSplitText(chunk.text_content, filename, finalChunkNumber);
-            finalChunks.push(...subChunks);
-            finalChunkNumber += subChunks.length;
-        }
-        return finalChunks;
+        if (chunks.length > 0) return chunks;
     }
 
-    // 4. Fallback to the original sliding window method if no other splits are possible.
     let index = 0;
     while (index < sanitizedText.length) {
         const end = index + CHUNK_SIZE;
@@ -120,10 +116,7 @@ function recursiveSplitText(text: string, filename: string, chunkNumber: number 
         chunks.push({
             content: chunkContent,
             text_content: chunkContent,
-            metadata: {
-                source_filename: filename,
-                chunk_number: chunkNumber++,
-            },
+            metadata: { ...metadata, chunk_number: chunkNumber++ },
         });
         index += CHUNK_SIZE - CHUNK_OVERLAP;
     }
@@ -131,32 +124,21 @@ function recursiveSplitText(text: string, filename: string, chunkNumber: number 
     return chunks;
 }
 
-
-/**
- * Splits an HTML content into semantic chunks.
- * @param html The full HTML content as a string.
- * @param filename The name of the source file for metadata.
- * @returns An array of HTML chunks.
- */
-function splitHtmlIntoChunks(html: string, filename: string): Chunk[] {
+function splitHtmlIntoChunks(html: string, metadata: BaseMetadata): Chunk[] {
     const $ = cheerio.load(html);
     const chunks: Chunk[] = [];
     let chunkNumber = 1;
 
-    // Process semantic blocks. You can extend this selector.
     $('p, h1, h2, h3, h4, li, pre, table').each((_, element) => {
         const $element = $(element);
         const htmlContent = $element.html();
         const textContent = $element.text();
 
-        if (textContent.trim().length > 10 && htmlContent) { // Ignore very short or empty tags
+        if (textContent.trim().length > 10 && htmlContent) {
             chunks.push({
-                content: `<div>${htmlContent}</div>`, // Wrap in a div to maintain context
+                content: `<div>${htmlContent}</div>`, 
                 text_content: textContent,
-                metadata: {
-                    source_filename: filename,
-                    chunk_number: chunkNumber++,
-                }
+                metadata: { ...metadata, chunk_number: chunkNumber++ },
             });
         }
     });
@@ -164,48 +146,46 @@ function splitHtmlIntoChunks(html: string, filename: string): Chunk[] {
     return chunks;
 }
 
-/**
- * Receives a file (PDF or HTML), parses it, splits it into chunks, and processes them
- * in batches to generate and store embeddings. This function is designed to be
- * robust and avoid server timeouts.
- * @param prevState - The previous state from useFormState.
- * @param formData - The form data containing the uploaded file.
- * @returns An ActionResult object detailing the outcome.
- */
-export async function processAndEmbedFile(prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function processAndEmbedFile(formData: FormData): Promise<ActionResult> {
     const file = formData.get('file') as File;
     const clearKB = formData.get('clear_kb') === 'true';
-
 
     if (!file || file.size === 0) {
         return { successfulCount: 0, failedCount: 0, message: 'Файл не найден или пуст.' };
     }
     
     if (clearKB) {
-        console.log('Clearing knowledge base before embedding...');
+        console.log('Clearing knowledge base via RPC before embedding...');
         const supabase = createAdminClient();
-        const { error } = await supabase.from('manual_knowledge').delete().gt('id', 0);
+        const { error } = await supabase.rpc('truncate_manual_knowledge');
         if (error) {
-             return { successfulCount: 0, failedCount: 0, message: `Ошибка очистки базы знаний: ${error.message}` };
+             return { successfulCount: 0, failedCount: 0, message: `Ошибка очистки базы знаний: ${error.message}. Убедитесь, что вы создали функцию truncate_manual_knowledge в вашей базе данных.` };
         }
-        console.log('Knowledge base cleared successfully.');
+        console.log('Knowledge base cleared successfully via RPC.');
     }
 
-
     try {
+        const { manufacturer, models } = extractMetadataFromFilename(file.name);
+        console.log(`[File Info] Extracted Manufacturer: ${manufacturer || 'N/A'}, Models: ${models?.join(', ') || 'N/A'}`);
+        
+        const baseMetadata: BaseMetadata = {
+            source_filename: file.name,
+            manufacturer: manufacturer,
+            device_models: models,
+        };
+
         const fileBuffer = Buffer.from(await file.arrayBuffer());
         let chunks: Chunk[];
 
-        // 1. Parse file based on its type and split into chunks
         if (file.type === 'application/pdf') {
             const pdfData = await pdf(fileBuffer);
             if (!pdfData.text) {
                  return { successfulCount: 0, failedCount: 0, message: `Не удалось извлечь текст из PDF файла ${file.name}.` };
             }
-            chunks = recursiveSplitText(pdfData.text, file.name);
+            chunks = recursiveSplitText(pdfData.text, file.name, baseMetadata);
         } else if (file.type === 'text/html') {
             const htmlContent = fileBuffer.toString('utf-8');
-            chunks = splitHtmlIntoChunks(htmlContent, file.name);
+            chunks = splitHtmlIntoChunks(htmlContent, baseMetadata);
         } else {
             return { successfulCount: 0, failedCount: 0, message: `Неподдерживаемый тип файла: ${file.type}.` };
         }
@@ -213,50 +193,82 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
         if (chunks.length === 0) {
              return { successfulCount: 0, failedCount: 0, message: 'Не удалось создать фрагменты из файла.' };
         }
+        console.log(`[Chunking] Created ${chunks.length} chunks from ${file.name}.`);
         
         const supabase = createAdminClient();
         let totalSuccess = 0;
         let totalFailed = 0;
         const failedChunksDetails: ActionResult['details'] = [];
 
-        // 2. Process chunks one by one to avoid rate limiting
-        for (const chunk of chunks) {
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+            const batch = chunks.slice(i, i + BATCH_SIZE);
+            console.log(`[Batch Start] Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(chunks.length / BATCH_SIZE)} with ${batch.length} chunks.`);
+
             try {
-                console.log(`[Embedding Start] Processing chunk #${chunk.metadata.chunk_number} for ${file.name}`);
-                
-                const embeddingResponse = await ai.embed({
-                    embedder: textEmbeddingGecko,
-                    content: chunk.text_content,
+                const embeddingPromises = batch.map(chunk => 
+                    ai.embed({
+                        embedder: textEmbeddingGecko,
+                        content: chunk.text_content,
+                    }).catch(e => ({ error: e, chunk }))
+                );
+
+                const embeddingResults = await Promise.all(embeddingPromises);
+
+                const recordsToInsert: any[] = [];
+                const batchFailedChunks: { chunk: Chunk, error: any }[] = [];
+
+                embeddingResults.forEach((result: any, index) => {
+                    const chunk = batch[index];
+                    if (typeof result === 'object' && result !== null && 'error' in result) {
+                        batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
+                    } else if (Array.isArray(result) && result[0]?.embedding) {
+                        recordsToInsert.push({
+                            content: chunk.content,
+                            metadata: chunk.metadata,
+                            embedding: result[0].embedding,
+                        });
+                    } else {
+                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
+                    }
                 });
-                
-                const embedding = embeddingResponse[0]?.embedding;
 
-                if (!embedding) {
-                    throw new Error(`Не удалось сгенерировать эмбеддинг для фрагмента №${chunk.metadata.chunk_number}`);
+                if (recordsToInsert.length > 0) {
+                    const { error: insertError } = await supabase
+                        .from('manual_knowledge')
+                        .insert(recordsToInsert);
+
+                    if (insertError) {
+                        totalFailed += recordsToInsert.length;
+                        recordsToInsert.forEach(record => {
+                            const { embedding, ...originalChunkData } = record;
+                            failedChunksDetails.push({
+                                chunk: originalChunkData as Omit<Chunk, 'text_content'>,
+                                error: `Ошибка пакетной вставки: ${insertError.message}`,
+                            });
+                        });
+                    } else {
+                        totalSuccess += recordsToInsert.length;
+                    }
                 }
 
-                const { error: insertError } = await supabase
-                    .from('manual_knowledge')
-                    .insert({
-                        content: chunk.content,
-                        metadata: chunk.metadata,
-                        embedding: embedding,
+                if (batchFailedChunks.length > 0) {
+                    totalFailed += batchFailedChunks.length;
+                    batchFailedChunks.forEach(({ chunk, error }) => {
+                        const { text_content, ...chunkForDetails } = chunk;
+                        const errorMessage = error.cause?.message || error.message || 'Неизвестная ошибка при обработке фрагмента.';
+                        failedChunksDetails.push({ chunk: chunkForDetails, error: errorMessage });
                     });
-
-                if (insertError) {
-                    throw new Error(`Ошибка при сохранении в базу данных: ${insertError.message}`);
                 }
-                
-                totalSuccess++;
 
-            } catch (chunkError: any) {
-                console.error(`[Embedding Failed] Chunk #${chunk.metadata.chunk_number} Error Details:`, JSON.stringify(chunkError, null, 2));
-                totalFailed++;
-                const { text_content, ...chunkForDetails } = chunk;
-                const errorMessage = chunkError.cause?.message || chunkError.message || 'Неизвестная ошибка при обработке фрагмента.';
-                failedChunksDetails.push({
-                    chunk: chunkForDetails,
-                    error: errorMessage,
+                 console.log(`[Batch End] Finished batch. Current totals - Success: ${totalSuccess}, Failed: ${totalFailed}`);
+
+            } catch (batchError: any) {
+                console.error(`[Batch Error] A critical error occurred in a batch:`, batchError);
+                const batchFailedCount = batch.length;
+                totalFailed += batchFailedCount;
+                batch.forEach(chunk => {
+                    const { text_content, ...chunkForDetails } = chunk;
+                    failedChunksDetails.push({ chunk: chunkForDetails, error: `Критическая ошибка в пакете: ${batchError.message}` });
                 });
             }
         }
@@ -280,6 +292,7 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
         };
 
     } catch (error: any) {
+        console.error(`Критическая ошибка при обработке файла ${file.name}:`, error);
         return {
             successfulCount: 0,
             failedCount: 0,
