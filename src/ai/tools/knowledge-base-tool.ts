@@ -3,6 +3,7 @@
  * @fileOverview A Genkit tool for searching the knowledge base.
  * This tool is now configurable via the `app_config` table in Supabase.
  * It now extracts both manufacturer and model for precise, filtered searches.
+ * If no information is found, it provides helpful external links, also configured in the database.
  */
 'use server';
 
@@ -18,12 +19,28 @@ async function getSearchConfig() {
     const { data, error } = await supabase
         .from('app_config')
         .select('key, value')
-        .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count', 'bot_prompt_extract_model']);
+        .in('key', [
+            'bot_kb_match_threshold', 
+            'bot_kb_match_count', 
+            'bot_prompt_extract_model',
+            'bot_kb_not_found_generic',
+            'bot_kb_not_found_specific',
+            'bot_kb_link_epson',
+            'bot_kb_link_canon',
+            'bot_kb_link_hp'
+        ]);
 
     if (error) {
         console.error("Error fetching knowledge base config:", error.message);
         // Return safe defaults if DB query fails
-        return { matchThreshold: 0.7, matchCount: 5, extractModelPrompt: '' };
+        return { 
+            matchThreshold: 0.7, 
+            matchCount: 5, 
+            extractModelPrompt: '',
+            notFoundGeneric: 'Не удалось найти информацию. Уточните производителя.',
+            notFoundSpecific: 'Не удалось найти информацию по {{manufacturer}}.',
+            links: {}
+        };
     }
 
     const config = data.reduce((acc, { key, value }) => {
@@ -33,12 +50,18 @@ async function getSearchConfig() {
     
     const matchThreshold = parseFloat(config.bot_kb_match_threshold || '0.7');
     const matchCount = parseInt(config.bot_kb_match_count || '5', 10);
-    const extractModelPrompt = config.bot_prompt_extract_model || '';
 
     return {
         matchThreshold: isNaN(matchThreshold) ? 0.7 : matchThreshold,
         matchCount: isNaN(matchCount) ? 5 : matchCount,
-        extractModelPrompt
+        extractModelPrompt: config.bot_prompt_extract_model || '',
+        notFoundGeneric: config.bot_kb_not_found_generic || 'К сожалению, я не нашел информации по вашему запросу. Попробуйте переформулировать его или указать производителя. Вот полезные ресурсы:\n{{links}}',
+        notFoundSpecific: config.bot_kb_not_found_specific || 'К сожалению, по вашему запросу для {{manufacturer}} ничего не найдено. Попробуйте поискать на официальном сайте: \n{{link}}',
+        links: {
+            epson: config.bot_kb_link_epson,
+            canon: config.bot_kb_link_canon,
+            hp: config.bot_kb_link_hp,
+        }
     };
 }
 
@@ -50,15 +73,16 @@ export const knowledgeBaseTool = ai.defineTool(
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
-        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating that no information was found.'),
+        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a helpful message with links if no information was found.'),
     },
     async ({ query }, context: any) => {
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
-        const { matchThreshold, matchCount, extractModelPrompt } = await getSearchConfig();
+        const { matchThreshold, matchCount, extractModelPrompt, notFoundGeneric, notFoundSpecific, links } = await getSearchConfig();
         
         let filterMetadata: Record<string, any> = {};
+        let extractedManufacturer: string | null = null;
 
         if (extractModelPrompt) {
             try {
@@ -67,15 +91,12 @@ export const knowledgeBaseTool = ai.defineTool(
                     prompt: extractModelPrompt.replace('{{query}}', query),
                 });
 
-                // Attempt to parse the JSON response from the model
-                let jsonString = modelExtractionLlmResponse.text.trim();
-                // Clean up potential markdown formatting
-                jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '');
-                
+                let jsonString = modelExtractionLlmResponse.text.trim().replace(/```json/g, '').replace(/```/g, '');
                 const extractedData = JSON.parse(jsonString);
 
                 if (extractedData.manufacturer) {
-                    filterMetadata.manufacturer = extractedData.manufacturer;
+                    extractedManufacturer = extractedData.manufacturer.toLowerCase();
+                    filterMetadata.manufacturer = extractedManufacturer;
                 }
                 if (extractedData.model) {
                     filterMetadata.device_models = [extractedData.model];
@@ -85,7 +106,6 @@ export const knowledgeBaseTool = ai.defineTool(
 
             } catch (e: any) {
                 console.error('Error parsing metadata extraction response:', e.message);
-                // Proceed without filter if extraction fails
             }
         }
 
@@ -106,15 +126,13 @@ export const knowledgeBaseTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
-        // Perform the RPC call to the match_manual_knowledge function
         const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
             query_embedding: embedding,
             match_threshold: matchThreshold,
             match_count: matchCount,
             filter_metadata: filterMetadata,
-            is_array_contains: true // New parameter to control jsonb operator
+            is_array_contains: true
         });
-
 
         if (error) {
             console.error('Ошибка при поиске в базе знаний:', error);
@@ -124,7 +142,19 @@ export const knowledgeBaseTool = ai.defineTool(
         if (!documents || documents.length === 0) {
             console.log(`Found 0 relevant documents.`);
             console.log(`============================================`);
-            return 'К сожалению, я не нашел информации по вашему запросу. Попробуйте переформулировать его или указать модель устройства.';
+
+            if (extractedManufacturer && links[extractedManufacturer as keyof typeof links]) {
+                const specificLink = `- ${extractedManufacturer.toUpperCase()}: ${links[extractedManufacturer as keyof typeof links]}`;
+                return notFoundSpecific
+                    .replace('{{manufacturer}}', extractedManufacturer)
+                    .replace('{{link}}', specificLink);
+            } else {
+                 const allLinks = Object.entries(links)
+                    .filter(([_, url]) => url)
+                    .map(([name, url]) => `- ${name.toUpperCase()}: ${url}`)
+                    .join('\n');
+                return notFoundGeneric.replace('{{links}}', allLinks);
+            }
         }
         
         console.log(`Found ${documents.length} relevant documents. (Logging details below)`);
