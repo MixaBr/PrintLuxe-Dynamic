@@ -96,9 +96,12 @@ export const knowledgeBaseTool = ai.defineTool(
 
                 if (extractedData.manufacturer) {
                     extractedManufacturer = extractedData.manufacturer.toLowerCase();
+                    // Important: The filter key must match the key in the metadata JSON.
+                    // Let's assume the key is `manufacturer`.
                     filterMetadata.manufacturer = extractedManufacturer;
                 }
                 if (extractedData.model) {
+                     // The key `device_models` is used here for filtering
                     filterMetadata.device_models = [extractedData.model];
                 }
 
@@ -108,8 +111,11 @@ export const knowledgeBaseTool = ai.defineTool(
                 console.error('Error parsing metadata extraction response:', e.message);
             }
         }
-
-        console.log(`Query is detailed enough. Proceeding with vector search.`);
+        
+        // This check is conceptually flawed. Even if we extract metadata, the query might still be broad.
+        // The decision to proceed to vector search should always be true if the tool is called.
+        // We will remove the "is_detailed" logic.
+        console.log(`Query is being processed. Proceeding with vector search.`);
         console.log(`Using search config: threshold=${matchThreshold}, count=${matchCount}`);
         console.log(`Using filter: ${JSON.stringify(filterMetadata)}`);
 
