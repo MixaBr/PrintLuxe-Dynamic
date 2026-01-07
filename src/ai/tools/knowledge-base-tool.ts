@@ -3,6 +3,7 @@
  * @fileOverview A Genkit tool for searching the knowledge base.
  * This tool is now configurable via the `app_config` table in Supabase.
  * It now extracts both manufacturer and model for precise, filtered searches.
+ * If no information is found, it provides helpful links to external resources.
  */
 'use server';
 
@@ -47,14 +48,15 @@ export const knowledgeBaseTool = ai.defineTool(
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
-        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base or a message indicating no relevant information was found.'),
+        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base or a helpful message with external links if no information was found.'),
     },
-    async ({ query }) => {
+    async ({ query }, context: any) => {
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
         const { matchThreshold, matchCount, extractModelPrompt } = await getSearchConfig();
         let filterMetadata: Record<string, any> = {};
+        let extractedManufacturer: string | null = null;
 
         if (extractModelPrompt) {
             try {
@@ -69,7 +71,8 @@ export const knowledgeBaseTool = ai.defineTool(
                 const extractedData = JSON.parse(jsonString);
 
                 if (extractedData.manufacturer) {
-                    filterMetadata.manufacturer = extractedData.manufacturer;
+                    extractedManufacturer = extractedData.manufacturer;
+                    filterMetadata.manufacturer = extractedManufacturer;
                 }
                 if (extractedData.model) {
                     filterMetadata.device_models = [extractedData.model];
@@ -100,7 +103,7 @@ export const knowledgeBaseTool = ai.defineTool(
             match_threshold: matchThreshold,
             match_count: matchCount,
             filter_metadata: filterMetadata,
-            is_array_contains: true // This new parameter tells the function to use the contains operator
+            is_array_contains: true 
         });
 
         if (error) {
@@ -111,7 +114,30 @@ export const knowledgeBaseTool = ai.defineTool(
         if (!documents || documents.length === 0) {
             console.log(`Found 0 relevant documents.`);
             console.log(`============================================`);
-            return 'В базе знаний не найдено релевантной информации по вашему вопросу.';
+            
+            const links = {
+                EPSON: 'https://EPSON.SN',
+                CANON: 'https://ij.manual.canon/ij/webmanual/WebPortal/PTL/ptl-top.html?lng=ru',
+                HP: 'https://support.hp.com/kz-ru'
+            };
+
+            let response = "К сожалению, я не нашел точной информации по вашему запросу в своей базе знаний. ";
+
+            if (extractedManufacturer) {
+                const upperMan = extractedManufacturer.toUpperCase();
+                if (upperMan in links) {
+                    response += `Однако, вы можете найти официальные руководства для ${extractedManufacturer} по ссылке: ${links[upperMan as keyof typeof links]}`;
+                } else {
+                    response += `Попробуйте поискать на официальном сайте производителя ${extractedManufacturer}.`;
+                }
+            } else {
+                 response += "Не могли бы вы уточнить производителя вашего устройства (например, Epson, Canon, HP)?\n\nВозможно, вы найдете ответ в официальных руководствах:\n"
+                + `  - Для EPSON: ${links.EPSON}\n`
+                + `  - Для CANON: ${links.CANON}\n`
+                + `  - Для HP: ${links.HP}`;
+            }
+
+            return response;
         }
         
         console.log(`Found ${documents.length} relevant documents. (Logging details below)`);
