@@ -3,7 +3,6 @@
  * @fileOverview A Genkit tool for searching the knowledge base.
  * This tool is now configurable via the `app_config` table in Supabase.
  * It now extracts both manufacturer and model for precise, filtered searches.
- * If no information is found, it provides helpful links to external resources.
  */
 'use server';
 
@@ -13,6 +12,7 @@ import { z } from 'zod';
 
 const MATCH_FUNCTION = 'match_manual_knowledge';
 
+// Helper to get search configuration from the database
 async function getSearchConfig() {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -22,6 +22,7 @@ async function getSearchConfig() {
 
     if (error) {
         console.error("Error fetching knowledge base config:", error.message);
+        // Return safe defaults if DB query fails
         return { matchThreshold: 0.7, matchCount: 5, extractModelPrompt: '' };
     }
 
@@ -41,6 +42,7 @@ async function getSearchConfig() {
     };
 }
 
+
 export const knowledgeBaseTool = ai.defineTool(
     {
         name: 'knowledgeBaseTool',
@@ -48,15 +50,15 @@ export const knowledgeBaseTool = ai.defineTool(
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
-        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base or a helpful message with external links if no information was found.'),
+        outputSchema: z.string().describe('A string containing the most relevant context from the knowledge base, or a message indicating that no information was found.'),
     },
     async ({ query }, context: any) => {
         console.log(`======== KNOWLEDGE BASE TOOL CALLED ========`);
         console.log(`Searching for: "${query}"`);
 
         const { matchThreshold, matchCount, extractModelPrompt } = await getSearchConfig();
+        
         let filterMetadata: Record<string, any> = {};
-        let extractedManufacturer: string | null = null;
 
         if (extractModelPrompt) {
             try {
@@ -65,14 +67,15 @@ export const knowledgeBaseTool = ai.defineTool(
                     prompt: extractModelPrompt.replace('{{query}}', query),
                 });
 
+                // Attempt to parse the JSON response from the model
                 let jsonString = modelExtractionLlmResponse.text.trim();
+                // Clean up potential markdown formatting
                 jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '');
                 
                 const extractedData = JSON.parse(jsonString);
 
                 if (extractedData.manufacturer) {
-                    extractedManufacturer = extractedData.manufacturer;
-                    filterMetadata.manufacturer = extractedManufacturer;
+                    filterMetadata.manufacturer = extractedData.manufacturer;
                 }
                 if (extractedData.model) {
                     filterMetadata.device_models = [extractedData.model];
@@ -82,6 +85,7 @@ export const knowledgeBaseTool = ai.defineTool(
 
             } catch (e: any) {
                 console.error('Error parsing metadata extraction response:', e.message);
+                // Proceed without filter if extraction fails
             }
         }
 
@@ -95,52 +99,39 @@ export const knowledgeBaseTool = ai.defineTool(
         });
 
         const embedding = embeddingResponse[0]?.embedding;
-        if (!embedding) return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';
+
+        if (!embedding) {
+            return 'Произошла ошибка при создании эмбеддинга для вашего запроса.';
+        }
 
         const supabase = createAdminClient();
+
+        // Perform the RPC call to the match_manual_knowledge function
         const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
             query_embedding: embedding,
             match_threshold: matchThreshold,
             match_count: matchCount,
             filter_metadata: filterMetadata,
-            is_array_contains: true 
+            is_array_contains: true // New parameter to control jsonb operator
         });
 
+
         if (error) {
-            console.error('Error searching knowledge base:', error);
+            console.error('Ошибка при поиске в базе знаний:', error);
             return 'Произошла ошибка при поиске в базе знаний.';
         }
 
         if (!documents || documents.length === 0) {
             console.log(`Found 0 relevant documents.`);
             console.log(`============================================`);
-            
-            const links = {
-                EPSON: 'https://EPSON.SN',
-                CANON: 'https://ij.manual.canon/ij/webmanual/WebPortal/PTL/ptl-top.html?lng=ru',
-                HP: 'https://support.hp.com/kz-ru'
-            };
-
-            let response = "К сожалению, я не нашел точной информации по вашему запросу в своей базе знаний. ";
-
-            if (extractedManufacturer) {
-                const upperMan = extractedManufacturer.toUpperCase();
-                if (upperMan in links) {
-                    response += `Однако, вы можете найти официальные руководства для ${extractedManufacturer} по ссылке: ${links[upperMan as keyof typeof links]}`;
-                } else {
-                    response += `Попробуйте поискать на официальном сайте производителя ${extractedManufacturer}.`;
-                }
-            } else {
-                 response += "Не могли бы вы уточнить производителя вашего устройства (например, Epson, Canon, HP)?\n\nВозможно, вы найдете ответ в официальных руководствах:\n"
-                + `  - Для EPSON: ${links.EPSON}\n`
-                + `  - Для CANON: ${links.CANON}\n`
-                + `  - Для HP: ${links.HP}`;
-            }
-
-            return response;
+            return 'К сожалению, я не нашел информации по вашему запросу. Попробуйте переформулировать его или указать модель устройства.';
         }
         
         console.log(`Found ${documents.length} relevant documents. (Logging details below)`);
+        documents.forEach((doc: any, index: number) => {
+            console.log(`  [Doc ${index + 1}] Similarity: ${doc.similarity}, Filename: ${doc.metadata?.source_filename || 'N/A'}`);
+        });
+
         const contextText = documents
             .map((doc: any) => `- Источник: ${doc.metadata?.source_filename || 'Неизвестно'} (Производитель: ${doc.metadata?.manufacturer || 'N/A'}, Модели: ${doc.metadata?.device_models?.join(', ') || 'N/A'})\n  Содержание: ${doc.content}`)
             .join('\n\n');
