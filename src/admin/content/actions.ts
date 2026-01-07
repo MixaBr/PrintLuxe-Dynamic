@@ -312,5 +312,3 @@ export async function processAndEmbedFile(prevState: ActionResult, formData: For
         };
     }
 }
-
-    
