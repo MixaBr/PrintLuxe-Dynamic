@@ -19,7 +19,6 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  // ИСПРАВЛЕНИЕ: Используем правильный, серверный клиент, который не кеширует данные при 'force-dynamic'
   const supabase = createClient();
   const { data, error } = await supabase
     .from('documents')
@@ -28,8 +27,6 @@ async function getDocumentBySlug(slug: string) {
     .single();
 
   if (error) {
-    // RLS скроет документ, если он не опубликован, поэтому ошибка - это нормально
-    // Логируем только если это не стандартная ошибка "row not found"
     if (error.code !== 'PGRST116') {
         console.error(`Error fetching document for slug "${slug}":`, error);
     }
@@ -53,7 +50,6 @@ export async function generateMetadata({ params }: LegalDocPageProps): Promise<M
   }
 }
 
-// Эта функция запускается во время сборки, поэтому ей нужен простой клиент
 export async function generateStaticParams() {
   const { data: documents } = await simpleSupabaseClient
     .from('documents')
@@ -72,11 +68,8 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
     notFound();
   }
   
-  // Pre-process the content to fix formatting issues from single-line text.
   let processedContent = doc.content || '';
-  // Add newlines before headers (##) to ensure they are parsed correctly.
   processedContent = processedContent.replace(/\s*(##\s)/g, '\n\n$1');
-  // Add newlines before numbered sections (e.g., 1.1., 1.2.)
   processedContent = processedContent.replace(/\s*(\d+\.\d+\.)/g, '\n\n$1');
 
   const contentHtml = await marked.parse(processedContent);
@@ -111,7 +104,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none whitespace-pre-wrap"
+                    className="prose prose-invert max-w-none whitespace-pre-wrap prose-p:my-4"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
