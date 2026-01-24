@@ -29,12 +29,16 @@ export default function LegalDocActions({ docTitle, docContent }: LegalDocAction
     URL.revokeObjectURL(url);
   };
 
+  const showDownloadButton = docTitle.toLowerCase().includes('договор');
+
   return (
     <div className="flex items-center gap-2">
-      <Button onClick={handleDownload}>
-        <Download className="mr-2 h-4 w-4" />
-        Скачать договор
-      </Button>
+      {showDownloadButton && (
+        <Button onClick={handleDownload}>
+          <Download className="mr-2 h-4 w-4" />
+          Скачать договор
+        </Button>
+      )}
       <Button asChild variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10 hover:text-white">
         <Link href="/legal">
           <ArrowLeft className="mr-2 h-4 w-4" />
