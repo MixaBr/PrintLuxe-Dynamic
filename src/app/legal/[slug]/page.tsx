@@ -19,13 +19,17 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  const { data, error } = await simpleSupabaseClient
+  // ИСПРАВЛЕНИЕ: Используем правильный, серверный клиент, который не кеширует данные при 'force-dynamic'
+  const supabase = createClient();
+  const { data, error } = await supabase
     .from('documents')
     .select('title, content, published_at, updated_at')
     .eq('slug', slug)
     .single();
 
   if (error) {
+    // RLS скроет документ, если он не опубликован, поэтому ошибка - это нормально
+    // Логируем только если это не стандартная ошибка "row not found"
     if (error.code !== 'PGRST116') {
         console.error(`Error fetching document for slug "${slug}":`, error);
     }
@@ -49,6 +53,7 @@ export async function generateMetadata({ params }: LegalDocPageProps): Promise<M
   }
 }
 
+// Эта функция запускается во время сборки, поэтому ей нужен простой клиент
 export async function generateStaticParams() {
   const { data: documents } = await simpleSupabaseClient
     .from('documents')
