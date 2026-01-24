@@ -1,5 +1,4 @@
 
-import { createClient } from '@/lib/supabase/server';
 import { supabase } from '@/lib/supabaseClient';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
@@ -16,9 +15,7 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  const supabase = createClient();
   // RLS (Row Level Security) handles filtering for published documents.
-  // The .eq('status', 'published') is no longer needed here.
   const { data, error } = await supabase
     .from('documents')
     .select('title, content, published_at, updated_at')
@@ -100,7 +97,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none text-white/90 prose-headings:text-white prose-strong:text-white"
+                    className="prose prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
