@@ -7,7 +7,6 @@ import Link from 'next/link';
 async function getLegalDocs() {
     const supabase = createClient();
     // RLS (Row Level Security) handles filtering for published documents.
-    // The .eq('status', 'published') is no longer needed here.
     const { data, error } = await supabase
         .from('documents')
         .select('title, slug, excerpt')
@@ -26,7 +25,7 @@ export default async function LegalInfoPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 md:px-8 h-full flex items-center justify-center">
-            <Card className="w-full max-w-2xl bg-black/50 backdrop-blur-sm border-white/20 text-white">
+            <Card className="w-full max-w-4xl bg-black/50 backdrop-blur-sm border-white/20 text-white">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <List className="h-8 w-8 text-white" />

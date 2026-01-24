@@ -95,7 +95,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 md:px-8">
-        <Card className="w-full max-w-4xl mx-auto bg-black/50 backdrop-blur-sm border-white/20 text-white">
+        <Card className="w-full max-w-6xl mx-auto bg-black/50 backdrop-blur-sm border-white/20 text-white">
             <CardHeader>
                 <div className="flex items-start gap-4">
                     <FileText className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
@@ -111,7 +111,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none"
+                    className="prose prose-invert max-w-none whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
