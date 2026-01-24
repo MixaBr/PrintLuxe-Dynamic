@@ -3,13 +3,14 @@ import { createClient as createClientSSR } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, ArrowLeft } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Metadata } from 'next';
 import { supabase as simpleSupabaseClient } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import LegalDocActions from '@/components/legal/LegalDocActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,12 +105,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
                             </div>
                         </div>
                     </div>
-                    <Button asChild variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10 hover:text-white">
-                        <Link href="/legal">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Вернуться
-                        </Link>
-                    </Button>
+                    <LegalDocActions docTitle={doc.title} docContent={doc.content || ''} />
                 </div>
             </CardHeader>
             <CardContent>
