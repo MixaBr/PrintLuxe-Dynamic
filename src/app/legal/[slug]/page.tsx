@@ -1,5 +1,5 @@
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createClientSSR } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  const supabase = createClient();
+  const supabase = createClientSSR();
   const { data, error } = await supabase
     .from('documents')
     .select('title, content, published_at, updated_at')
@@ -104,7 +104,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none whitespace-pre-wrap prose-p:my-4"
+                    className="prose prose-invert max-w-none whitespace-pre-wrap prose-p:my-2"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
