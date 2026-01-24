@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Metadata } from 'next';
+import { supabase as simpleSupabaseClient } from '@/lib/supabaseClient';
+
 
 interface LegalDocPageProps {
   params: {
@@ -15,8 +17,7 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  // RLS (Row Level Security) handles filtering for published documents.
-  const { data, error } = await supabase
+  const { data, error } = await createClient()
     .from('documents')
     .select('title, content, published_at, updated_at')
     .eq('slug', slug)
@@ -47,8 +48,7 @@ export async function generateMetadata({ params }: LegalDocPageProps): Promise<M
 }
 
 export async function generateStaticParams() {
-  // Используем простой клиент, который не зависит от cookie, для генерации страниц во время сборки
-  const { data: documents } = await supabase
+  const { data: documents } = await simpleSupabaseClient
     .from('documents')
     .select('slug')
     .eq('category', 'legal');
@@ -97,7 +97,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none"
+                    className="prose prose-invert max-w-none whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
