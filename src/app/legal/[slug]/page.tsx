@@ -9,6 +9,8 @@ import { ru } from 'date-fns/locale';
 import type { Metadata } from 'next';
 import { supabase as simpleSupabaseClient } from '@/lib/supabaseClient';
 
+export const dynamic = 'force-dynamic';
+
 
 interface LegalDocPageProps {
   params: {
