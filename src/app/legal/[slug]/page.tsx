@@ -16,11 +16,12 @@ interface LegalDocPageProps {
 
 async function getDocumentBySlug(slug: string) {
   const supabase = createClient();
+  // RLS (Row Level Security) handles filtering for published documents.
+  // The .eq('status', 'published') is no longer needed here.
   const { data, error } = await supabase
     .from('documents')
     .select('title, content, published_at, updated_at')
     .eq('slug', slug)
-    .eq('status', 'published') // Only fetch published documents
     .single();
 
   if (error) {
@@ -69,13 +70,17 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
 
   const contentHtml = await marked.parse(doc.content || '');
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+      if (!dateString) return null;
       try {
         return format(new Date(dateString), 'd MMMM yyyy', { locale: ru });
       } catch {
         return 'Неверная дата';
       }
   }
+
+  const publicationDate = formatDate(doc.published_at);
+  const updateDate = formatDate(doc.updated_at);
 
   return (
     <div className="container mx-auto px-4 py-8 md:px-8">
@@ -86,9 +91,9 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
                     <div>
                         <CardTitle className="font-headline text-3xl text-white">{doc.title}</CardTitle>
                         <div className="text-xs text-white/50 mt-2">
-                            {doc.published_at && <span>Опубликовано: {formatDate(doc.published_at)}</span>}
-                            {doc.updated_at && doc.published_at && <span className="mx-2">|</span>}
-                            {doc.updated_at && <span>Последнее обновление: {formatDate(doc.updated_at)}</span>}
+                            {publicationDate && <span>Опубликовано: {publicationDate}</span>}
+                            {updateDate && publicationDate && <span className="mx-2">|</span>}
+                            {updateDate && <span>Последнее обновление: {updateDate}</span>}
                         </div>
                     </div>
                 </div>

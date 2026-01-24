@@ -6,11 +6,12 @@ import Link from 'next/link';
 
 async function getLegalDocs() {
     const supabase = createClient();
+    // RLS (Row Level Security) handles filtering for published documents.
+    // The .eq('status', 'published') is no longer needed here.
     const { data, error } = await supabase
         .from('documents')
         .select('title, slug, excerpt')
         .eq('category', 'legal')
-        .eq('status', 'published')
         .order('published_at', { ascending: true });
 
     if (error) {
