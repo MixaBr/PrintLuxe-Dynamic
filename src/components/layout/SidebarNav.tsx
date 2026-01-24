@@ -14,7 +14,7 @@ const navLinks: NavLinkItem[] = [
     { href: '/catalog', label: 'Каталог' },
     { href: '/about', label: 'О нас' },
     { href: '/contact', label: 'Контакты' },
-    { href: '/user-info', label: 'Информация для пользователя' },
+    { href: '/legal', label: 'Юридическая информация' },
 ];
 
 interface SidebarNavProps {
@@ -33,8 +33,8 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
                     onClick={onLinkClick}
                 >
                     <Link href={link.href}>
-                         {link.href === '/user-info' ? (
-                            <div className="text-left leading-tight">Информация<br/>для пользователя</div>
+                         {link.href === '/legal' ? (
+                            <div className="text-left leading-tight">Юридическая<br/>информация</div>
                         ) : (
                             link.label
                         )}

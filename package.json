@@ -68,6 +68,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.13",
     "@types/cheerio": "^0.22.35",
     "@types/google.maps": "^3.58.1",
     "@types/grecaptcha": "^3.0.9",
