@@ -17,7 +17,7 @@ interface LegalDocPageProps {
 }
 
 async function getDocumentBySlug(slug: string) {
-  const { data, error } = await createClient()
+  const { data, error } = await simpleSupabaseClient
     .from('documents')
     .select('title, content, published_at, updated_at')
     .eq('slug', slug)
@@ -64,8 +64,15 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
   if (!doc) {
     notFound();
   }
+  
+  // Pre-process the content to fix formatting issues from single-line text.
+  let processedContent = doc.content || '';
+  // Add newlines before headers (##) to ensure they are parsed correctly.
+  processedContent = processedContent.replace(/\s*(##\s)/g, '\n\n$1');
+  // Add newlines before numbered sections (e.g., 1.1., 1.2.)
+  processedContent = processedContent.replace(/\s*(\d+\.\d+\.)/g, '\n\n$1');
 
-  const contentHtml = await marked.parse(doc.content || '');
+  const contentHtml = await marked.parse(processedContent);
 
   const formatDate = (dateString: string | null) => {
       if (!dateString) return null;
@@ -97,7 +104,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none whitespace-pre-wrap"
+                    className="prose prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
