@@ -3,11 +3,13 @@ import { createClient as createClientSSR } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText } from 'lucide-react';
+import { FileText, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Metadata } from 'next';
 import { supabase as simpleSupabaseClient } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,16 +92,24 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
     <div className="container mx-auto px-4 py-8 md:px-8">
         <Card className="w-full max-w-6xl mx-auto bg-black/50 backdrop-blur-sm border-white/20 text-white">
             <CardHeader>
-                <div className="flex items-start gap-4">
-                    <FileText className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
-                    <div>
-                        <CardTitle className="font-headline text-3xl text-white">{doc.title}</CardTitle>
-                        <div className="text-xs text-white/50 mt-2">
-                            {publicationDate && <span>Опубликовано: {publicationDate}</span>}
-                            {updateDate && publicationDate && <span className="mx-2">|</span>}
-                            {updateDate && <span>Последнее обновление: {updateDate}</span>}
+                <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-4">
+                        <FileText className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
+                        <div>
+                            <CardTitle className="font-headline text-3xl text-white">{doc.title}</CardTitle>
+                            <div className="text-xs text-white/50 mt-2">
+                                {publicationDate && <span>Опубликовано: {publicationDate}</span>}
+                                {updateDate && publicationDate && <span className="mx-2">|</span>}
+                                {updateDate && <span>Последнее обновление: {updateDate}</span>}
+                            </div>
                         </div>
                     </div>
+                    <Button asChild variant="outline" className="bg-transparent border-white/50 text-white hover:bg-white/10 hover:text-white">
+                        <Link href="/legal">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Вернуться
+                        </Link>
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
