@@ -15,6 +15,7 @@ const navLinks: NavLinkItem[] = [
     { href: '/about', label: 'О нас' },
     { href: '/contact', label: 'Контакты' },
     { href: '/legal', label: 'Юридическая информация' },
+    { href: '/user-info', label: 'Информация для пользователя' },
 ];
 
 interface SidebarNavProps {
