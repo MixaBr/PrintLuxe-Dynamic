@@ -104,7 +104,7 @@ export default async function LegalDocPage({ params }: LegalDocPageProps) {
             </CardHeader>
             <CardContent>
                 <div
-                    className="prose prose-invert max-w-none whitespace-pre-wrap prose-p:my-2"
+                    className="prose prose-invert max-w-none whitespace-pre-wrap prose-p:my-1"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
             </CardContent>
