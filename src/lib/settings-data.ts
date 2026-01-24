@@ -1,5 +1,6 @@
 
 import { createClient } from './supabase/server';
+import { supabase as simpleSupabaseClient } from './supabaseClient';
 
 /**
  * Fetches the most recent 'updated_at' timestamp from the 'settings' table
@@ -10,8 +11,8 @@ import { createClient } from './supabase/server';
  * @returns A Date object of the last modification, or the current date as a fallback.
  */
 export async function getPageLastModified(keyPrefix: string): Promise<Date> {
-  const supabase = createClient();
-  const { data, error } = await supabase
+  // Используем простой клиент для генерации sitemap во время сборки
+  const { data, error } = await simpleSupabaseClient
     .from('settings')
     .select('updated_at')
     .like('key', `${keyPrefix}%`)

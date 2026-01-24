@@ -1,5 +1,6 @@
 
 import { createClient } from '@/lib/supabase/server';
+import { supabase } from '@/lib/supabaseClient';
 import { notFound } from 'next/navigation';
 import { marked } from 'marked';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,11 +50,10 @@ export async function generateMetadata({ params }: LegalDocPageProps): Promise<M
 }
 
 export async function generateStaticParams() {
-  const supabase = createClient();
+  // Используем простой клиент, который не зависит от cookie, для генерации страниц во время сборки
   const { data: documents } = await supabase
     .from('documents')
     .select('slug')
-    .eq('status', 'published')
     .eq('category', 'legal');
  
   return documents?.map((doc) => ({
