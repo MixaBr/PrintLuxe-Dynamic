@@ -24,6 +24,7 @@ interface Chunk {
         chunk_number: number;
         manufacturer?: string;
         device_models?: string[];
+        category?: string;
     }
 }
 
@@ -297,6 +298,160 @@ export async function processAndEmbedFile(formData: FormData): Promise<ActionRes
             successfulCount: 0,
             failedCount: 0,
             message: `Критическая ошибка при обработке файла ${file.name}: ${error.message}`
+        };
+    }
+}
+
+
+export async function indexDocumentsFromDb(): Promise<ActionResult> {
+    console.log('[DB Indexer] Starting indexing process from the "documents" table.');
+    const supabase = createAdminClient();
+
+    try {
+        // 1. Fetch all documents
+        const { data: documents, error: fetchError } = await supabase
+            .from('documents')
+            .select('title, content, slug, category');
+
+        if (fetchError) {
+            throw new Error(`Ошибка загрузки документов из БД: ${fetchError.message}`);
+        }
+
+        if (!documents || documents.length === 0) {
+            return { successfulCount: 0, failedCount: 0, message: 'Документы в базе данных не найдены для индексации.' };
+        }
+        
+        console.log(`[DB Indexer] Found ${documents.length} documents to process.`);
+
+        // 2. Clear old entries from manual_knowledge for these documents
+        const slugs = documents.map(d => d.slug).filter(Boolean) as string[];
+        if (slugs.length > 0) {
+            console.log(`[DB Indexer] Clearing old knowledge base entries for ${slugs.length} slugs.`);
+            const { error: deleteError } = await supabase
+                .from('manual_knowledge')
+                .delete()
+                .in('metadata->>source_filename', slugs);
+
+            if (deleteError) {
+                console.warn(`[DB Indexer] Warning: Could not clear old entries. This may result in duplicates. Error: ${deleteError.message}`);
+            }
+        }
+        
+        let allChunks: Chunk[] = [];
+        // 3. Create chunks for all documents
+        for (const doc of documents) {
+            if (!doc.content || !doc.slug) continue;
+            
+            const baseMetadata: BaseMetadata = {
+                source_filename: doc.slug,
+                category: doc.category || undefined,
+            };
+            
+            const docChunks = recursiveSplitText(doc.content, doc.slug, baseMetadata);
+            allChunks.push(...docChunks);
+        }
+        
+        if (allChunks.length === 0) {
+            return { successfulCount: 0, failedCount: 0, message: 'Не удалось создать фрагменты из документов в базе данных.' };
+        }
+        
+        console.log(`[DB Indexer] Total chunks to process: ${allChunks.length}.`);
+
+        // 4. Batch process all chunks
+        let totalSuccess = 0;
+        let totalFailed = 0;
+        const failedChunksDetails: ActionResult['details'] = [];
+        
+        for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
+            const batch = allChunks.slice(i, i + BATCH_SIZE);
+            console.log(`[DB Indexer] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(allChunks.length / BATCH_SIZE)}`);
+            
+            try {
+                const embeddingPromises = batch.map(chunk => 
+                    ai.embed({
+                        embedder: textEmbeddingGecko,
+                        content: chunk.text_content,
+                    }).catch(e => ({ error: e, chunk }))
+                );
+                
+                const embeddingResults = await Promise.all(embeddingPromises);
+                
+                const recordsToInsert: any[] = [];
+                const batchFailedChunks: { chunk: Chunk, error: any }[] = [];
+
+                embeddingResults.forEach((result: any, index) => {
+                    const chunk = batch[index];
+                    if (typeof result === 'object' && result !== null && 'error' in result) {
+                        batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
+                    } else if (Array.isArray(result) && result[0]?.embedding) {
+                        recordsToInsert.push({
+                            content: chunk.content,
+                            metadata: chunk.metadata,
+                            embedding: result[0].embedding,
+                        });
+                    } else {
+                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
+                    }
+                });
+
+                if (recordsToInsert.length > 0) {
+                    const { error: insertError } = await supabase
+                        .from('manual_knowledge')
+                        .insert(recordsToInsert);
+
+                    if (insertError) {
+                        totalFailed += recordsToInsert.length;
+                        recordsToInsert.forEach(record => {
+                            const { embedding, ...originalChunkData } = record;
+                            failedChunksDetails.push({
+                                chunk: originalChunkData as Omit<Chunk, 'text_content'>,
+                                error: `Ошибка пакетной вставки: ${insertError.message}`,
+                            });
+                        });
+                    } else {
+                        totalSuccess += recordsToInsert.length;
+                    }
+                }
+
+                if (batchFailedChunks.length > 0) {
+                    totalFailed += batchFailedChunks.length;
+                    batchFailedChunks.forEach(({ chunk, error }) => {
+                        const { text_content, ...chunkForDetails } = chunk;
+                        const errorMessage = error.cause?.message || error.message || 'Неизвестная ошибка.';
+                        failedChunksDetails.push({ chunk: chunkForDetails, error: errorMessage });
+                    });
+                }
+            } catch (batchError: any) {
+                 const batchFailedCount = batch.length;
+                totalFailed += batchFailedCount;
+                batch.forEach(chunk => {
+                    const { text_content, ...chunkForDetails } = chunk;
+                    failedChunksDetails.push({ chunk: chunkForDetails, error: `Критическая ошибка в пакете: ${batchError.message}` });
+                });
+            }
+        } 
+
+        revalidatePath('/admin/content');
+
+        let message: string;
+        if (totalFailed === 0) {
+            message = `Успешно проиндексировано ${totalSuccess} фрагментов из ${documents.length} документов.`;
+        } else {
+            message = `Индексация завершена. Успешно: ${totalSuccess}, Ошибки: ${totalFailed}.`;
+        }
+
+        return {
+            successfulCount: totalSuccess,
+            failedCount: totalFailed,
+            message: message,
+            details: failedChunksDetails
+        };
+    } catch (error: any) {
+        console.error('[DB Indexer] Critical error:', error);
+        return {
+            successfulCount: 0,
+            failedCount: 0,
+            message: `Критическая ошибка при индексации: ${error.message}`
         };
     }
 }

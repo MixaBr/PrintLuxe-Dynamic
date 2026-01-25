@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { KnowledgeBaseUploader } from "@/components/admin/KnowledgeBaseUploader"
+import { DatabaseIndexer } from "@/components/admin/DatabaseIndexer"
 
 export default function AdminContentPage() {
     const menuItems = [
@@ -30,11 +31,21 @@ export default function AdminContentPage() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>База знаний</CardTitle>
-                    <CardDescription>Загрузка и управление документами (PDF) для AI-ассистента.</CardDescription>
+                    <CardTitle>База знаний из Файлов</CardTitle>
+                    <CardDescription>Загрузка и управление документами (PDF, HTML) для AI-ассистента.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <KnowledgeBaseUploader />
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle>База знаний из Базы Данных</CardTitle>
+                    <CardDescription>Индексация контента из таблицы `documents`.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <DatabaseIndexer />
                 </CardContent>
             </Card>
 
