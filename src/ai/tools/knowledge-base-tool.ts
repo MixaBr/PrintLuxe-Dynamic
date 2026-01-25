@@ -17,7 +17,7 @@ const MATCH_COUNT = 5;       // Return top 5 most relevant chunks.
 export const knowledgeBaseTool = ai.defineTool(
     {
         name: 'knowledgeBaseTool',
-        description: 'Crucially, use this tool for any questions related to legal information ("юридическая информация"), terms of service, return policies, or any other official company documents. It is also used for technical questions about product specifications, troubleshooting, repairs, and user manuals. The tool searches the internal knowledge base for the most relevant information to answer the user\'s query.',
+        description: 'Searches the internal knowledge base for technical information about product specifications, troubleshooting, and repairs. Use this for specific technical questions about devices.',
         inputSchema: z.object({
             query: z.string().describe('The user question to search for in the knowledge base.'),
         }),
