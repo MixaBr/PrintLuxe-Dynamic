@@ -20,19 +20,66 @@ function render({ template, context }: { template: string; context: Record<strin
     });
 }
 
+
 async function sendTelegramMessage(chatId: number, text: string) {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    // First attempt: Send with HTML formatting
+    try {
+        console.log(`--- [DEBUG] Attempting to send message with HTML formatting to chatId: ${chatId}`);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text,
+                parse_mode: 'HTML'
+            }),
+        });
+
+        const result = await response.json();
+        if (!result.ok) {
+            // This is the trigger for the fallback
+            throw new Error(`Telegram API error: ${result.description}`);
+        }
+
+        console.log(`--- [DEBUG] Successfully sent message with HTML formatting to chatId: ${chatId}`);
+        return; // Success, exit the function
+
+    } catch (error) {
+        console.warn('--- [WARN] Failed to send message with HTML formatting. Error:', error instanceof Error ? error.message : String(error));
+        console.log('--- [LOG] Retrying without formatting... ---');
+
+        // Second attempt (fallback): Send as plain text
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text
+                }),
+            });
+            console.log(`--- [DEBUG] Successfully sent message as plain text fallback to chatId: ${chatId}`);
+        } catch (fallbackError) {
+            console.error('--- [CRITICAL ERROR] Failed to send Telegram message even as plain text fallback:', fallbackError);
+        }
+    }
+}
+
+async function sendTelegramChatAction(chatId: number, action: string = 'typing') {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const url = `https://api.telegram.org/bot${botToken}/sendChatAction`;
   try {
-    console.log(`--- [DEBUG] Preparing to send message to chatId: ${chatId}`);
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify({ chat_id: chatId, action: action }),
     });
-    console.log(`--- [DEBUG] Successfully sent message to chatId: ${chatId}`);
   } catch (error) {
-    console.error('--- [CRITICAL ERROR] Failed to send Telegram message:', error);
+    // We don't need to throw an error here, as this is a non-critical UX feature
+    console.warn('--- [WARN] Failed to send chat action:', error);
   }
 }
 
@@ -69,6 +116,9 @@ export async function POST(req: Request) {
     const chatId = message.chat.id;
     const query = message.text;
     console.log(`--- [LOG] Received message from chatId: ${chatId}, query: "${query}" ---`);
+
+    // Send "typing..." action to Telegram immediately
+    await sendTelegramChatAction(chatId);
 
     const supabase = createAdminClient();
 

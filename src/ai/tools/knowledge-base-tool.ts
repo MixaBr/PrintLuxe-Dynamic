@@ -11,8 +11,6 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { z } from 'zod';
 
 const MATCH_FUNCTION = 'match_manual_knowledge';
-const MATCH_THRESHOLD = 0.75; // A reasonable default threshold for similarity.
-const MATCH_COUNT = 5;       // Return top 5 most relevant chunks.
 
 export const knowledgeBaseTool = ai.defineTool(
     {
@@ -40,23 +38,62 @@ export const knowledgeBaseTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
-        // Perform a generic search across all documents without filtering by metadata.
-        const { data: documents, error } = await supabase.rpc(MATCH_FUNCTION, {
-            query_embedding: embedding,
-            match_threshold: MATCH_THRESHOLD,
-            match_count: MATCH_COUNT,
-            filter_metadata: {}, // Empty filter searches all documents
-        });
+        // Get search settings from the app_config table
+        let matchThreshold = 0.75; // Default fallback value
+        let matchCount = 5;       // Default fallback value
+
+        const { data: settings, error: settingsError } = await supabase
+            .from('app_config')
+            .select('key, value')
+            .in('key', ['bot_kb_match_threshold', 'bot_kb_match_count']);
+
+        if (settingsError) {
+            console.error('Error fetching search settings from app_config:', settingsError);
+            // Continue with default settings in case of an error
+        } else if (settings) {
+            const thresholdSetting = settings.find(s => s.key === 'bot_kb_match_threshold');
+            const countSetting = settings.find(s => s.key === 'bot_kb_match_count');
+
+            if (thresholdSetting && !isNaN(parseFloat(thresholdSetting.value))) {
+                matchThreshold = parseFloat(thresholdSetting.value);
+            }
+            if (countSetting && !isNaN(parseInt(countSetting.value, 10))) {
+                matchCount = parseInt(countSetting.value, 10);
+            }
+        }
+        
+        console.log(`Using search params: threshold=${matchThreshold}, count=${matchCount}`);
+
+        // Define the search function to avoid code duplication
+        const doSearch = async () => {
+            return await supabase.rpc(MATCH_FUNCTION, {
+                query_embedding: embedding,
+                match_threshold: matchThreshold,
+                match_count: matchCount,
+                filter_metadata: {},
+            });
+        };
+
+        let { data: documents, error } = await doSearch();
+
+        // If the first attempt fails, wait 1 second and try again
+        if (error) {
+            console.warn('Initial knowledge base search failed. Retrying in 1 second...', error);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const retryResult = await doSearch();
+            documents = retryResult.data;
+            error = retryResult.error;
+        }
 
         if (error) {
-            console.error('Ошибка при поиске в базе знаний:', error);
-            return 'Произошла ошибка при поиске в базе знаний.';
+            console.error('Knowledge base search failed after retry:', error);
+            return 'К сожалению, в данный момент база знаний недоступна. Пожалуйста, повторите ваш запрос немного позже.';
         }
 
         if (!documents || documents.length === 0) {
             console.log(`Found 0 relevant documents.`);
             console.log(`============================================`);
-            // Generic "not found" message is more appropriate now.
             return 'К сожалению, я не нашел точной информации по вашему запросу во внутренней базе знаний. Попробуйте переформулировать вопрос.';
         }
         
@@ -65,7 +102,6 @@ export const knowledgeBaseTool = ai.defineTool(
             console.log(`  [Doc ${index + 1}] Similarity: ${doc.similarity}, Source: ${doc.metadata?.source_filename || 'N/A'}`);
         });
 
-        // Simplified context string, as we no longer have specific metadata like manufacturer.
         const contextText = documents
             .map((doc: any) => `Источник: ${doc.metadata?.source_filename || 'Неизвестно'}\nСодержание: ${doc.content}`)
             .join('\n\n---\n\n');
