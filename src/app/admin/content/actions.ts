@@ -2,7 +2,7 @@
 /**
  * @fileOverview Server actions for the content management page.
  * Implements a robust, batch-oriented processing pipeline for PDF and HTML files.
- * Now includes logic to extract the manufacturer and multiple device models from filenames.
+ * Now includes a unified logic to extract category, manufacturer, and models from filenames/slugs.
  */
 'use server';
 
@@ -22,13 +22,12 @@ interface Chunk {
     metadata: {
         source_filename: string;
         chunk_number: number;
+        category?: string;
         manufacturer?: string;
         device_models?: string[];
-        category?: string;
     }
 }
 
-// Defines the base metadata structure before chunk-specific details are added.
 type BaseMetadata = Omit<Chunk['metadata'], 'chunk_number'>;
 
 export interface ActionResult {
@@ -38,21 +37,49 @@ export interface ActionResult {
     details?: { chunk: Omit<Chunk, 'text_content'>, error: string }[];
 }
 
-function extractMetadataFromFilename(filename: string): { manufacturer?: string; models?: string[] } {
-    const nameWithoutExt = filename.split('.').slice(0, -1).join('.');
-    const parts = nameWithoutExt.split('_').filter(p => p.toLowerCase() !== 'manual' && p.toLowerCase() !== 'series');
-    
+/**
+ * Extracts category, manufacturer, and models from a structured filename or slug.
+ * Expected format for technical docs: <category>_<manufacturer>_<model1>_<model2>...
+ * Expected format for legal docs: <category>_<description>
+ * @param identifier The filename or slug (e.g., "technical_Epson_L3150.pdf" or "legal_warranty-policy")
+ */
+function extractMetadataFromFilename(identifier: string): { category?: string; manufacturer?: string; models?: string[] } {
+    const nameWithoutExt = identifier.includes('.') ? identifier.split('.').slice(0, -1).join('.') : identifier;
+    const parts = nameWithoutExt.split('_');
+
     if (parts.length === 0) {
         return {};
     }
 
-    const manufacturer = parts[0]; 
-    const models = parts.slice(1).filter(part => /\d/.test(part));
-    
-    return {
-        manufacturer: manufacturer,
-        models: models.length > 0 ? models : undefined,
-    };
+    const category = parts[0].toLowerCase();
+
+    // The category must be one of the known types for the filter to work.
+    if (category !== 'technical' && category !== 'legal') {
+        console.warn(`[Metadata] Identifier "${identifier}" does not start with a valid category ('technical' or 'legal').`);
+        return {};
+    }
+
+    if (category === 'technical') {
+        if (parts.length < 2) {
+            console.warn(`[Metadata] Technical identifier "${identifier}" is missing manufacturer part.`);
+            return { category };
+        }
+        const manufacturer = parts[1];
+        const models = parts.slice(2);
+        
+        return {
+            category,
+            manufacturer,
+            models: models.length > 0 ? models : undefined,
+        };
+    }
+
+    // For 'legal' documents, we only care about the category.
+    if (category === 'legal') {
+        return { category };
+    }
+
+    return {};
 }
 
 function recursiveSplitText(text: string, filename: string, metadata: BaseMetadata, chunkNumber: number = 1): Chunk[] {
@@ -166,11 +193,12 @@ export async function processAndEmbedFile(formData: FormData): Promise<ActionRes
     }
 
     try {
-        const { manufacturer, models } = extractMetadataFromFilename(file.name);
-        console.log(`[File Info] Extracted Manufacturer: ${manufacturer || 'N/A'}, Models: ${models?.join(', ') || 'N/A'}`);
+        const { category, manufacturer, models } = extractMetadataFromFilename(file.name);
+        console.log(`[File Info] Extracted Category: ${category || 'N/A'}, Manufacturer: ${manufacturer || 'N/A'}, Models: ${models?.join(', ') || 'N/A'}`);
         
         const baseMetadata: BaseMetadata = {
             source_filename: file.name,
+            category: category,
             manufacturer: manufacturer,
             device_models: models,
         };
@@ -222,15 +250,13 @@ export async function processAndEmbedFile(formData: FormData): Promise<ActionRes
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else if (Array.isArray(result) && result[0]?.embedding) {
+                    } else {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result[0].embedding,
+                            embedding: result,
                         });
-                    } else {
-                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
-                    }
+                    } 
                 });
 
                 if (recordsToInsert.length > 0) {
@@ -342,9 +368,14 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
         for (const doc of documents) {
             if (!doc.content || !doc.slug) continue;
             
+            const { category, manufacturer, models } = extractMetadataFromFilename(doc.slug);
+            console.log(`[DB Indexer Info] Extracted from slug "${doc.slug}": Category: ${category || 'N/A'}, Manufacturer: ${manufacturer || 'N/A'}, Models: ${models?.join(', ') || 'N/A'}`);
+
             const baseMetadata: BaseMetadata = {
                 source_filename: doc.slug,
-                category: doc.category || undefined,
+                category: category, 
+                manufacturer: manufacturer,
+                device_models: models,
             };
             
             const docChunks = recursiveSplitText(doc.content, doc.slug, baseMetadata);
@@ -383,14 +414,12 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else if (Array.isArray(result) && result[0]?.embedding) {
+                    } else {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result[0].embedding,
+                            embedding: result,
                         });
-                    } else {
-                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
                     }
                 });
 
