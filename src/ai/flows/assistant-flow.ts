@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview The main AI assistant flow for the Telegram bot.
  * This file orchestrates a multi-step process:
@@ -16,7 +15,8 @@ import { detectAndSaveName } from '../tools/user-profile';
 import { getIntroduction } from '../tools/introduction';
 import { createAdminClient } from '@/lib/supabase/service';
 import { endConversationTool } from '../tools/end-conversation';
-import { knowledgeBaseTool } from '../tools/knowledge-base-tool';
+import { technicalSearchTool } from '../tools/technical-search-tool'; // UPDATED
+import { legalSearchTool } from '../tools/legal-search-tool';       // UPDATED
 import { logSecurityStrike } from '../tools/security';
 import { googleAI } from '@genkit-ai/google-genai';
 
@@ -135,8 +135,8 @@ const securityGuardFlow = ai.defineFlow(
   }
 );
 
-
-const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, knowledgeBaseTool];
+// UPDATED: Replaced the single knowledgeBaseTool with two specialized tools.
+const tools = [detectAndSaveName, generalQuestionsTool, endConversationTool, technicalSearchTool, legalSearchTool];
 
 const assistantRouterFlow = ai.defineFlow(
   {
