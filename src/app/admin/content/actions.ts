@@ -39,6 +39,7 @@ export interface ActionResult {
 
 /**
  * Extracts category, manufacturer, and models from a structured filename or slug.
+ * All extracted values are converted to lowercase.
  * Expected format for technical docs: <category>_<manufacturer>_<model1>_<model2>...
  * Expected format for legal docs: <category>_<description>
  * @param identifier The filename or slug (e.g., "technical_Epson_L3150.pdf" or "legal_warranty-policy")
@@ -53,7 +54,6 @@ function extractMetadataFromFilename(identifier: string): { category?: string; m
 
     const category = parts[0].toLowerCase();
 
-    // The category must be one of the known types for the filter to work.
     if (category !== 'technical' && category !== 'legal') {
         console.warn(`[Metadata] Identifier "${identifier}" does not start with a valid category ('technical' or 'legal').`);
         return {};
@@ -64,8 +64,8 @@ function extractMetadataFromFilename(identifier: string): { category?: string; m
             console.warn(`[Metadata] Technical identifier "${identifier}" is missing manufacturer part.`);
             return { category };
         }
-        const manufacturer = parts[1];
-        const models = parts.slice(2);
+        const manufacturer = parts[1].toLowerCase();
+        const models = parts.slice(2).map(m => m.toLowerCase());
         
         return {
             category,
@@ -74,7 +74,6 @@ function extractMetadataFromFilename(identifier: string): { category?: string; m
         };
     }
 
-    // For 'legal' documents, we only care about the category.
     if (category === 'legal') {
         return { category };
     }
@@ -250,13 +249,15 @@ export async function processAndEmbedFile(formData: FormData): Promise<ActionRes
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else {
+                    } else if (result?.embedding) {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result,
+                            embedding: result.embedding,
                         });
-                    } 
+                    } else {
+                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
+                    }
                 });
 
                 if (recordsToInsert.length > 0) {
@@ -334,10 +335,9 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
     const supabase = createAdminClient();
 
     try {
-        // 1. Fetch all documents
         const { data: documents, error: fetchError } = await supabase
             .from('documents')
-            .select('title, content, slug, category');
+            .select('title, content, slug');
 
         if (fetchError) {
             throw new Error(`Ошибка загрузки документов из БД: ${fetchError.message}`);
@@ -349,7 +349,6 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
         
         console.log(`[DB Indexer] Found ${documents.length} documents to process.`);
 
-        // 2. Clear old entries from manual_knowledge for these documents
         const slugs = documents.map(d => d.slug).filter(Boolean) as string[];
         if (slugs.length > 0) {
             console.log(`[DB Indexer] Clearing old knowledge base entries for ${slugs.length} slugs.`);
@@ -364,18 +363,16 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
         }
         
         let allChunks: Chunk[] = [];
-        // 3. Create chunks for all documents
         for (const doc of documents) {
             if (!doc.content || !doc.slug) continue;
             
-            const { category, manufacturer, models } = extractMetadataFromFilename(doc.slug);
-            console.log(`[DB Indexer Info] Extracted from slug "${doc.slug}": Category: ${category || 'N/A'}, Manufacturer: ${manufacturer || 'N/A'}, Models: ${models?.join(', ') || 'N/A'}`);
+            console.log(`[DB Indexer Info] Processing slug "${doc.slug}" as a legal document.`);
 
             const baseMetadata: BaseMetadata = {
                 source_filename: doc.slug,
-                category: category, 
-                manufacturer: manufacturer,
-                device_models: models,
+                category: 'legal', 
+                manufacturer: undefined,
+                device_models: undefined,
             };
             
             const docChunks = recursiveSplitText(doc.content, doc.slug, baseMetadata);
@@ -388,7 +385,6 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
         
         console.log(`[DB Indexer] Total chunks to process: ${allChunks.length}.`);
 
-        // 4. Batch process all chunks
         let totalSuccess = 0;
         let totalFailed = 0;
         const failedChunksDetails: ActionResult['details'] = [];
@@ -414,12 +410,14 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else {
+                    } else if (result?.embedding) {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result,
+                            embedding: result.embedding,
                         });
+                    } else {
+                        batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
                     }
                 });
 
