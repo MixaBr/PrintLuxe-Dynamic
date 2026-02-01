@@ -50,7 +50,7 @@ const nextConfig = {
     // This option allows us to specify which packages should be treated as external
     // by the server-side bundler. By adding '@supabase/supabase-js', we tell Next.js
     // not to bundle it, resolving the 'Cannot find module' error.
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    serverComponentsExternalPackages: ['@supabase/supabase-js', 'require-in-the-middle'],
   },
 
   webpack: (config, { isServer }) => {

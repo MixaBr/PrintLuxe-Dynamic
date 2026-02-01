@@ -20,8 +20,8 @@ export const legalSearchTool = ai.defineTool(
 
         const supabase = createAdminClient();
 
-        const rpcFilter = {
-            filter_category: 'legal'
+        const filter_metadata = {
+            category: 'legal'
         };
         console.log('Applied category filter: legal');
 
@@ -40,16 +40,17 @@ export const legalSearchTool = ai.defineTool(
 
         console.log(`Using search params: threshold=${match_threshold}, count=${match_count}`);
 
-        const embedding = await ai.embed({
+        const embeddingResponse = await ai.embed({
             embedder: textEmbeddingGecko,
             content: input.query,
         });
 
-        const { data: documents, error: matchError } = await supabase.rpc('match_documents', {
-            query_embedding: embedding,
+        const { data: documents, error: matchError } = await supabase.rpc('match_manual_knowledge', {
+            query_embedding: embeddingResponse[0].embedding,
             match_threshold,
             match_count,
-            ...rpcFilter
+            filter_metadata,
+            is_array_contains: false
         });
 
         if (matchError) {

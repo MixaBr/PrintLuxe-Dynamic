@@ -19,6 +19,18 @@ function extractTechnicalFilters(query: string): { manufacturer: string | null; 
     return { manufacturer, models: filteredModels };
 }
 
+function cleanQueryForEmbedding(query: string, manufacturer: string | null, models: string[]): string {
+    let cleanedQuery = query.toLowerCase();
+    if (manufacturer) {
+        cleanedQuery = cleanedQuery.replace(new RegExp(manufacturer, 'gi'), '');
+    }
+    models.forEach(model => {
+        cleanedQuery = cleanedQuery.replace(new RegExp(model, 'gi'), '');
+    });
+    // Убираем лишние пробелы, которые могли остаться после замены
+    return cleanedQuery.replace(/\s+/g, ' ').trim();
+}
+
 export const technicalSearchTool = ai.defineTool(
     {
         name: 'technicalSearchTool',
@@ -30,23 +42,26 @@ export const technicalSearchTool = ai.defineTool(
     },
     async (input) => {
         console.log('======== TECHNICAL SEARCH TOOL CALLED ========');
-        console.log(`Searching for: "${input.query}"`);
+        console.log(`Original query: "${input.query}"`);
 
         const supabase = createAdminClient();
 
         const { manufacturer, models } = extractTechnicalFilters(input.query);
         
-        let rpcFilter: any = {
-            filter_category: 'technical'
+        const filter_metadata: any = {
+            category: 'technical'
         };
         if (manufacturer) {
-            rpcFilter.filter_manufacturer = manufacturer;
+            filter_metadata.manufacturer = manufacturer;
             console.log(`Applied manufacturer filter: ${manufacturer}`);
         }
         if (models.length > 0) {
-            rpcFilter.filter_device_models = JSON.stringify(models);
+            filter_metadata.device_models = models;
             console.log(`Applied device models filter: ${models.join(', ')}`);
         }
+
+        const cleanedQuery = cleanQueryForEmbedding(input.query, manufacturer, models);
+        console.log(`Cleaned query for embedding: "${cleanedQuery}"`);
 
         const { data: config, error: configError } = await supabase
             .from('app_config')
@@ -63,16 +78,17 @@ export const technicalSearchTool = ai.defineTool(
         
         console.log(`Using search params: threshold=${match_threshold}, count=${match_count}`);
 
-        const embedding = await ai.embed({
+        const embeddingResponse = await ai.embed({
             embedder: textEmbeddingGecko,
-            content: input.query,
+            content: cleanedQuery, // Используем очищенный запрос
         });
 
-        const { data: documents, error: matchError } = await supabase.rpc('match_documents', {
-            query_embedding: embedding,
+        const { data: documents, error: matchError } = await supabase.rpc('match_manual_knowledge', {
+            query_embedding: embeddingResponse[0].embedding,
             match_threshold,
             match_count,
-            ...rpcFilter
+            filter_metadata,
+            is_array_contains: true
         });
 
         if (matchError) {

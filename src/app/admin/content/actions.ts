@@ -249,11 +249,11 @@ export async function processAndEmbedFile(formData: FormData): Promise<ActionRes
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else if (result?.embedding) {
+                    } else if (Array.isArray(result) && result[0]?.embedding) {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result.embedding,
+                            embedding: result[0].embedding,
                         });
                     } else {
                         batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });
@@ -410,11 +410,11 @@ export async function indexDocumentsFromDb(): Promise<ActionResult> {
                     const chunk = batch[index];
                     if (typeof result === 'object' && result !== null && 'error' in result) {
                         batchFailedChunks.push({ chunk, error: result.error || new Error('Unknown embedding error') });
-                    } else if (result?.embedding) {
+                    } else if (Array.isArray(result) && result[0]?.embedding) {
                         recordsToInsert.push({
                             content: chunk.content,
                             metadata: chunk.metadata,
-                            embedding: result.embedding,
+                            embedding: result[0].embedding,
                         });
                     } else {
                         batchFailedChunks.push({ chunk, error: new Error('Invalid or empty embedding response') });

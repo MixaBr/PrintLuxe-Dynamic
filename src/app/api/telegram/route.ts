@@ -22,48 +22,102 @@ function render({ template, context }: { template: string; context: Record<strin
 
 
 async function sendTelegramMessage(chatId: number, text: string) {
+    const MAX_LENGTH = 4096;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
-    // First attempt: Send with HTML formatting
-    try {
-        console.log(`--- [DEBUG] Attempting to send message with HTML formatting to chatId: ${chatId}`);
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text,
-                parse_mode: 'HTML'
-            }),
-        });
-
-        const result = await response.json();
-        if (!result.ok) {
-            // This is the trigger for the fallback
-            throw new Error(`Telegram API error: ${result.description}`);
-        }
-
-        console.log(`--- [DEBUG] Successfully sent message with HTML formatting to chatId: ${chatId}`);
-        return; // Success, exit the function
-
-    } catch (error) {
-        console.warn('--- [WARN] Failed to send message with HTML formatting. Error:', error instanceof Error ? error.message : String(error));
-        console.log('--- [LOG] Retrying without formatting... ---');
-
-        // Second attempt (fallback): Send as plain text
+    // Helper to perform the actual sending of a single message part
+    async function _sendPart(part: string) {
+        // First attempt: Send with HTML formatting
         try {
-            await fetch(url, {
+            console.log(`--- [DEBUG] Attempting to send message part with HTML formatting to chatId: ${chatId}`);
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: chatId,
-                    text
+                    text: part,
+                    parse_mode: 'HTML'
                 }),
             });
-            console.log(`--- [DEBUG] Successfully sent message as plain text fallback to chatId: ${chatId}`);
-        } catch (fallbackError) {
-            console.error('--- [CRITICAL ERROR] Failed to send Telegram message even as plain text fallback:', fallbackError);
+
+            const result = await response.json();
+            if (!result.ok) {
+                throw new Error(`Telegram API error: ${result.description}`);
+            }
+            console.log(`--- [DEBUG] Successfully sent message part with HTML formatting to chatId: ${chatId}`);
+            return;
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn(`--- [WARN] Failed to send message part with HTML formatting. Error: ${errorMessage}`);
+            
+            if (errorMessage.includes('message is too long')) {
+                console.error(`--- [CRITICAL ERROR] A chunk is still too long. Length: ${part.length}. This should not happen.`);
+                // Try sending a generic error to the user instead of retrying the long message
+                await _sendPart('An internal error occurred: a message part was too long to send.');
+                return;
+            }
+
+            console.log('--- [LOG] Retrying part without formatting... ---');
+
+            // Second attempt (fallback): Send as plain text
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: part
+                    }),
+                });
+                console.log(`--- [DEBUG] Successfully sent message part as plain text fallback to chatId: ${chatId}`);
+            } catch (fallbackError) {
+                console.error('--- [CRITICAL ERROR] Failed to send Telegram message part even as plain text fallback:', fallbackError);
+            }
+        }
+    }
+
+    if (text.length <= MAX_LENGTH) {
+        await _sendPart(text);
+        return;
+    }
+
+    console.log(`--- [LOG] Message is too long (${text.length} > ${MAX_LENGTH}). Splitting into chunks. ---`);
+    const chunks: string[] = [];
+    let remainingText = text;
+
+    while (remainingText.length > 0) {
+        if (remainingText.length <= MAX_LENGTH) {
+            chunks.push(remainingText);
+            break;
+        }
+
+        let splitPos = -1;
+        const splitters = ['\n\n', '\n', '. ', ' '];
+        for (const splitter of splitters) {
+            const lastIndexOfSplitter = remainingText.substring(0, MAX_LENGTH).lastIndexOf(splitter);
+            if (lastIndexOfSplitter !== -1) {
+                splitPos = lastIndexOfSplitter + splitter.length;
+                break;
+            }
+        }
+
+        if (splitPos === -1) {
+            splitPos = MAX_LENGTH;
+        }
+
+        chunks.push(remainingText.substring(0, splitPos));
+        remainingText = remainingText.substring(splitPos);
+    }
+
+    console.log(`--- [LOG] Sending message in ${chunks.length} parts. ---`);
+
+    for (let i = 0; i < chunks.length; i++) {
+        console.log(`--- [LOG] Sending part ${i + 1}/${chunks.length}... ---`);
+        await _sendPart(chunks[i]);
+        if (i < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
 }
