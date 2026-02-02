@@ -3,11 +3,13 @@
 import { useFormState } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { signIn, signUp } from './actions';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,7 @@ export default function LoginPage() {
 
   const [activeTab, setActiveTab] = useState("signin");
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
+  const [isConsentGiven, setIsConsentGiven] = useState(false);
 
   useEffect(() => {
     if (signInState && 'error' in signInState && signInState.error === 'ACCOUNT_ARCHIVED') {
@@ -134,6 +137,7 @@ export default function LoginPage() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setIsRecaptchaVerified(false);
+    setIsConsentGiven(false);
   }
 
   return (
@@ -186,10 +190,18 @@ export default function LoginPage() {
                 <div className="my-4 flex justify-center">
                     <RecaptchaWidget onVerified={setIsRecaptchaVerified} />
                 </div>
+
+                <div className="flex items-start space-x-2.5 my-4 px-1">
+                    <Checkbox id="consent-checkbox" checked={isConsentGiven} onCheckedChange={(checked) => setIsConsentGiven(checked as boolean)} className="mt-0.5" />
+                    <Label htmlFor="consent-checkbox" className="text-xs peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-normal">
+                        Нажимая кнопку «Зарегистрироваться», я даю согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с <Link href="/legal/privacy-policy" className="underline hover:text-primary" target="_blank">Политикой конфиденциальности</Link> и принимаю <Link href="/legal/terms-of-service" className="underline hover:text-primary" target="_blank">Условия использования</Link>.
+                    </Label>
+                </div>
+
                  {getErrorMessage(signUpState) && (
                     <p className="text-sm font-medium text-destructive">{getErrorMessage(signUpState)}</p>
                 )}
-                <Button type="submit" className="w-full" disabled={!isRecaptchaVerified}>Зарегистрироваться</Button>
+                <Button type="submit" className="w-full" disabled={!isRecaptchaVerified || !isConsentGiven}>Зарегистрироваться</Button>
             </form>
           )}
         </CardContent>
