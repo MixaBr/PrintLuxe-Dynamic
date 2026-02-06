@@ -32,6 +32,10 @@ export const checkoutFormSchema = z.object({
   apartment: z.string().optional(),
   postal_code: z.string().optional(),
   address_comment: z.string().optional(),
+
+  consent: z.literal('true', {
+    errorMap: () => ({ message: 'Согласие на обработку персональных данных обязательно для оформления заказа.' }),
+  }),
 });
 
 // Уточненная схема, использующая корректное значение для проверки

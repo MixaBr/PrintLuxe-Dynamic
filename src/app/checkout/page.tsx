@@ -4,6 +4,12 @@ import CheckoutClient from './CheckoutClient';
 import { redirect } from 'next/navigation';
 import type { Address } from '@/lib/definitions';
 
+interface CheckoutPageProps {
+  searchParams: {
+    consent?: string;
+  };
+}
+
 async function getPickupAddress() {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -19,7 +25,7 @@ async function getPickupAddress() {
     return data.value;
 }
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({ searchParams }: CheckoutPageProps) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -37,6 +43,7 @@ export default async function CheckoutPage() {
   }
 
   const pickupAddress = await getPickupAddress();
+  const consentGiven = searchParams.consent === 'true';
 
-  return <CheckoutClient user={userProfile} pickupAddress={pickupAddress} />;
+  return <CheckoutClient user={userProfile} pickupAddress={pickupAddress} consentGiven={consentGiven} />;
 }

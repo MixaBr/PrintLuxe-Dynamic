@@ -48,7 +48,7 @@ export default function CartPage() {
 
   const handleConfirmCheckout = () => {
     if (isConsentGiven) {
-      router.push('/checkout');
+      router.push('/checkout?consent=true');
     }
   };
 

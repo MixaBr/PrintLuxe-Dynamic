@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useFormState } from 'react-dom';
@@ -70,6 +71,8 @@ export default function LoginPage() {
             description = "Пользователь с таким email уже существует. Пожалуйста, войдите в свой аккаунт.";
         } else if (errorMessage.includes("Validation error") || errorMessage.includes("is invalid")) {
             description = "Убедитесь, что вы ввели правильный email и пароль длиной не менее 6 символов.";
+        } else if (errorMessage.includes("должны дать согласие")) {
+            description = "Вы должны дать согласие на обработку персональных данных для продолжения.";
         }
 
         setModalState({
@@ -174,6 +177,7 @@ export default function LoginPage() {
             </form>
           ) : (
             <form action={signUpAction} className="space-y-4">
+                {isConsentGiven && <input type="hidden" name="consent" value="true" />}
                 <div className="space-y-2">
                     <Label htmlFor="name">Имя</Label>
                     <Input id="name" name="name" required />

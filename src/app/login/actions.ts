@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
@@ -81,6 +82,11 @@ export async function signUp(prevState: any, formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const consent = formData.get("consent") as string;
+
+  if (consent !== 'true') {
+    return { error: 'Вы должны дать согласие на обработку персональных данных.' };
+  }
 
   const emailValidation = emailSchema.safeParse(email);
   if (!emailValidation.success) {
@@ -139,6 +145,19 @@ export async function signUp(prevState: any, formData: FormData) {
   
   if (data.user && data.user.identities && data.user.identities.length === 0) {
     return { error: 'Пользователь с таким email уже существует, но не подтвержден.' };
+  }
+
+  if (data.user) {
+    // The user's profile is created by a trigger. Now, update it with the consent timestamp.
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ pd_consent_given_at: new Date().toISOString() })
+      .eq('user_id', data.user.id);
+    
+    if (profileError) {
+        console.error('Failed to save consent timestamp during sign up:', profileError);
+        // We don't need to fail the whole registration for this, but it should be logged.
+    }
   }
 
   revalidatePath('/', 'layout');

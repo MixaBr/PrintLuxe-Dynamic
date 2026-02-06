@@ -28,6 +28,7 @@ const initialState = { status: 'error' as const, message: '', orderId: undefined
 interface CheckoutClientProps {
   user: { id: string; email?: string; profile?: { first_name?: string; last_name?: string; phone?: string; }; addresses: Address[]; } | null;
   pickupAddress: string | null;
+  consentGiven: boolean;
 }
 
 function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
@@ -39,7 +40,7 @@ function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
   );
 }
 
-export default function CheckoutClient({ user, pickupAddress }: CheckoutClientProps) {
+export default function CheckoutClient({ user, pickupAddress, consentGiven }: CheckoutClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { items, clearCart } = useCartStore();
@@ -66,11 +67,12 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
       postal_code: '',
       address_comment: '',
       order_comment: '',
+      consent: consentGiven ? 'true' : undefined,
     },
      mode: 'onBlur', 
   });
 
-  const { formState: { isSubmitting }, control, watch, setValue, trigger } = form;
+  const { formState: { isSubmitting, errors }, control, watch, setValue, trigger } = form;
   const deliveryMethod = watch('delivery_method');
   const paymentMethod = watch('payment_method');
   const cardClasses = "bg-black/50 text-white border-white/20 backdrop-blur-sm";
@@ -282,6 +284,7 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <input type="hidden" name="consent" value={consentGiven ? 'true' : ''} />
             <Card className={cardClasses}>
               <CardHeader><CardTitle className="flex items-center gap-2"><User />Контактная информация</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -353,6 +356,12 @@ export default function CheckoutClient({ user, pickupAddress }: CheckoutClientPr
                 </div>
               </CardContent>
             </Card>
+            
+            {errors.consent && (
+              <div className="text-destructive font-medium text-center p-4 bg-destructive/10 rounded-md">
+                {errors.consent.message}
+              </div>
+            )}
 
             <SubmitButton isSubmitting={isSubmitting} />
           </form>

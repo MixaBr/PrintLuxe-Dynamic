@@ -121,7 +121,7 @@ export async function processOrder(
         addressComment = "Самовывоз";
     }
 
-    const rpcParameters = {
+    const rpcParameters: any = {
         p_user_id: user?.id || null,
         p_guest_email: user ? null : validatedData.email,
         p_guest_first_name: user ? null : validatedData.first_name,
@@ -138,6 +138,10 @@ export async function processOrder(
         },
         p_order_items: cartItems
     };
+
+    if (validatedData.consent === 'true') {
+        rpcParameters.p_pd_consent_given_at = new Date().toISOString();
+    }
 
     const { data: orderData, error: rpcError } = await supabase.rpc('create_order_and_details', rpcParameters);
 
