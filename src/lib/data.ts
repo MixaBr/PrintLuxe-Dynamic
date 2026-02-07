@@ -1,5 +1,5 @@
 
-import { supabase } from './supabaseClient';
+import { createClient } from './supabase/server';
 import type { Product } from './definitions';
 import type { User } from '@supabase/supabase-js';
 export type { Product } from './definitions';
@@ -12,8 +12,8 @@ interface ProductQueryOptions {
   user?: User | null;
 }
 
-// This function now returns products with the correct prices based on the new tiered logic.
 export async function getAllProducts({ query, category, page = 1, limit = 1000, user = null }: ProductQueryOptions = {}): Promise<Product[]> {
+    const supabase = createClient();
     let supabaseQuery = supabase
         .from('products')
         .select('*');
@@ -41,7 +41,6 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     
     if (!productsData) return [];
 
-    // Guest users always get price1
     if (!user) {
         return productsData.map(product => ({
             ...product,
@@ -49,7 +48,6 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         }));
     }
 
-    // Authenticated users: Fetch profile once
     const { data: profile } = await supabase
         .from('profiles')
         .select('total_purchases, is_vip')
@@ -60,14 +58,11 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     const isVip = profile?.is_vip || false;
 
     const pricedProducts = productsData.map(product => {
-        let finalPrice = product.price2; // Default for authenticated user
+        let finalPrice = product.price2;
 
-        // Highest priority: VIP status
         if (isVip && product.price4 != null) {
             finalPrice = product.price4;
-        } 
-        // Second priority: Accumulation threshold for the specific product
-        else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
+        } else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
             finalPrice = product.price3;
         }
 
@@ -81,6 +76,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
 }
 
 export async function getProductsCount({ query, category }: { query?: string; category?: string; }): Promise<number> {
+    const supabase = createClient();
     let supabaseQuery = supabase
         .from('products')
         .select('id', { count: 'exact', head: true });
@@ -104,8 +100,8 @@ export async function getProductsCount({ query, category }: { query?: string; ca
 }
 
 
-// The function now accepts the user object to determine the price.
 export async function getFeaturedProducts(ids: number[], user: User | null): Promise<Product[]> {
+  const supabase = createClient();
   if (!ids || ids.length === 0) {
     return [];
   }
@@ -119,8 +115,9 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
     console.error('Error fetching featured products by IDs:', error);
     return [];
   }
+  
+  if (!productsData) return [];
 
-  // Guest users
   if (!user) {
       return productsData.map(product => ({
           ...product,
@@ -128,7 +125,6 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
       }));
   }
 
-  // Authenticated users: Fetch profile once
   const { data: profile } = await supabase
       .from('profiles')
       .select('total_purchases, is_vip')
@@ -139,7 +135,7 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
   const isVip = profile?.is_vip || false;
 
   const pricedProducts = productsData.map(product => {
-      let finalPrice = product.price2; // Default for authenticated user
+      let finalPrice = product.price2;
 
       if (isVip && product.price4 != null) {
           finalPrice = product.price4;
@@ -157,6 +153,7 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
 }
 
 export async function getProductById(id: string, user: User | null): Promise<Product | null> {
+    const supabase = createClient();
     const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -201,6 +198,7 @@ export async function getProductById(id: string, user: User | null): Promise<Pro
 }
 
 export async function getAppBackground(): Promise<string | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('settings')
     .select('value')
