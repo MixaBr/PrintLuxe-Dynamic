@@ -4,15 +4,6 @@ import { cookies } from 'next/headers'
 export function createClient() {
   const cookieStore = cookies()
 
-  // --- [ЛОГИРОВАНИЕ] ---
-  const authCookie = cookieStore.getAll().find(cookie => cookie.name.startsWith('sb-') && cookie.name.endsWith('-auth-token'));
-  if (authCookie) {
-    console.log('[server.ts/createClient] Auth cookie found.');
-  } else {
-    console.log('[server.ts/createClient] Auth cookie NOT found.');
-  }
-  // --------------------
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
