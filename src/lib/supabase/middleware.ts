@@ -17,16 +17,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          // In a Next.js middleware, you must set the cookie on the response
           response.cookies.set({
             name,
             value,
@@ -34,16 +25,7 @@ export async function updateSession(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          // In a Next.js middleware, you must set the cookie on the response
           response.cookies.set({
             name,
             value: '',
@@ -54,15 +36,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // This will log the session status for every request
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (user) {
-    console.log(`[Middleware] User session found: ${user.id}`);
-  } else {
-    console.log(`[Middleware] No user session found for path: ${request.nextUrl.pathname}`);
-  }
-
+  // This will refresh the session cookie if needed
+  await supabase.auth.getUser()
 
   return response
 }
