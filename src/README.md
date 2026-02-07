@@ -1,5 +1,5 @@
 # PrintLux-Dynamic
-Веб-приложение
+Веб-приложение +
 
 # Firebase Studio
 
