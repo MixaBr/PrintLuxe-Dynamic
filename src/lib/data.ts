@@ -16,7 +16,9 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     console.log('--- [getAllProducts] START ---');
     const supabase = createClient();
     
-    const user = passedUser ?? (await supabase.auth.getUser()).data.user;
+    // Check if a user object was passed in, otherwise fetch it.
+    // This allows us to force a "guest" state by passing `user: null`.
+    const { data: { user } } = passedUser === undefined ? await supabase.auth.getUser() : { data: { user: passedUser } };
 
     if (!user) {
         console.log('[getAllProducts] User determined as GUEST. Applying price1 for all products.');
@@ -41,7 +43,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     }
 
     // --- AUTHENTICATED USER LOGIC ---
-    console.log(`[getAllProducts] User determined as AUTHENTICATED: ${user.id}.`);
+    console.log(`[getAllProducts] User determined as AUTHENTICATED: ${user.id}. Fetching profile...`);
     
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -52,7 +54,6 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     if (profileError) {
         console.error('[getAllProducts] AUTHENTICATED Profile fetch error:', profileError);
         console.log('[getAllProducts] PROFILE FETCH FAILED. Falling back to GUEST price (price1) for safety.');
-        // Recursively call itself but without a user to force guest pricing as a fallback
         return getAllProducts({ query, category, page, limit, user: null });
     }
 
@@ -78,15 +79,18 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     }
 
     const pricedProducts = productsData.map(product => {
-        let finalPrice = product.price2;
-        let priceTier = 'price2 (base)';
+        let finalPrice: number | null;
+        let priceTier: string;
 
         if (profile.is_vip && product.price4 != null) {
             finalPrice = product.price4;
             priceTier = 'price4 (VIP)';
-        } else if (product.accumulation != null && profile.total_purchases > product.accumulation && product.price3 != null) {
+        } else if (product.accumulation != null && profile.total_purchases != null && profile.total_purchases > product.accumulation && product.price3 != null) {
             finalPrice = product.price3;
             priceTier = `price3 (accumulation: ${profile.total_purchases} > ${product.accumulation})`;
+        } else {
+            finalPrice = product.price2;
+            priceTier = 'price2 (base for authenticated)';
         }
         
         console.log(`[getAllProducts] Pricing for "${product.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
@@ -159,15 +163,18 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
   console.log(`[getFeaturedProducts] Profile loaded: total_purchases=${profile.total_purchases}, is_vip=${profile.is_vip}`);
 
   const pricedProducts = productsData.map(product => {
-      let finalPrice = product.price2;
-      let priceTier = 'price2 (base)';
+      let finalPrice: number | null;
+      let priceTier: string;
 
       if (profile.is_vip && product.price4 != null) {
           finalPrice = product.price4;
           priceTier = 'price4 (VIP)';
-      } else if (product.accumulation != null && profile.total_purchases > product.accumulation && product.price3 != null) {
+      } else if (product.accumulation != null && profile.total_purchases != null && profile.total_purchases > product.accumulation && product.price3 != null) {
           finalPrice = product.price3;
           priceTier = `price3 (accumulation: ${profile.total_purchases} > ${product.accumulation})`;
+      } else {
+          finalPrice = product.price2;
+          priceTier = 'price2 (base for authenticated)';
       }
       
       console.log(`[getFeaturedProducts] Pricing for "${product.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
@@ -209,15 +216,18 @@ export async function getProductById(id: string, user: User | null): Promise<Pro
 
     console.log(`[getProductById] Profile loaded: total_purchases=${profile.total_purchases}, is_vip=${profile.is_vip}`);
     
-    let finalPrice = productData.price2;
-    let priceTier = 'price2 (base)';
+    let finalPrice: number | null;
+    let priceTier: string;
 
     if (profile.is_vip && productData.price4 != null) {
         finalPrice = productData.price4;
         priceTier = 'price4 (VIP)';
-    } else if (productData.accumulation != null && profile.total_purchases > productData.accumulation && productData.price3 != null) {
+    } else if (productData.accumulation != null && productData.total_purchases != null && productData.total_purchases > productData.accumulation && productData.price3 != null) {
         finalPrice = productData.price3;
         priceTier = `price3 (accumulation: ${profile.total_purchases} > ${productData.accumulation})`;
+    } else {
+        finalPrice = productData.price2;
+        priceTier = 'price2 (base for authenticated)';
     }
     
     console.log(`[getProductById] Pricing for "${productData.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
@@ -241,3 +251,5 @@ export async function getAppBackground(): Promise<string | null> {
 
   return data?.value || null;
 }
+
+    

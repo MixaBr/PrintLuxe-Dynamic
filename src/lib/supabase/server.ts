@@ -1,8 +1,17 @@
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export function createClient() {
   const cookieStore = cookies()
+
+  // Diagnostic log to see if the cookie is present from the server component's perspective
+  const authCookieName = `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL!.split('.')[0].split('//')[1]}-auth-token`;
+  if (cookieStore.get(authCookieName)) {
+    console.log(`[server.ts/createClient] Auth cookie found.`);
+  } else {
+    console.log(`[server.ts/createClient] Auth cookie NOT found.`);
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,3 +43,5 @@ export function createClient() {
     }
   )
 }
+
+    
