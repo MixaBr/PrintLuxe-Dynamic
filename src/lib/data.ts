@@ -12,51 +12,7 @@ interface ProductQueryOptions {
   user?: User | null;
 }
 
-// Helper function for tiered pricing logic
-async function getPriceForUser(product: any, user: User | null): Promise<number | null> {
-    if (!user) {
-        return product.price1; // Guest price
-    }
-
-    // Authenticated user: apply tiered pricing
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('total_purchases')
-        .eq('user_id', user.id)
-        .single();
-
-    if (profileError) {
-        console.error(`Error fetching profile for user ${user.id} to determine price:`, profileError);
-        return product.price2; // Fallback to base authenticated price
-    }
-
-    const totalPurchases = profile?.total_purchases || 0;
-
-    // Fetching thresholds. Using a simple client here is fine for server-side logic.
-    const { data: config, error: configError } = await supabase
-        .from('app_config')
-        .select('key, value')
-        .in('key', ['price_tier3_threshold', 'price_tier4_threshold']);
-
-    if (configError) {
-        console.error('Error fetching pricing tier thresholds:', configError);
-        return product.price2; // Fallback
-    }
-
-    const tier3Threshold = parseFloat(config?.find(c => c.key === 'price_tier3_threshold')?.value || '999999999');
-    const tier4Threshold = parseFloat(config?.find(c => c.key === 'price_tier4_threshold')?.value || '999999999');
-
-    if (totalPurchases >= tier4Threshold && product.price4 != null) {
-        return product.price4;
-    }
-    if (totalPurchases >= tier3Threshold && product.price3 != null) {
-        return product.price3;
-    }
-    
-    return product.price2;
-}
-
-// This function now returns products with the correct prices based on auth status and tiers.
+// This function now returns products with the correct prices based on the new tiered logic.
 export async function getAllProducts({ query, category, page = 1, limit = 1000, user = null }: ProductQueryOptions = {}): Promise<Product[]> {
     let supabaseQuery = supabase
         .from('products')
@@ -76,23 +32,50 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
       supabaseQuery = supabaseQuery.range(from, to);
     }
 
-    const { data, error } = await supabaseQuery.order('name', { ascending: true });
+    const { data: productsData, error } = await supabaseQuery.order('name', { ascending: true });
 
     if (error) {
         console.error('Error fetching products:', error);
         return [];
     }
     
-    if (!data) return [];
+    if (!productsData) return [];
 
-    // Asynchronously apply role-based pricing for all fetched products
-    const pricedProducts = await Promise.all(data.map(async (product) => {
-        const price = await getPriceForUser(product, user);
+    // Guest users
+    if (!user) {
+        return productsData.map(product => ({
+            ...product,
+            price: product.price1,
+        }));
+    }
+
+    // Authenticated users: Fetch profile once
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_purchases, is_vip')
+        .eq('user_id', user.id)
+        .single();
+    
+    const totalPurchases = profile?.total_purchases || 0;
+    const isVip = profile?.is_vip || false;
+
+    const pricedProducts = productsData.map(product => {
+        let finalPrice = product.price2; // Default for authenticated user
+
+        // Highest priority: VIP status
+        if (isVip && product.price4 != null) {
+            finalPrice = product.price4;
+        } 
+        // Second priority: Accumulation threshold
+        else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
+            finalPrice = product.price3;
+        }
+
         return {
             ...product,
-            price: price,
+            price: finalPrice,
         };
-    }));
+    });
 
     return pricedProducts;
 }
@@ -127,7 +110,7 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
     return [];
   }
 
-  const { data, error } = await supabase
+  const { data: productsData, error } = await supabase
     .from('products')
     .select('*')
     .in('id', ids);
@@ -137,14 +120,38 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
     return [];
   }
 
-  // Process data on the server to include only the correct price.
-  const pricedProducts = await Promise.all(data.map(async (product) => {
-      const price = await getPriceForUser(product, user);
+  // Guest users
+  if (!user) {
+      return productsData.map(product => ({
+          ...product,
+          price: product.price1,
+      }));
+  }
+
+  // Authenticated users: Fetch profile once
+  const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_purchases, is_vip')
+      .eq('user_id', user.id)
+      .single();
+
+  const totalPurchases = profile?.total_purchases || 0;
+  const isVip = profile?.is_vip || false;
+
+  const pricedProducts = productsData.map(product => {
+      let finalPrice = product.price2; // Default for authenticated user
+
+      if (isVip && product.price4 != null) {
+          finalPrice = product.price4;
+      } else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
+          finalPrice = product.price3;
+      }
+
       return {
           ...product,
-          price: price
+          price: finalPrice,
       };
-  }));
+  });
 
   return pricedProducts;
 }
@@ -164,10 +171,29 @@ export async function getProductById(id: string, user: User | null): Promise<Pro
     }
   
     if (data) {
-        const price = await getPriceForUser(data, user);
+        let finalPrice = null;
+        if (!user) {
+            finalPrice = data.price1;
+        } else {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('total_purchases, is_vip')
+                .eq('user_id', user.id)
+                .single();
+            
+            const totalPurchases = profile?.total_purchases || 0;
+            const isVip = profile?.is_vip || false;
+
+            finalPrice = data.price2;
+            if (isVip && data.price4 != null) {
+                finalPrice = data.price4;
+            } else if (data.accumulation != null && totalPurchases > data.accumulation && data.price3 != null) {
+                finalPrice = data.price3;
+            }
+        }
         return {
             ...data,
-            price: price,
+            price: finalPrice,
         };
     }
 

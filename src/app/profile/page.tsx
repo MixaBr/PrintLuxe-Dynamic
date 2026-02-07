@@ -1,7 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Link2 } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Link2, Gem } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -188,10 +189,17 @@ export default async function ProfilePage() {
                    {/* Statistics */}
                   <div>
                       <h3 className="font-semibold text-md flex items-center gap-2 mb-2"><BarChart2 className="w-5 h-5" />Статистика и статус</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           <div className="space-y-1">
                               <p className="text-xs font-medium text-gray-300">Роль</p>
                               <p className="capitalize text-sm">{role}</p>
+                          </div>
+                           <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-300">VIP Статус</p>
+                               <div className={cn("flex items-center gap-2 capitalize text-sm font-bold", profile?.is_vip ? "text-primary" : "text-white/70")}>
+                                {profile?.is_vip ? <Gem className="w-4 h-4"/> : null}
+                                {profile?.is_vip ? 'Активен' : 'Не активен'}
+                               </div>
                           </div>
                           <div className="space-y-1">
                               <p className="text-xs font-medium text-gray-300">Статус</p>
