@@ -11,7 +11,6 @@ export default async function Home() {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const isAuthenticated = !!user;
 
     const homePageData = await getHomePageData();
     const recentNews = await getRecentNews(10);
@@ -20,7 +19,7 @@ export default async function Home() {
         throw new Error("Не удалось загрузить структуру главной страницы.");
     }
 
-    const featuredProductsData = await getFeaturedProducts(homePageData.featured.ids, isAuthenticated);
+    const featuredProductsData = await getFeaturedProducts(homePageData.featured.ids, user);
 
     const featuredProducts = featuredProductsData.map(p => ({ ...p, description: p.name }));
 

@@ -7,7 +7,7 @@ import type { Product } from '@/lib/definitions';
 import { revalidatePath } from 'next/cache';
 
 /**
- * Fetches the full product details on the server, accounting for the user's authentication status.
+ * Fetches the full product details on the server, accounting for the user's authentication status and purchase history.
  * This is a Server Action designed to be called from Client Components.
  */
 export async function getFullProductDetails(productId: string): Promise<Product | null> {
@@ -16,10 +16,10 @@ export async function getFullProductDetails(productId: string): Promise<Product 
   const { data: { user } } = await supabase.auth.getUser();
   
   // Fetch the product using the existing data-access function, 
-  // passing the user's authenticated status to calculate the correct price.
-  const product = await getProductById(productId, !!user);
+  // passing the user object to calculate the correct tiered price.
+  const product = await getProductById(productId, user);
   
-  return product || null;
+  return product;
 }
 
 /**

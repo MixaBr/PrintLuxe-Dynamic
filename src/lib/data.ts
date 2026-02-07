@@ -1,6 +1,7 @@
 
 import { supabase } from './supabaseClient';
 import type { Product } from './definitions';
+import type { User } from '@supabase/supabase-js';
 export type { Product } from './definitions';
 
 interface ProductQueryOptions {
@@ -8,43 +9,92 @@ interface ProductQueryOptions {
   category?: string;
   page?: number;
   limit?: number;
-  isAuthenticated?: boolean;
+  user?: User | null;
 }
 
-// This function now returns products with the correct prices based on auth status.
-export async function getAllProducts({ query, category, page = 1, limit = 1000, isAuthenticated = false }: ProductQueryOptions = {}): Promise<Product[]> {
-  let supabaseQuery = supabase
-    .from('products')
-    .select('*', { count: 'exact' });
+// Helper function for tiered pricing logic
+async function getPriceForUser(product: any, user: User | null): Promise<number | null> {
+    if (!user) {
+        return product.price1; // Guest price
+    }
 
-  if (query) {
-    // Поиск по нескольким полям
-    supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,article_number.ilike.%${query}%`);
-  }
+    // Authenticated user: apply tiered pricing
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('total_purchases')
+        .eq('user_id', user.id)
+        .single();
 
-  if (category && category !== 'all') {
-    supabaseQuery = supabaseQuery.eq('category', category);
-  }
+    if (profileError) {
+        console.error(`Error fetching profile for user ${user.id} to determine price:`, profileError);
+        return product.price2; // Fallback to base authenticated price
+    }
 
-  if (limit) {
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    supabaseQuery = supabaseQuery.range(from, to);
-  }
+    const totalPurchases = profile?.total_purchases || 0;
 
-  const { data, error } = await supabaseQuery.order('name', { ascending: true });
+    // Fetching thresholds. Using a simple client here is fine for server-side logic.
+    const { data: config, error: configError } = await supabase
+        .from('app_config')
+        .select('key, value')
+        .in('key', ['price_tier3_threshold', 'price_tier4_threshold']);
 
+    if (configError) {
+        console.error('Error fetching pricing tier thresholds:', configError);
+        return product.price2; // Fallback
+    }
 
-  if (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
+    const tier3Threshold = parseFloat(config?.find(c => c.key === 'price_tier3_threshold')?.value || '999999999');
+    const tier4Threshold = parseFloat(config?.find(c => c.key === 'price_tier4_threshold')?.value || '999999999');
 
-  // Apply role-based pricing
-  return data.map(product => ({
-    ...product,
-    price: isAuthenticated ? product.price2 : product.price1
-  }));
+    if (totalPurchases >= tier4Threshold && product.price4 != null) {
+        return product.price4;
+    }
+    if (totalPurchases >= tier3Threshold && product.price3 != null) {
+        return product.price3;
+    }
+    
+    return product.price2;
+}
+
+// This function now returns products with the correct prices based on auth status and tiers.
+export async function getAllProducts({ query, category, page = 1, limit = 1000, user = null }: ProductQueryOptions = {}): Promise<Product[]> {
+    let supabaseQuery = supabase
+        .from('products')
+        .select('*');
+
+    if (query) {
+        supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,article_number.ilike.%${query}%`);
+    }
+
+    if (category && category !== 'all') {
+        supabaseQuery = supabaseQuery.eq('category', category);
+    }
+
+    if (limit) {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      supabaseQuery = supabaseQuery.range(from, to);
+    }
+
+    const { data, error } = await supabaseQuery.order('name', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching products:', error);
+        return [];
+    }
+    
+    if (!data) return [];
+
+    // Asynchronously apply role-based pricing for all fetched products
+    const pricedProducts = await Promise.all(data.map(async (product) => {
+        const price = await getPriceForUser(product, user);
+        return {
+            ...product,
+            price: price,
+        };
+    }));
+
+    return pricedProducts;
 }
 
 export async function getProductsCount({ query, category }: { query?: string; category?: string; }): Promise<number> {
@@ -71,8 +121,8 @@ export async function getProductsCount({ query, category }: { query?: string; ca
 }
 
 
-// The function now accepts isAuthenticated to determine the price.
-export async function getFeaturedProducts(ids: number[], isAuthenticated: boolean): Promise<Product[]> {
+// The function now accepts the user object to determine the price.
+export async function getFeaturedProducts(ids: number[], user: User | null): Promise<Product[]> {
   if (!ids || ids.length === 0) {
     return [];
   }
@@ -88,32 +138,40 @@ export async function getFeaturedProducts(ids: number[], isAuthenticated: boolea
   }
 
   // Process data on the server to include only the correct price.
-  return data.map(product => ({
-    ...product,
-    price: isAuthenticated ? product.price2 : product.price1,
+  const pricedProducts = await Promise.all(data.map(async (product) => {
+      const price = await getPriceForUser(product, user);
+      return {
+          ...product,
+          price: price
+      };
   }));
+
+  return pricedProducts;
 }
 
-export async function getProductById(id: string, isAuthenticated: boolean): Promise<Product | undefined> {
+export async function getProductById(id: string, user: User | null): Promise<Product | null> {
     const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single();
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  if (error) {
-    console.error(`Error fetching product with id ${id}:`, error);
-    return undefined;
-  }
+    if (error) {
+        if (error.code !== 'PGRST116') { // Ignore 'No rows found' error
+            console.error(`Error fetching product with id ${id}:`, error);
+        }
+        return null;
+    }
   
-  if (data) {
-      return {
-          ...data,
-          price: isAuthenticated ? data.price2 : data.price1,
-      }
-  }
+    if (data) {
+        const price = await getPriceForUser(data, user);
+        return {
+            ...data,
+            price: price,
+        };
+    }
 
-  return undefined;
+    return null;
 }
 
 export async function getAppBackground(): Promise<string | null> {

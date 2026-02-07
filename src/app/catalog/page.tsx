@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import { getAllProducts, getProductsCount } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -25,9 +20,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const isAuthenticated = !!user;
 
-  const products = await getAllProducts({ query, category, page: currentPage, limit: productsPerPage, isAuthenticated });
+  const products = await getAllProducts({ query, category, page: currentPage, limit: productsPerPage, user });
 
   const totalProducts = await getProductsCount({ query, category });
   const totalPages = Math.ceil(totalProducts / productsPerPage);
