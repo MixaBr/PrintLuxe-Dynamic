@@ -26,7 +26,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const totalProducts = await getProductsCount({ query, category });
   const totalPages = Math.ceil(totalProducts / productsPerPage);
 
-  const allFetchedProducts = await getAllProducts();
+  const allFetchedProducts = await getAllProducts({user});
   const categories = [...new Set(allFetchedProducts.map(p => p.category).filter(Boolean))] as string[];
 
   const renderPagination = () => {

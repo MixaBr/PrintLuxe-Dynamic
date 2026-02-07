@@ -41,7 +41,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     
     if (!productsData) return [];
 
-    // Guest users
+    // Guest users always get price1
     if (!user) {
         return productsData.map(product => ({
             ...product,
@@ -66,7 +66,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         if (isVip && product.price4 != null) {
             finalPrice = product.price4;
         } 
-        // Second priority: Accumulation threshold
+        // Second priority: Accumulation threshold for the specific product
         else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
             finalPrice = product.price3;
         }
