@@ -15,8 +15,6 @@ interface ProductQueryOptions {
 export async function getAllProducts({ query, category, page = 1, limit = 1000, user: passedUser = undefined }: ProductQueryOptions = {}): Promise<Product[]> {
     const supabase = createClient();
     
-    // Check if a user object was passed in, otherwise fetch it.
-    // This allows us to force a "guest" state by passing `user: null`.
     const { data: { user } } = passedUser === undefined ? await supabase.auth.getUser() : { data: { user: passedUser } };
 
     if (!user) {
@@ -40,7 +38,6 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         return productsData.map(p => ({ ...p, price: p.price1 }));
     }
 
-    // --- AUTHENTICATED USER LOGIC ---
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('total_purchases, is_vip')
@@ -138,7 +135,6 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
       .single();
 
    if (profileError) {
-        console.error('[getFeaturedProducts] Profile fetch error:', profileError);
         return productsData.map(p => ({ ...p, price: p.price1 }));
     }
   
@@ -210,5 +206,3 @@ export async function getAppBackground(): Promise<string | null> {
 
   return data?.value || null;
 }
-
-    
