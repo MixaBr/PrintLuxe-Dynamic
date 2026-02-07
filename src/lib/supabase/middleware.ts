@@ -26,7 +26,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // --- [ЛОГИРОВАНИЕ] ---
+  console.log(`[Middleware] Running for path: ${request.nextUrl.pathname}`);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    console.log(`[Middleware] User session found: ${user.id}`);
+  } else {
+    console.log('[Middleware] No user session found.');
+  }
+  // --------------------
 
   return response;
 }

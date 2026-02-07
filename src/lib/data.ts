@@ -1,5 +1,5 @@
 
-import { createClient } from './supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import type { Product } from './definitions';
 import type { User } from '@supabase/supabase-js';
 export type { Product } from './definitions';
@@ -12,49 +12,37 @@ interface ProductQueryOptions {
   user?: User | null;
 }
 
-export async function getAllProducts({ query, category, page = 1, limit = 1000, user = null }: ProductQueryOptions = {}): Promise<Product[]> {
+export async function getAllProducts({ query, category, page = 1, limit = 1000, user: passedUser = null }: ProductQueryOptions = {}): Promise<Product[]> {
     console.log('--- [getAllProducts] START ---');
     const supabase = createClient();
-    let supabaseQuery = supabase
-        .from('products')
-        .select('*');
-
-    if (query) {
-        supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,article_number.ilike.%${query}%`);
-    }
-
-    if (category && category !== 'all') {
-        supabaseQuery = supabaseQuery.eq('category', category);
-    }
-
-    if (limit) {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      supabaseQuery = supabaseQuery.range(from, to);
-    }
-
-    const { data: productsData, error } = await supabaseQuery.order('name', { ascending: true });
-
-    if (error) {
-        console.error('[getAllProducts] Supabase error fetching products:', error);
-        return [];
-    }
     
-    if (!productsData) {
-        console.log('[getAllProducts] No products found.');
-        return [];
-    }
+    const user = passedUser ?? (await supabase.auth.getUser()).data.user;
 
     if (!user) {
-        console.log('[getAllProducts] User is GUEST. Applying price1 for all products.');
-        return productsData.map(product => ({
-            ...product,
-            price: product.price1,
-        }));
+        console.log('[getAllProducts] User determined as GUEST. Applying price1 for all products.');
+        let guestQuery = supabase
+            .from('products')
+            .select('*');
+
+        if (query) { guestQuery = guestQuery.or(`name.ilike.%${query}%,article_number.ilike.%${query}%`); }
+        if (category && category !== 'all') { guestQuery = guestQuery.eq('category', category); }
+        if (limit) {
+            const from = (page - 1) * limit;
+            const to = from + limit - 1;
+            guestQuery = guestQuery.range(from, to);
+        }
+        const { data: productsData, error } = await guestQuery.order('name', { ascending: true });
+
+        if (error) {
+            console.error('[getAllProducts] GUEST Supabase error:', error);
+            return [];
+        }
+        return productsData.map(p => ({ ...p, price: p.price1 }));
     }
 
-    console.log(`[getAllProducts] User is AUTHENTICATED. User ID: ${user.id}. Fetching profile...`);
-
+    // --- AUTHENTICATED USER LOGIC ---
+    console.log(`[getAllProducts] User determined as AUTHENTICATED: ${user.id}.`);
+    
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('total_purchases, is_vip')
@@ -62,41 +50,54 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         .single();
     
     if (profileError) {
-        console.error('[getAllProducts] Error fetching profile:', profileError);
-        console.log('[getAllProducts] PROFILE FETCH FAILED. Falling back to guest price (price1) for safety.');
-         return productsData.map(product => ({
-            ...product,
-            price: product.price1,
-        }));
+        console.error('[getAllProducts] AUTHENTICATED Profile fetch error:', profileError);
+        console.log('[getAllProducts] PROFILE FETCH FAILED. Falling back to GUEST price (price1) for safety.');
+        // Recursively call itself but without a user to force guest pricing as a fallback
+        return getAllProducts({ query, category, page, limit, user: null });
     }
 
-    const totalPurchases = profile?.total_purchases || 0;
-    const isVip = profile?.is_vip || false;
-    console.log(`[getAllProducts] Profile loaded: total_purchases = ${totalPurchases}, is_vip = ${isVip}`);
+    console.log(`[getAllProducts] Profile loaded: total_purchases=${profile.total_purchases}, is_vip=${profile.is_vip}`);
+
+    let authQuery = supabase
+        .from('products')
+        .select('*');
+
+    if (query) { authQuery = authQuery.or(`name.ilike.%${query}%,article_number.ilike.%${query}%`); }
+    if (category && category !== 'all') { authQuery = authQuery.eq('category', category); }
+    if (limit) {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        authQuery = authQuery.range(from, to);
+    }
+
+    const { data: productsData, error: productsError } = await authQuery.order('name', { ascending: true });
+
+    if (productsError) {
+        console.error('[getAllProducts] AUTHENTICATED Products fetch error:', productsError);
+        return [];
+    }
 
     const pricedProducts = productsData.map(product => {
-        let finalPrice = product.price2; // Base price for authenticated user
+        let finalPrice = product.price2;
         let priceTier = 'price2 (base)';
 
-        if (isVip && product.price4 != null) {
+        if (profile.is_vip && product.price4 != null) {
             finalPrice = product.price4;
             priceTier = 'price4 (VIP)';
-        } else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
+        } else if (product.accumulation != null && profile.total_purchases > product.accumulation && product.price3 != null) {
             finalPrice = product.price3;
-            priceTier = `price3 (accumulation: ${totalPurchases} > ${product.accumulation})`;
+            priceTier = `price3 (accumulation: ${profile.total_purchases} > ${product.accumulation})`;
         }
         
-        console.log(`[getAllProducts] Pricing for product "${product.name}" (ID: ${product.id}): Final Price = ${finalPrice}, Tier = ${priceTier}`);
+        console.log(`[getAllProducts] Pricing for "${product.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
 
-        return {
-            ...product,
-            price: finalPrice,
-        };
+        return { ...product, price: finalPrice };
     });
 
     console.log('--- [getAllProducts] END ---');
     return pricedProducts;
 }
+
 
 export async function getProductsCount({ query, category }: { query?: string; category?: string; }): Promise<number> {
     const supabase = createClient();
@@ -126,17 +127,12 @@ export async function getProductsCount({ query, category }: { query?: string; ca
 export async function getFeaturedProducts(ids: number[], user: User | null): Promise<Product[]> {
   console.log('--- [getFeaturedProducts] START ---');
   const supabase = createClient();
-  if (!ids || ids.length === 0) {
-    return [];
-  }
+  if (!ids || ids.length === 0) return [];
 
-  const { data: productsData, error } = await supabase
-    .from('products')
-    .select('*')
-    .in('id', ids);
+  const { data: productsData, error } = await supabase.from('products').select('*').in('id', ids);
 
   if (error) {
-    console.error('[getFeaturedProducts] Error fetching featured products by IDs:', error);
+    console.error('[getFeaturedProducts] Error fetching by IDs:', error);
     return [];
   }
   
@@ -144,13 +140,10 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
 
   if (!user) {
       console.log('[getFeaturedProducts] User is GUEST. Applying price1.');
-      return productsData.map(product => ({
-          ...product,
-          price: product.price1,
-      }));
+      return productsData.map(p => ({ ...p, price: p.price1 }));
   }
 
-  console.log(`[getFeaturedProducts] User is AUTHENTICATED. User ID: ${user.id}. Fetching profile...`);
+  console.log(`[getFeaturedProducts] User is AUTHENTICATED: ${user.id}. Fetching profile...`);
   const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('total_purchases, is_vip')
@@ -158,38 +151,30 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
       .single();
 
    if (profileError) {
-        console.error('[getFeaturedProducts] Error fetching profile:', profileError);
-        console.log('[getFeaturedProducts] PROFILE FETCH FAILED. Falling back to guest price (price1) for safety.');
-         return productsData.map(product => ({
-            ...product,
-            price: product.price1,
-        }));
+        console.error('[getFeaturedProducts] Profile fetch error:', profileError);
+        console.log('[getFeaturedProducts] PROFILE FETCH FAILED. Falling back to GUEST price (price1) for safety.');
+        return productsData.map(p => ({ ...p, price: p.price1 }));
     }
-
-  const totalPurchases = profile?.total_purchases || 0;
-  const isVip = profile?.is_vip || false;
-  console.log(`[getFeaturedProducts] Profile loaded: total_purchases = ${totalPurchases}, is_vip = ${isVip}`);
-
+  
+  console.log(`[getFeaturedProducts] Profile loaded: total_purchases=${profile.total_purchases}, is_vip=${profile.is_vip}`);
 
   const pricedProducts = productsData.map(product => {
       let finalPrice = product.price2;
       let priceTier = 'price2 (base)';
 
-      if (isVip && product.price4 != null) {
+      if (profile.is_vip && product.price4 != null) {
           finalPrice = product.price4;
           priceTier = 'price4 (VIP)';
-      } else if (product.accumulation != null && totalPurchases > product.accumulation && product.price3 != null) {
+      } else if (product.accumulation != null && profile.total_purchases > product.accumulation && product.price3 != null) {
           finalPrice = product.price3;
-          priceTier = `price3 (accumulation: ${totalPurchases} > ${product.accumulation})`;
+          priceTier = `price3 (accumulation: ${profile.total_purchases} > ${product.accumulation})`;
       }
       
-      console.log(`[getFeaturedProducts] Pricing for product "${product.name}" (ID: ${product.id}): Final Price = ${finalPrice}, Tier = ${priceTier}`);
+      console.log(`[getFeaturedProducts] Pricing for "${product.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
 
-      return {
-          ...product,
-          price: finalPrice,
-      };
+      return { ...product, price: finalPrice };
   });
+
   console.log('--- [getFeaturedProducts] END ---');
   return pricedProducts;
 }
@@ -197,67 +182,48 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
 export async function getProductById(id: string, user: User | null): Promise<Product | null> {
     console.log(`--- [getProductById] START for product ID: ${id} ---`);
     const supabase = createClient();
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data: productData, error } = await supabase.from('products').select('*').eq('id', id).single();
 
-    if (error) {
-        if (error.code !== 'PGRST116') { 
-            console.error(`[getProductById] Error fetching product with id ${id}:`, error);
-        }
+    if (error || !productData) {
+        console.error(`[getProductById] Error fetching product ${id}:`, error);
         return null;
     }
   
-    if (data) {
-        let finalPrice: number | null = null;
-        let priceTier = 'N/A';
-
-        if (!user) {
-            finalPrice = data.price1;
-            priceTier = 'price1 (guest)';
-            console.log(`[getProductById] User is GUEST. Applying price1.`);
-        } else {
-            console.log(`[getProductById] User is AUTHENTICATED. User ID: ${user.id}. Fetching profile...`);
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('total_purchases, is_vip')
-                .eq('user_id', user.id)
-                .single();
-            
-            if (profileError) {
-                console.error('[getProductById] Error fetching profile:', profileError);
-                console.log('[getProductById] PROFILE FETCH FAILED. Falling back to guest price (price1) for safety.');
-                finalPrice = data.price1;
-                priceTier = 'price1 (fallback)';
-            } else {
-                const totalPurchases = profile?.total_purchases || 0;
-                const isVip = profile?.is_vip || false;
-                console.log(`[getProductById] Profile loaded: total_purchases = ${totalPurchases}, is_vip = ${isVip}`);
-
-                finalPrice = data.price2;
-                priceTier = 'price2 (base)';
-                if (isVip && data.price4 != null) {
-                    finalPrice = data.price4;
-                    priceTier = 'price4 (VIP)';
-                } else if (data.accumulation != null && totalPurchases > data.accumulation && data.price3 != null) {
-                    finalPrice = data.price3;
-                    priceTier = `price3 (accumulation: ${totalPurchases} > ${data.accumulation})`;
-                }
-            }
-        }
-        
-        console.log(`[getProductById] Pricing for product "${data.name}" (ID: ${data.id}): Final Price = ${finalPrice}, Tier = ${priceTier}`);
-        console.log(`--- [getProductById] END for product ID: ${id} ---`);
-
-        return {
-            ...data,
-            price: finalPrice,
-        };
+    if (!user) {
+        console.log(`[getProductById] User is GUEST. Applying price1.`);
+        return { ...productData, price: productData.price1 };
     }
 
-    return null;
+    console.log(`[getProductById] User is AUTHENTICATED: ${user.id}. Fetching profile...`);
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('total_purchases, is_vip')
+        .eq('user_id', user.id)
+        .single();
+    
+    if (profileError) {
+        console.error('[getProductById] Profile fetch error:', profileError);
+        console.log('[getProductById] PROFILE FETCH FAILED. Falling back to GUEST price (price1) for safety.');
+        return { ...productData, price: productData.price1 };
+    }
+
+    console.log(`[getProductById] Profile loaded: total_purchases=${profile.total_purchases}, is_vip=${profile.is_vip}`);
+    
+    let finalPrice = productData.price2;
+    let priceTier = 'price2 (base)';
+
+    if (profile.is_vip && productData.price4 != null) {
+        finalPrice = productData.price4;
+        priceTier = 'price4 (VIP)';
+    } else if (productData.accumulation != null && profile.total_purchases > productData.accumulation && productData.price3 != null) {
+        finalPrice = productData.price3;
+        priceTier = `price3 (accumulation: ${profile.total_purchases} > ${productData.accumulation})`;
+    }
+    
+    console.log(`[getProductById] Pricing for "${productData.name}": Final Price = ${finalPrice}, Tier = ${priceTier}`);
+    console.log(`--- [getProductById] END ---`);
+
+    return { ...productData, price: finalPrice };
 }
 
 export async function getAppBackground(): Promise<string | null> {
