@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/service';
 import { getProductById } from '@/lib/data';
 import type { Product } from '@/lib/definitions';
 import { revalidatePath } from 'next/cache';
@@ -27,7 +28,8 @@ export async function getFullProductDetails(productId: string): Promise<Product 
  * This is a Server Action that can be called from any context.
  */
 export async function incrementProductViewCount(productId: string) {
-  const supabase = createClient();
+  // ИСПРАВЛЕНО: Используем admin-клиент для обхода RLS
+  const supabase = createAdminClient();
 
   // Use a remote procedure call (RPC) in Supabase to increment the view count.
   const { error } = await supabase.rpc('increment_view_count', { product_id: productId });
