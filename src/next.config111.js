@@ -1,6 +1,7 @@
 
 
-const allowedOrigin = '6000-firebase-studio-1760946131578.cluster-6aufaxcfanfh2quaz7stglulic.cloudworkstations.dev';
+console.log("NEXT CONFIG LOADED")
+const allowedOrigin = '9000-firebase-studio-1760946131578.cluster-6aufaxcfanfh2quaz7stglulic.cloudworkstations.dev';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -47,17 +48,9 @@ const nextConfig = {
     ]
   },
 
-  experimental: {
-    // This option allows us to specify which packages should be treated as external
-    // by the server-side bundler. By adding '@supabase/supabase-js', we tell Next.js
-    // not to bundle it, resolving the 'Cannot find module' error.
-    serverComponentsExternalPackages: ['@supabase/supabase-js', 'require-in-the-middle'],
-  },
-
   webpack: (config, { isServer }) => {
     // This alias prevents Webpack from trying to bundle the 'canvas' module.
     // It's a server-side dependency of pdfjs-dist that we don't use, and it causes build errors.
-    // We apply it to both server and client builds to be safe.
     config.resolve.alias.canvas = false;
 
     // Fixes for client-side bundles only
@@ -66,9 +59,6 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false, // Don't bundle 'fs' for the browser
       };
-      
-      // This alias is necessary for pdf-parse to work in the browser.
-      config.resolve.alias['pdf-parse'] = 'pdf-parse/lib/pdf-parse.js';
     }
     
     return config;

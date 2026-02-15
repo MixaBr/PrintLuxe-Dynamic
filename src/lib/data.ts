@@ -15,8 +15,10 @@ interface ProductQueryOptions {
 export async function getAllProducts({ query, category, page = 1, limit = 1000, user: passedUser = undefined }: ProductQueryOptions = {}): Promise<Product[]> {
     const supabase = createClient();
     
+    // If a user object isn't explicitly passed, try to get it from the session.
     const { data: { user } } = passedUser === undefined ? await supabase.auth.getUser() : { data: { user: passedUser } };
 
+    // GUEST LOGIC
     if (!user) {
         let guestQuery = supabase
             .from('products')
@@ -38,6 +40,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         return productsData.map(p => ({ ...p, price: p.price1 }));
     }
 
+    // AUTHENTICATED USER LOGIC
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('total_purchases, is_vip')
@@ -45,7 +48,8 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         .single();
     
     if (profileError) {
-        console.error('[getAllProducts] AUTHENTICATED Profile fetch error:', profileError);
+        console.error(`[getAllProducts] AUTHENTICATED Profile fetch error for user ID ${user.id}:`, profileError);
+        // Fallback to guest logic if profile is not found
         return getAllProducts({ query, category, page, limit, user: null });
     }
 
@@ -64,7 +68,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
     const { data: productsData, error: productsError } = await authQuery.order('name', { ascending: true });
 
     if (productsError) {
-        console.error('[getAllProducts] AUTHENTICATED Products fetch error:', productsError);
+        console.error(`[getAllProducts] AUTHENTICATED Products fetch error for user ID ${user.id}:`, productsError);
         return [];
     }
 
@@ -78,7 +82,7 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         } else {
             finalPrice = product.price2;
         }
-
+        
         return { ...product, price: finalPrice };
     });
 

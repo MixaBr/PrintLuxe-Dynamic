@@ -2,7 +2,9 @@
 import { getAllProducts, getProductsCount } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { createClient } from '@/lib/supabase/server';
+
+// Указываем, что страница всегда должна быть динамической
+export const dynamic = 'force-dynamic';
 
 interface CatalogPageProps {
   searchParams: {
@@ -18,15 +20,14 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const currentPage = Number(searchParams.page) || 1;
   const productsPerPage = 20; // Количество товаров на странице
 
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // ИСПРАВЛЕНО: Мы больше не получаем пользователя здесь. 
+  // Функция getAllProducts сама получит его из контекста запроса.
+  const products = await getAllProducts({ query, category, page: currentPage, limit: productsPerPage });
 
-  const products = await getAllProducts({ query, category, page: currentPage, limit: productsPerPage, user });
-
+  // Для подсчета общего количества и категорий пользователь не нужен
   const totalProducts = await getProductsCount({ query, category });
   const totalPages = Math.ceil(totalProducts / productsPerPage);
-
-  const allFetchedProducts = await getAllProducts({user});
+  const allFetchedProducts = await getAllProducts({});
   const categories = [...new Set(allFetchedProducts.map(p => p.category).filter(Boolean))] as string[];
 
   const renderPagination = () => {
@@ -42,7 +43,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
             <PaginationItem key={i}>
               <PaginationLink href={`/catalog?query=${query}&category=${category}&page=${i + 1}`} isActive={currentPage === i + 1}>
                 {i + 1}
-              </PaginationLink>
+              </PaginationLink> 
             </PaginationItem>
           ))}
           <PaginationItem>

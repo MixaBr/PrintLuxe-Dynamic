@@ -33,7 +33,7 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
                     className="p-0 text-lg text-white/80 hover:text-white h-auto"
                     onClick={onLinkClick}
                 >
-                    <Link href={link.href}>
+                    <Link href={link.href} prefetch={false}>
                          {link.href === '/legal' ? (
                             <div className="text-left leading-tight">Юридическая<br/>информация</div>
                         ) : (
