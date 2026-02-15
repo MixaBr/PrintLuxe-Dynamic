@@ -9,8 +9,8 @@ export const paymentMethods = [
 ] as const;
 
 export const deliveryMethods = [
-  'Самовывоз',
   'Курьером по городу',
+  'Самовывоз',
   'СДЭК',
   'Почта'
 ] as const;
