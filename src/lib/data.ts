@@ -31,7 +31,9 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
             const to = from + limit - 1;
             guestQuery = guestQuery.range(from, to);
         }
-        const { data: productsData, error } = await guestQuery.order('name', { ascending: true });
+        const { data: productsData, error } = await guestQuery
+            .order('weight', { ascending: false })
+            .order('name', { ascending: true });
 
         if (error) {
             console.error('[getAllProducts] GUEST Supabase error:', error);
@@ -65,7 +67,9 @@ export async function getAllProducts({ query, category, page = 1, limit = 1000, 
         authQuery = authQuery.range(from, to);
     }
 
-    const { data: productsData, error: productsError } = await authQuery.order('name', { ascending: true });
+    const { data: productsData, error: productsError } = await authQuery
+        .order('weight', { ascending: false })
+        .order('name', { ascending: true });
 
     if (productsError) {
         console.error(`[getAllProducts] AUTHENTICATED Products fetch error for user ID ${user.id}:`, productsError);
