@@ -1,6 +1,6 @@
 
 
-const allowedOrigin = '6000-firebase-studio-1760946131578.cluster-6aufaxcfanfh2quaz7stglulic.cloudworkstations.dev';
+const allowedOrigin = 'https://6000-firebase-studio-1760946131578.cluster-6aufaxcfanfh2quaz7stglulic.cloudworkstations.dev';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
