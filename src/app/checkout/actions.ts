@@ -16,12 +16,11 @@ type FormState = {
   orderId?: number;
 };
 
-// ИСПРАВЛЕНИЕ: Определяем тип для объекта в корзине
 type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  product_id: string;
+  product_id: string; // ID should be a string to match the form data
 };
 
 async function getPickupAddress() {
@@ -48,22 +47,6 @@ export async function processOrder(
   const supabase = createClient();
   const rawData = Object.fromEntries(formData.entries());
 
-  // Server-side check for placeholder values
-  if (rawData.delivery_method === 'Выберите способ...') {
-    return {
-      status: 'error',
-      message: 'Пожалуйста, выберите способ доставки.',
-      errors: { delivery_method: ['Выберите способ доставки.'] }
-    };
-  }
-  if (rawData.payment_method === 'Выберите способ...') {
-    return {
-      status: 'error',
-      message: 'Пожалуйста, выберите способ оплаты.',
-      errors: { payment_method: ['Выберите способ оплаты.'] }
-    };
-  }
-
   const validatedFields = refinedCheckoutFormSchema.safeParse(rawData);
 
   if (!validatedFields.success) {
@@ -76,7 +59,6 @@ export async function processOrder(
 
   const { data: validatedData } = validatedFields;
   const cartItemsString = formData.get('cart_items') as string;
-  // ИСПРАВЛЕНИЕ: Указываем тип для массива корзины
   const cartItems: CartItem[] = JSON.parse(cartItemsString || '[]');
 
   if (cartItems.length === 0) {

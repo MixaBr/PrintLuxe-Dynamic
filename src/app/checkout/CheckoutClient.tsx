@@ -56,8 +56,6 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
       last_name: user?.profile?.last_name || '',
       email: user?.email || '',
       phone: user?.profile?.phone || '',
-      delivery_method: 'Выберите способ...',
-      payment_method: 'Выберите способ...',
       country: 'Беларусь',
       city: 'Минск',
       street: '',
@@ -96,7 +94,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
   }, [formState, router, clearCart, toast, form]);
 
   useEffect(() => {
-    if (deliveryMethod === 'Самовывоз' || !deliveryMethod || deliveryMethod === 'Выберите способ...') {
+    if (deliveryMethod === 'Самовывоз' || !deliveryMethod) {
         setShowNewAddressForm(false);
         setSelectedSavedAddress(null);
         setValue('street', '');
@@ -115,7 +113,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
   }, [paymentMethod, trigger]);
 
   const isPaymentMethodDisabled = (method: typeof paymentMethods[number]) => {
-    if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return false;
+    if (!deliveryMethod) return false;
     if (deliveryMethod === 'Самовывоз') {
       return false; // Все способы оплаты доступны
     }
@@ -126,7 +124,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
   };
 
   const isDeliveryMethodDisabled = (method: typeof deliveryMethods[number]) => {
-    if (!paymentMethod || paymentMethod === 'Выберите способ...') return false;
+    if (!paymentMethod) return false;
 
     if (paymentMethod === 'Наличный при получении' || paymentMethod === 'Картой при получении') {
       return method !== 'Самовывоз';
@@ -156,7 +154,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
   const onSubmit = (data: CheckoutFormValues) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
-        if (value && value !== 'Выберите способ...') formData.append(key, value.toString());
+        if (value) formData.append(key, value.toString());
     });
     formData.append('cart_items', JSON.stringify(items.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, name: i.name }))));
     formAction(formData);
@@ -165,7 +163,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
   const total = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
 
   const renderAddressSection = () => {
-    if (!deliveryMethod || deliveryMethod === 'Выберите способ...') return null;
+    if (!deliveryMethod) return null;
 
     if (deliveryMethod === 'Самовывоз') {
       return (
@@ -312,7 +310,6 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
                             {deliveryMethods.map(method => (
                               <SelectItem key={method} value={method} disabled={isDeliveryMethodDisabled(method)}>
                                 {method}
@@ -337,7 +334,6 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Выберите способ...">Выберите способ...</SelectItem>
                             {paymentMethods.map(method => (
                               <SelectItem key={method} value={method} disabled={isPaymentMethodDisabled(method)}>
                                 {method}
