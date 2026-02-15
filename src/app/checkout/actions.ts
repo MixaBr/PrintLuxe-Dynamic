@@ -20,7 +20,7 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  product_id: string; // ID should be a string to match the form data
+  product_id: string; 
 };
 
 async function getPickupAddress() {
@@ -118,7 +118,8 @@ export async function processOrder(
             source_url: headerList.get('referer'),
             cookie_id: cookieStore.get('_ga')?.value
         },
-        p_order_items: cartItems
+        p_order_items: cartItems,
+        p_pd_consent_given_at: null, // Инициализируем как null
     };
 
     if (validatedData.consent === 'true') {
