@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/service";
 
 interface ThankYouPageProps {
     params: {
@@ -12,7 +12,7 @@ interface ThankYouPageProps {
 }
 
 export default async function ThankYouPage({ params }: ThankYouPageProps) {
-    const supabase = createClient();
+    const supabase = createAdminClient();
     const { data: order, error } = await supabase
         .from('orders')
         .select('id, guest_email, guest_first_name')
@@ -20,6 +20,7 @@ export default async function ThankYouPage({ params }: ThankYouPageProps) {
         .single();
         
     if (error || !order) {
+        console.error(`Thank you page error for orderId ${params.orderId}:`, error);
         return (
              <div className="container mx-auto h-full flex items-center justify-center p-4">
                 <Card className="w-full max-w-lg bg-card/80 backdrop-blur-sm border-white/20">
