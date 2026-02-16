@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { cookies, headers } from "next/headers"
 
 const emailSchema = z.string().email({ message: 'Неверный формат email.' });
 const passwordSchema = z.string().min(6, { message: 'Пароль должен содержать не менее 6 символов.' });
@@ -148,15 +149,28 @@ export async function signUp(prevState: any, formData: FormData) {
   }
 
   if (data.user) {
+    const consentGivenAt = new Date();
+    
     // The user's profile is created by a trigger. Now, update it with the consent timestamp.
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ pd_consent_given_at: new Date().toISOString() })
+      .update({ pd_consent_given_at: consentGivenAt.toISOString() })
       .eq('user_id', data.user.id);
     
     if (profileError) {
         console.error('Failed to save consent timestamp during sign up:', profileError);
         // We don't need to fail the whole registration for this, but it should be logged.
+    }
+
+    // Call the RPC to create a formal audit record for the registration consent
+    const { error: rpcError } = await supabase.rpc('log_registration_consent', {
+      p_user_id: data.user.id,
+      p_consent_given_at: consentGivenAt.toISOString()
+    });
+
+    if (rpcError) {
+        console.error('Failed to create registration consent audit record:', rpcError);
+        // This is also not a fatal error for the user experience, but it's a critical issue for auditing and should be logged.
     }
   }
 
