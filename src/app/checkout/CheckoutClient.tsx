@@ -225,7 +225,7 @@ export default function CheckoutClient({ user, pickupAddress, consentGiven }: Ch
                     </div>
                     <div className='flex gap-2'>
                         <Button onClick={handleSelectSavedAddress} disabled={!selectedSavedAddress} className="flex-1">Выберите адрес</Button>
-                        <Button onClick={() => setShowNewAddressForm(true)} variant="outline" className="flex-1">Ввести новый адрес</Button>
+                        <Button onClick={() => setShowNewAddressForm(true)} className="flex-1">Ввести новый адрес</Button>
                     </div>
                 </div>
             )}

@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 /**
  * @fileOverview The main webhook endpoint for handling Telegram updates.
  * This file implements a sophisticated pipeline for processing incoming messages:

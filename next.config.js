@@ -70,6 +70,16 @@ const nextConfig = {
       // This alias is necessary for pdf-parse to work in the browser.
       config.resolve.alias['pdf-parse'] = 'pdf-parse/lib/pdf-parse.js';
     }
+
+    // Suppresses the "Critical dependency" warning from OpenTelemetry, which is a dependency of Genkit.
+    // This warning is common in libraries not specifically designed for Webpack and can be safely ignored.
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /@opentelemetry\/instrumentation/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+    ];
     
     return config;
   },

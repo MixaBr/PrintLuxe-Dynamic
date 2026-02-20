@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   description: 'Профессиональный ремонт принтеров, МФУ, запасные части и расходные материалы EPSON в Минске. Быстро, качественно, с гарантией. Работаем со всеми популярными марками: HP, Canon, Epson, Samsung, Brother.',
 };
 
+// Force dynamic rendering and disable static generation
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   let backgroundUrl;
   try {
