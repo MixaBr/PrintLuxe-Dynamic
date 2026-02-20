@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
+import { ru } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProfile } from "./actions";
@@ -73,6 +74,16 @@ export default async function ProfilePage() {
       return format(loginDate, 'dd.MM.yyyy HH:mm');
     } catch (e) {
       console.warn(`Invalid login date string received: ${dateString}`);
+      return 'Ошибка формата';
+    }
+  };
+
+  const formatDisplayDate = (dateString: string | null) => {
+    if (!dateString) return 'Неизвестно';
+    try {
+      return format(new Date(dateString), 'd MMMM yyyy г.', { locale: ru });
+    } catch (e) {
+      console.warn(`Invalid display date string received: ${dateString}`);
       return 'Ошибка формата';
     }
   };
@@ -213,6 +224,16 @@ export default async function ProfilePage() {
                               <p className="text-xs font-medium text-gray-300">Последний вход</p>
                               <p className="text-sm">{formatLoginTime(profile?.last_login_at)}</p>
                           </div>
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-gray-300 flex items-center gap-1"><Star className="h-3 w-3" /> VIP Статус</p>
+                            <p className={`text-sm font-semibold ${profile?.is_vip ? 'text-yellow-400' : ''}`}>{profile?.is_vip ? 'Активен' : 'Не активен'}</p>
+                          </div>
+                          {profile?.is_vip && (
+                              <div className="space-y-1">
+                                  <p className="text-xs font-medium text-gray-300">VIP с даты</p>
+                                  <p className="text-sm">{formatDisplayDate(profile.vip_since)}</p>
+                              </div>
+                          )}
                       </div>
                   </div>
               </CardContent>
