@@ -12,12 +12,12 @@ type NavLinkItem = {
 const navLinks: NavLinkItem[] = [
     { href: '/', label: 'Главная' },
     { href: '/catalog', label: 'Каталог' },
-    { href: '/services', label: 'Услуги' },
-    { href: '/faq', label: 'Вопросы' },
+    { href: '/services', label: 'Наши услуги' },
     { href: '/about', label: 'О нас' },
     { href: '/contact', label: 'Контакты' },
-    { href: '/legal', label: 'Юридическая информация' },
     { href: '/user-info', label: 'Информация для пользователя' },
+    { href: '/legal', label: 'Юридическая информация' },
+    { href: '/faq', label: 'Вопросы и ответы' },
 ];
 
 interface SidebarNavProps {
