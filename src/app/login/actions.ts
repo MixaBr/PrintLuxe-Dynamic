@@ -1,7 +1,7 @@
-
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
@@ -124,7 +124,7 @@ export async function signUp(prevState: any, formData: FormData) {
       return { error: 'Ошибка при проверке reCAPTCHA.' };
   }
 
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -149,10 +149,11 @@ export async function signUp(prevState: any, formData: FormData) {
   }
 
   if (data.user) {
+    const adminSupabase = createAdminClient();
     const consentGivenAt = new Date();
     
     // The user's profile is created by a trigger. Now, update it with the consent timestamp.
-    const { error: profileError } = await supabase
+    const { error: profileError } = await adminSupabase
       .from('profiles')
       .update({ pd_consent_given_at: consentGivenAt.toISOString() })
       .eq('user_id', data.user.id);
@@ -163,7 +164,7 @@ export async function signUp(prevState: any, formData: FormData) {
     }
 
     // Call the RPC to create a formal audit record for the registration consent
-    const { error: rpcError } = await supabase.rpc('log_registration_consent', {
+    const { error: rpcError } = await adminSupabase.rpc('log_registration_consent', {
       p_user_id: data.user.id,
       p_consent_given_at: consentGivenAt.toISOString()
     });
