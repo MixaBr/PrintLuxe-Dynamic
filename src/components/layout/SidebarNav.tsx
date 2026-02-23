@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -38,6 +37,8 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
                     <Link href={link.href} prefetch={false}>
                          {link.href === '/legal' ? (
                             <div className="text-left leading-tight">Юридическая<br/>информация</div>
+                         ) : link.href === '/user-info' ? (
+                            <div className="text-left leading-tight">Информация для<br/>пользователя</div>
                         ) : (
                             link.label
                         )}
