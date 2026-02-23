@@ -12,6 +12,7 @@ type NavLinkItem = {
 const navLinks: NavLinkItem[] = [
     { href: '/', label: 'Главная' },
     { href: '/catalog', label: 'Каталог' },
+    { href: '/services', label: 'Услуги' },
     { href: '/about', label: 'О нас' },
     { href: '/contact', label: 'Контакты' },
     { href: '/legal', label: 'Юридическая информация' },
