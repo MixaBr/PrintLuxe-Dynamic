@@ -5,9 +5,11 @@ import Link from "next/link"
 export default function AdminSalesPage() {
     const menuItems = [
         { href: "/admin", label: "Панель управления" },
+        { href: "/admin/content", label: "Содержимое" },
         { href: "/admin/products", label: "Товары" },
-        { href: "/admin/sales", label: "Продажи" },
         { href: "/admin/users", label: "Пользователи" },
+        { href: "/admin/settings/bot", label: "Настройки" },
+        { href: "/admin/system", label: "Система" },
     ]
 
     return (
@@ -16,7 +18,7 @@ export default function AdminSalesPage() {
                 <h1 className="font-headline text-3xl font-bold">Администрирование</h1>
                 <nav className="flex items-center gap-2">
                     {menuItems.map(item => (
-                        <Button key={item.href} variant="outline" asChild>
+                        <Button key={item.href} variant={item.href === '/admin/sales' ? 'default' : 'outline'} asChild>
                             <Link href={item.href}>{item.label}</Link>
                         </Button>
                     ))}
