@@ -166,7 +166,7 @@ export async function signUp(prevState: any, formData: FormData) {
     const { data: auditData, error: auditInsertError } = await adminSupabase
         .from('orders_pd_consent_audit')
         .insert({
-            order_id: 0, // Используем 0 как специальное значение для регистрации
+            order_id: null,
             old_pd_consent: null,
             new_pd_consent: consentGivenAt.toISOString(),
             changed_by: userId,
