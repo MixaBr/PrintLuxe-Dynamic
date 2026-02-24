@@ -174,21 +174,31 @@ export async function signUp(prevState: any, formData: FormData) {
     if (profileSelectError) {
         console.error('Failed to fetch profile ID for audit log:', profileSelectError);
     } else if (profileData) {
-        // Step 3: Directly insert the audit record with correct data types
-        const { error: auditInsertError } = await adminSupabase
+        // Step 3: Directly insert the audit record and request the inserted data back for verification.
+        const { data: auditData, error: auditInsertError } = await adminSupabase
             .from('orders_pd_consent_audit')
             .insert({
                 profile_id: profileData.id,
-                old_pd_consent: null, // Correct type: timestamptz can be null
-                new_pd_consent: consentGivenAt.toISOString(), // Correct type: timestamptz
+                old_pd_consent: null,
+                new_pd_consent: consentGivenAt.toISOString(),
                 changed_by: userId,
                 operation: 'registration',
                 changed_at: consentGivenAt.toISOString(),
                 actor_type: 'user'
-            });
+            })
+            .select(); // Ask Supabase to return the inserted row(s).
 
+        // Enhanced error logging to diagnose the silent failure.
         if (auditInsertError) {
-            console.error('Failed to create registration consent audit record via direct insert:', auditInsertError);
+            // This will catch explicit database errors (e.g., constraint violations).
+            console.error('CRITICAL: Direct insert into orders_pd_consent_audit FAILED with an error:', JSON.stringify(auditInsertError, null, 2));
+        } else if (!auditData || auditData.length === 0) {
+            // This case is crucial. If there's no error but also no data, 
+            // it strongly implies something silently prevented the insert.
+            console.error('CRITICAL: Direct insert into orders_pd_consent_audit returned NO ERROR but also NO DATA. The row was likely not inserted.');
+        } else {
+            // This is the success case.
+            console.log('SUCCESS: Audit record successfully inserted.', JSON.stringify(auditData, null, 2));
         }
     } else {
         console.error('Could not find profile for audit log even after update. Profile ID not found for user_id:', userId);
@@ -198,4 +208,3 @@ export async function signUp(prevState: any, formData: FormData) {
   revalidatePath('/', 'layout');
   return { success: true };
 }
-
