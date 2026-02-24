@@ -162,7 +162,6 @@ export async function signUp(prevState: any, formData: FormData) {
     
     if (profileUpdateError) {
         console.error('Failed to save consent timestamp to profile:', profileUpdateError);
-        // Continue, but log this critical failure.
     }
 
     // Step 2: Replicate the RPC logic by fetching the profile ID first.
@@ -175,13 +174,13 @@ export async function signUp(prevState: any, formData: FormData) {
     if (profileSelectError) {
         console.error('Failed to fetch profile ID for audit log:', profileSelectError);
     } else if (profileData) {
-        // Step 3: Directly insert the audit record.
+        // Step 3: Directly insert the audit record with correct data types
         const { error: auditInsertError } = await adminSupabase
             .from('orders_pd_consent_audit')
             .insert({
                 profile_id: profileData.id,
-                old_pd_consent: false,
-                new_pd_consent: true,
+                old_pd_consent: null, // Correct type: timestamptz can be null
+                new_pd_consent: consentGivenAt.toISOString(), // Correct type: timestamptz
                 changed_by: userId,
                 operation: 'registration',
                 changed_at: consentGivenAt.toISOString(),
@@ -199,3 +198,4 @@ export async function signUp(prevState: any, formData: FormData) {
   revalidatePath('/', 'layout');
   return { success: true };
 }
+
