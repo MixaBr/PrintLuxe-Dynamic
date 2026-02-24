@@ -154,7 +154,6 @@ export async function signUp(prevState: any, formData: FormData) {
     const consentGivenAt = new Date();
     const userId = data.user.id;
     
-    // Step 1: Update the profile with the consent timestamp.
     const { error: profileUpdateError } = await adminSupabase
       .from('profiles')
       .update({ pd_consent_given_at: consentGivenAt.toISOString() })
@@ -163,12 +162,11 @@ export async function signUp(prevState: any, formData: FormData) {
     if (profileUpdateError) {
         console.error('Failed to save consent timestamp to profile:', profileUpdateError);
     }
-
-    // Step 2: Directly insert the audit record.
+    
     const { data: auditData, error: auditInsertError } = await adminSupabase
         .from('orders_pd_consent_audit')
         .insert({
-            order_id: null,
+            order_id: 0, // Используем 0 как специальное значение для регистрации
             old_pd_consent: null,
             new_pd_consent: consentGivenAt.toISOString(),
             changed_by: userId,
