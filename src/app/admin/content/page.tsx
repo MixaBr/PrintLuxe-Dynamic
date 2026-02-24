@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -12,6 +11,7 @@ export default function AdminContentPage() {
         { href: "/admin/products", label: "Товары" },
         { href: "/admin/users", label: "Пользователи" },
         { href: "/admin/settings/bot", label: "Настройки" },
+        { href: "/admin/system", label: "Система" },
     ]
 
     return (

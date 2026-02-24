@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Users, FileText, Database, Settings } from "lucide-react"
+import { Users, FileText, Database, Settings, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -8,7 +8,8 @@ export default function AdminDashboardPage() {
         { title: "Управление контентом", description: "Редактирование страниц и базы знаний AI.", icon: <FileText className="h-8 w-8 text-muted-foreground" />, href: "/admin/content" },
         { title: "Управление пользователями", description: "Назначение ролей, просмотр и редактирование профилей.", icon: <Users className="h-8 w-8 text-muted-foreground" />, href: "/admin/users" },
         { title: "Управление каталогом", description: "Добавление, изменение и удаление товаров и категорий.", icon: <Database className="h-8 w-8 text-muted-foreground" />, href: "/admin/products" },
-        { title: "Системные настройки", description: "Глобальные параметры сайта, интеграции и ключи.", icon: <Settings className="h-8 w-8 text-muted-foreground" />, href: "/admin/settings/bot" },
+        { title: "Настройки", description: "Глобальные параметры сайта, интеграции и ключи.", icon: <Settings className="h-8 w-8 text-muted-foreground" />, href: "/admin/settings/bot" },
+        { title: "Обслуживание Системы", description: "Управление состоянием базы данных и другие системные задачи.", icon: <ShieldCheck className="h-8 w-8 text-muted-foreground" />, href: "/admin/system" },
     ]
 
     const menuItems = [
@@ -17,6 +18,7 @@ export default function AdminDashboardPage() {
         { href: "/admin/products", label: "Товары" },
         { href: "/admin/users", label: "Пользователи" },
         { href: "/admin/settings/bot", label: "Настройки" },
+        { href: "/admin/system", label: "Система" },
     ]
 
     return (
@@ -33,7 +35,7 @@ export default function AdminDashboardPage() {
             </div>
             
             <h2 className="font-headline text-2xl font-bold">Панель управления сайтом</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {stats.map(stat => (
                      <Card key={stat.title} className="hover:shadow-lg transition-shadow">
                         <Link href={stat.href}>

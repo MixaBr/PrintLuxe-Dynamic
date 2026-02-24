@@ -11,6 +11,7 @@ export default async function AdminBotSettingsPage() {
         { href: "/admin/products", label: "Товары" },
         { href: "/admin/users", label: "Пользователи" },
         { href: "/admin/settings/bot", label: "Настройки" },
+        { href: "/admin/system", label: "Система" },
     ]
 
     const supabase = createAdminClient();
