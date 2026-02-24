@@ -1,3 +1,4 @@
+
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
@@ -151,27 +152,47 @@ export async function signUp(prevState: any, formData: FormData) {
   if (data.user) {
     const adminSupabase = createAdminClient();
     const consentGivenAt = new Date();
+    const userId = data.user.id;
     
-    // The user's profile is created by a trigger. Now, update it with the consent timestamp.
-    const { error: profileError } = await adminSupabase
+    // Step 1: Update the profile with the consent timestamp.
+    const { error: profileUpdateError } = await adminSupabase
       .from('profiles')
       .update({ pd_consent_given_at: consentGivenAt.toISOString() })
-      .eq('user_id', data.user.id);
+      .eq('user_id', userId);
     
-    if (profileError) {
-        console.error('Failed to save consent timestamp during sign up:', profileError);
-        // We don't need to fail the whole registration for this, but it should be logged.
+    if (profileUpdateError) {
+        console.error('Failed to save consent timestamp to profile:', profileUpdateError);
+        // Continue, but log this critical failure.
     }
 
-    // Call the RPC to create a formal audit record for the registration consent
-    const { error: rpcError } = await adminSupabase.rpc('log_registration_consent', {
-      p_user_id: data.user.id,
-      p_consent_given_at: consentGivenAt.toISOString()
-    });
+    // Step 2: Replicate the RPC logic by fetching the profile ID first.
+    const { data: profileData, error: profileSelectError } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
 
-    if (rpcError) {
-        console.error('Failed to create registration consent audit record:', rpcError);
-        // This is also not a fatal error for the user experience, but it's a critical issue for auditing and should be logged.
+    if (profileSelectError) {
+        console.error('Failed to fetch profile ID for audit log:', profileSelectError);
+    } else if (profileData) {
+        // Step 3: Directly insert the audit record.
+        const { error: auditInsertError } = await adminSupabase
+            .from('orders_pd_consent_audit')
+            .insert({
+                profile_id: profileData.id,
+                old_pd_consent: false,
+                new_pd_consent: true,
+                changed_by: userId,
+                operation: 'registration',
+                changed_at: consentGivenAt.toISOString(),
+                actor_type: 'user'
+            });
+
+        if (auditInsertError) {
+            console.error('Failed to create registration consent audit record via direct insert:', auditInsertError);
+        }
+    } else {
+        console.error('Could not find profile for audit log even after update. Profile ID not found for user_id:', userId);
     }
   }
 
