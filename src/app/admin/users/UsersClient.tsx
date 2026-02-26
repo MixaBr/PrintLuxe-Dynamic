@@ -110,8 +110,8 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                  <TableCell>
                     <Badge variant={statusVariant(user.status)}>{user.status || 'unknown'}</Badge>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">{formatDate(user.created_at)}</TableCell>
-                <TableCell className="hidden lg:table-cell">{formatDate(user.last_sign_in_at)}</TableCell>
+                <TableCell className="hidden md:table-cell" suppressHydrationWarning>{formatDate(user.created_at)}</TableCell>
+                <TableCell className="hidden lg:table-cell" suppressHydrationWarning>{formatDate(user.last_sign_in_at)}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
