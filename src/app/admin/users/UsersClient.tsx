@@ -1,0 +1,153 @@
+
+'use client';
+
+import { useState, useTransition } from "react";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select"
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, Trash2, Loader2 } from "lucide-react";
+import { updateUserRole, deleteUser, type UserWithRoleAndProfile } from "./actions";
+
+interface UsersClientProps {
+  users: UserWithRoleAndProfile[];
+  currentUserId: string | undefined;
+}
+
+export function UsersClient({ users, currentUserId }: UsersClientProps) {
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+  const [userToDelete, setUserToDelete] = useState<UserWithRoleAndProfile | null>(null);
+
+  const handleRoleChange = (userId: string, newRole: string) => {
+    startTransition(async () => {
+      const result = await updateUserRole(userId, newRole);
+      if (result.error) {
+        toast({ variant: "destructive", title: "Ошибка", description: result.error });
+      } else {
+        toast({ title: "Успех", description: `Роль пользователя обновлена на "${newRole}".` });
+      }
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!userToDelete) return;
+    startTransition(async () => {
+      const result = await deleteUser(userToDelete.id);
+      if (result.error) {
+        toast({ variant: "destructive", title: "Ошибка", description: result.error });
+      } else {
+        toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
+      }
+      setUserToDelete(null);
+    });
+  };
+
+  const formatDate = (dateString: string | undefined) => {
+    return dateString ? format(new Date(dateString), "dd.MM.yyyy HH:mm") : '—';
+  };
+
+  const statusVariant = (status: string | null): "default" | "secondary" | "destructive" => {
+    switch (status) {
+        case 'active': return 'default';
+        case 'archived': return 'destructive';
+        default: return 'secondary';
+    }
+  }
+
+  return (
+    <>
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Пользователь</TableHead>
+              <TableHead>Роль</TableHead>
+              <TableHead>Статус</TableHead>
+              <TableHead className="hidden md:table-cell">Дата регистрации</TableHead>
+              <TableHead className="hidden lg:table-cell">Последний вход</TableHead>
+              <TableHead className="text-right">Действия</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id} className={isPending && (userToDelete?.id === user.id) ? 'opacity-50' : ''}>
+                <TableCell>
+                  <div className="font-medium">{user.first_name || 'Имя не'} {user.last_name || 'указано'}</div>
+                  <div className="text-sm text-muted-foreground">{user.email}</div>
+                </TableCell>
+                <TableCell>
+                   <Select
+                        defaultValue={user.role}
+                        onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                        disabled={user.id === currentUserId || isPending}
+                    >
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="buyer">Buyer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </TableCell>
+                 <TableCell>
+                    <Badge variant={statusVariant(user.status)}>{user.status || 'unknown'}</Badge>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(user.created_at)}</TableCell>
+                <TableCell className="hidden lg:table-cell">{formatDate(user.last_sign_in_at)}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" disabled={user.id === currentUserId || isPending}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Действия</DropdownMenuLabel>
+                      <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие полностью удалит пользователя <strong className="font-mono">{userToDelete?.email}</strong> и все его данные (профиль, заказы, адреса). Это действие невозможно отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90" disabled={isPending}>
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Да, удалить пользователя
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
