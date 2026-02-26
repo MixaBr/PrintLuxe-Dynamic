@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -25,6 +25,24 @@ interface UsersClientProps {
   users: UserWithRoleAndProfile[];
   currentUserId: string | undefined;
 }
+
+// Новый компонент для безопасного рендеринга дат на клиенте
+const ClientSideDate = ({ dateString }: { dateString: string | undefined }) => {
+  const [formattedDate, setFormattedDate] = useState('—');
+
+  useEffect(() => {
+    if (dateString) {
+      try {
+        setFormattedDate(format(new Date(dateString), "dd.MM.yyyy HH:mm"));
+      } catch (e) {
+        setFormattedDate('Неверная дата');
+      }
+    }
+  }, [dateString]);
+
+  return <>{formattedDate}</>;
+};
+
 
 export function UsersClient({ users, currentUserId }: UsersClientProps) {
   const router = useRouter();
@@ -58,14 +76,11 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     });
   };
 
-  const formatDate = (dateString: string | undefined) => {
-    return dateString ? format(new Date(dateString), "dd.MM.yyyy HH:mm") : '—';
-  };
-
   const statusVariant = (status: string | null): "default" | "secondary" | "destructive" => {
     switch (status) {
         case 'active': return 'default';
         case 'archived': return 'destructive';
+        case 'pending_verification': return 'secondary';
         default: return 'secondary';
     }
   }
@@ -110,8 +125,12 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                  <TableCell>
                     <Badge variant={statusVariant(user.status)}>{user.status || 'unknown'}</Badge>
                 </TableCell>
-                <TableCell className="hidden md:table-cell" suppressHydrationWarning>{formatDate(user.created_at)}</TableCell>
-                <TableCell className="hidden lg:table-cell" suppressHydrationWarning>{formatDate(user.last_sign_in_at)}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <ClientSideDate dateString={user.created_at} />
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  <ClientSideDate dateString={user.last_sign_in_at} />
+                </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
