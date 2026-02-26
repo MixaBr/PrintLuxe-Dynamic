@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useState, useTransition } from "react";
+import { useRouter } from 'next/navigation';
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,6 +27,7 @@ interface UsersClientProps {
 }
 
 export function UsersClient({ users, currentUserId }: UsersClientProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [userToDelete, setUserToDelete] = useState<UserWithRoleAndProfile | null>(null);
@@ -38,6 +39,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
         toast({ variant: "destructive", title: "Ошибка", description: result.error });
       } else {
         toast({ title: "Успех", description: `Роль пользователя обновлена на "${newRole}".` });
+        router.refresh();
       }
     });
   };
@@ -50,6 +52,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
         toast({ variant: "destructive", title: "Ошибка", description: result.error });
       } else {
         toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
+        router.refresh();
       }
       setUserToDelete(null);
     });
