@@ -68,11 +68,12 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
       const result = await deleteUser(userToDelete.id);
       if (result.error) {
         toast({ variant: "destructive", title: "Ошибка", description: result.error });
+        setUserToDelete(null);
       } else {
         toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
+        setUserToDelete(null);
         router.refresh();
       }
-      setUserToDelete(null);
     });
   };
 
