@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect } from "react";
@@ -177,12 +176,34 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                         disabled={user.id === currentUserId || isPending}
                     >
                         <SelectTrigger className="w-[180px]">
-                            <SelectValue />
+                            <div className="flex items-center gap-2">
+                                <span className={cn("h-2 w-2 rounded-full",
+                                    user.status === 'active' && "bg-green-500",
+                                    user.status === 'pending_verification' && "bg-yellow-400",
+                                    user.status === 'archived' && "bg-destructive"
+                                )} />
+                                <SelectValue />
+                            </div>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
-                            <SelectItem value="pending_verification">Pending Verification</SelectItem>
+                            <SelectItem value="active">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                                    <span>Active</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="archived">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-destructive" />
+                                    <span>Archived</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="pending_verification">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
+                                    <span>Pending Verification</span>
+                                </div>
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </TableCell>
