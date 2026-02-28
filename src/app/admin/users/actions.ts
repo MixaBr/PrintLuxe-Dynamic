@@ -84,6 +84,25 @@ export async function updateUserRole(userId: string, role: string): Promise<{ su
   }
 }
 
+// Action to update a user's status
+export async function updateUserStatus(userId: string, status: string): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ status: status })
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[updateUserStatus action Error]', error);
+    return { error: `Не удалось обновить статус: ${error.message}` };
+  }
+}
+
 // Action to delete a user
 export async function deleteUser(userId: string): Promise<{ success?: boolean; error?: string }> {
   try {

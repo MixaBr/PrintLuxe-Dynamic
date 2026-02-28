@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from "react";
@@ -17,9 +18,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Trash2, Loader2 } from "lucide-react";
-import { updateUserRole, deleteUser, type UserWithRoleAndProfile } from "./actions";
+import { updateUserRole, deleteUser, type UserWithRoleAndProfile, updateUserStatus } from "./actions";
 
 interface UsersClientProps {
   users: UserWithRoleAndProfile[];
@@ -62,29 +62,32 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     });
   };
 
-  const handleDeleteConfirm = () => {
-    if (!userToDelete) return;
+  const handleStatusChange = (userId: string, newStatus: string) => {
     startTransition(async () => {
-      const result = await deleteUser(userToDelete.id);
+      const result = await updateUserStatus(userId, newStatus);
       if (result.error) {
         toast({ variant: "destructive", title: "Ошибка", description: result.error });
-        setUserToDelete(null);
       } else {
-        toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
-        setUserToDelete(null);
+        toast({ title: "Успех", description: `Статус пользователя обновлен на "${newStatus}".` });
         router.refresh();
       }
     });
   };
 
-  const statusVariant = (status: string | null): "default" | "secondary" | "destructive" => {
-    switch (status) {
-        case 'active': return 'default';
-        case 'archived': return 'destructive';
-        case 'pending_verification': return 'secondary';
-        default: return 'secondary';
-    }
-  }
+  const handleDeleteConfirm = () => {
+    if (!userToDelete) return;
+
+    startTransition(async () => {
+      const result = await deleteUser(userToDelete.id);
+      if (result.error) {
+        toast({ variant: "destructive", title: "Ошибка", description: result.error });
+      } else {
+        toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
+      }
+      setUserToDelete(null);
+      router.refresh();
+    });
+  };
 
   return (
     <>
@@ -124,7 +127,20 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                     </Select>
                 </TableCell>
                  <TableCell>
-                    <Badge variant={statusVariant(user.status)}>{user.status || 'unknown'}</Badge>
+                    <Select
+                        defaultValue={user.status || 'active'}
+                        onValueChange={(newStatus) => handleStatusChange(user.id, newStatus)}
+                        disabled={user.id === currentUserId || isPending}
+                    >
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="archived">Archived</SelectItem>
+                            <SelectItem value="pending_verification">Pending Verification</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <ClientSideDate dateString={user.created_at} />
