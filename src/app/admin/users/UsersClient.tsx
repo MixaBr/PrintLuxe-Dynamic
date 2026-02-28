@@ -141,7 +141,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Действия</DropdownMenuLabel>
-                      <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="text-destructive">
+                      <DropdownMenuItem onSelect={() => setTimeout(() => setUserToDelete(user), 150)} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Удалить
                       </DropdownMenuItem>
