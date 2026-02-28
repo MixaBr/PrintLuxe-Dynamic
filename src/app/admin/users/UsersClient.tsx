@@ -22,6 +22,7 @@ import { MoreHorizontal, Trash2, Loader2, Gem } from "lucide-react";
 import { updateUserRole, deleteUser, type UserWithRoleAndProfile, updateUserStatus, updateUserVipStatus } from "./actions";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface UsersClientProps {
   users: UserWithRoleAndProfile[];
@@ -97,10 +98,16 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
         toast({ variant: "destructive", title: "Ошибка", description: result.error });
       } else {
         toast({ title: "Успех", description: `Пользователь ${userToDelete.email} был удален.` });
+        setUserToDelete(null);
+        router.refresh();
       }
-      setUserToDelete(null);
-      router.refresh();
     });
+  };
+
+  const handleDeleteAttempt = (user: UserWithRoleAndProfile) => {
+    setTimeout(() => {
+        setUserToDelete(user);
+    }, 150);
   };
 
   return (
@@ -131,13 +138,35 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                         onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
                         disabled={user.id === currentUserId || isPending}
                     >
-                        <SelectTrigger className="w-[120px]">
-                            <SelectValue />
+                        <SelectTrigger className="w-[140px]">
+                            <div className="flex items-center gap-2">
+                                <span className={cn("h-2 w-2 rounded-full",
+                                    user.role === 'admin' && "bg-destructive",
+                                    user.role === 'manager' && "bg-green-500",
+                                    user.role === 'buyer' && "bg-primary"
+                                )} />
+                                <SelectValue />
+                            </div>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="buyer">Buyer</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="buyer">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-primary" />
+                                    <span>Buyer</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="manager">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                                    <span>Manager</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="admin">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-destructive" />
+                                    <span>Admin</span>
+                                </div>
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </TableCell>
@@ -186,7 +215,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Действия</DropdownMenuLabel>
                       <DropdownMenuItem
-                        onSelect={() => setTimeout(() => setUserToDelete(user), 150)}
+                        onSelect={() => handleDeleteAttempt(user)}
                         className="text-destructive focus:text-destructive focus:bg-destructive/10"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
