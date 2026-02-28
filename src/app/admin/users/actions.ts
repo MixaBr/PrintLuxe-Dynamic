@@ -15,6 +15,7 @@ export type UserWithRoleAndProfile = {
   last_name: string | null;
   status: string | null;
   role: string;
+  is_vip: boolean | null;
 };
 
 // Action to get all users
@@ -59,6 +60,7 @@ export async function getUsers(): Promise<{ users: UserWithRoleAndProfile[], err
         last_name: profile?.last_name || null,
         status: profile?.status || 'active',
         role,
+        is_vip: profile?.is_vip || false,
       };
     });
 
@@ -100,6 +102,25 @@ export async function updateUserStatus(userId: string, status: string): Promise<
   } catch (error: any) {
     console.error('[updateUserStatus action Error]', error);
     return { error: `Не удалось обновить статус: ${error.message}` };
+  }
+}
+
+// Action to update VIP status
+export async function updateUserVipStatus(userId: string, isVip: boolean): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ is_vip: isVip, vip_since: isVip ? new Date().toISOString() : null })
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[updateUserVipStatus action Error]', error);
+    return { error: `Не удалось обновить VIP статус: ${error.message}` };
   }
 }
 

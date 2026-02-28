@@ -18,8 +18,10 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Loader2 } from "lucide-react";
-import { updateUserRole, deleteUser, type UserWithRoleAndProfile, updateUserStatus } from "./actions";
+import { MoreHorizontal, Trash2, Loader2, Gem } from "lucide-react";
+import { updateUserRole, deleteUser, type UserWithRoleAndProfile, updateUserStatus, updateUserVipStatus } from "./actions";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface UsersClientProps {
   users: UserWithRoleAndProfile[];
@@ -74,6 +76,18 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
     });
   };
 
+  const handleVipChange = (userId: string, isVip: boolean) => {
+    startTransition(async () => {
+        const result = await updateUserVipStatus(userId, isVip);
+        if (result.error) {
+            toast({ variant: "destructive", title: "Ошибка", description: result.error });
+        } else {
+            toast({ title: "Успех", description: `VIP статус пользователя обновлен.` });
+            router.refresh();
+        }
+    });
+  };
+
   const handleDeleteConfirm = () => {
     if (!userToDelete) return;
 
@@ -98,6 +112,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
               <TableHead>Пользователь</TableHead>
               <TableHead>Роль</TableHead>
               <TableHead>Статус</TableHead>
+              <TableHead>VIP</TableHead>
               <TableHead className="hidden md:table-cell">Дата регистрации</TableHead>
               <TableHead className="hidden lg:table-cell">Последний вход</TableHead>
               <TableHead className="text-right">Действия</TableHead>
@@ -142,6 +157,19 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                         </SelectContent>
                     </Select>
                 </TableCell>
+                <TableCell>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id={`vip-switch-${user.id}`}
+                            checked={user.is_vip || false}
+                            onCheckedChange={(newStatus) => handleVipChange(user.id, newStatus)}
+                            disabled={isPending}
+                        />
+                        <Label htmlFor={`vip-switch-${user.id}`} className="flex items-center">
+                            {user.is_vip && <Gem className="h-4 w-4 text-yellow-400" />}
+                        </Label>
+                    </div>
+                </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <ClientSideDate dateString={user.created_at} />
                 </TableCell>
@@ -157,7 +185,10 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Действия</DropdownMenuLabel>
-                      <DropdownMenuItem onSelect={() => setTimeout(() => setUserToDelete(user), 150)} className="text-destructive">
+                      <DropdownMenuItem
+                        onSelect={() => setTimeout(() => setUserToDelete(user), 150)}
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Удалить
                       </DropdownMenuItem>
