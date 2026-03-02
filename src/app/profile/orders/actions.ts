@@ -2,7 +2,6 @@
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
 // Определяем типы для заказов и их содержимого
 export type OrderItem = {
@@ -22,6 +21,19 @@ export type OrderWithItems = {
   total_amount: number;
   items: OrderItem[];
 };
+
+// Вспомогательный тип для данных, получаемых из Supabase
+type FetchedItem = {
+  id: number;
+  order_id: number;
+  product_id: number;
+  quantity: number;
+  price: number;
+  products: {
+    name: string;
+  } | null; // Supabase возвращает связанную запись как объект или null
+};
+
 
 /**
  * Fetches all orders for the currently authenticated user, along with their items.
@@ -53,25 +65,33 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     const orderIds = ordersData.map(o => o.id);
 
-    // ВРЕМЕННОЕ ИСПРАВЛЕНИЕ: Убрана колонка 'name' из запроса, чтобы избежать ошибки.
-    // Вместо нее будет подставлен плейсхолдер.
+    // ИСПРАВЛЕННЫЙ ЗАПРОС: Получаем детали и связываем их с названием товара из таблицы 'products'.
+    // Это предполагает, что существует связь по внешнему ключу от 'order_details.product_id' к 'products.id'.
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_details')
-      .select('id, order_id, product_id, quantity, price')
+      .select('id, order_id, product_id, quantity, price, products(name)')
       .in('order_id', orderIds);
 
     if (itemsError) {
-      console.error('Error fetching order items:', itemsError);
-      // Возвращаем конкретную ошибку от БД для точной диагностики
+      console.error('Error fetching order items with product names:', itemsError);
+      // Возвращаем точное сообщение об ошибке от Supabase для диагностики
       return { orders: [], error: `Ошибка при загрузке детализации заказов: ${itemsError.message}` };
     }
 
-    const itemsByOrderId = itemsData.reduce<Record<number, OrderItem[]>>((acc, item) => {
+    // Обрабатываем полученные данные, чтобы создать удобную структуру для клиента.
+    const itemsByOrderId = (itemsData as FetchedItem[]).reduce<Record<number, OrderItem[]>>((acc, item) => {
       if (!acc[item.order_id]) {
         acc[item.order_id] = [];
       }
-      // Добавляем плейсхолдер для имени товара
-      acc[item.order_id].push({ ...item, name: `[Название товара]` });
+      acc[item.order_id].push({
+        id: item.id,
+        order_id: item.order_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        // Безопасно получаем название из вложенного объекта 'products', с резервным вариантом.
+        name: item.products?.name || `[Товар удален или не найден, ID: ${item.product_id}]`
+      });
       return acc;
     }, {});
 
