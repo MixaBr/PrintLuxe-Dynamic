@@ -47,16 +47,16 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     if (ordersError) {
       console.error('Error fetching user orders:', ordersError);
-      throw new Error('Не удалось загрузить историю заказов.');
+      return { orders: [], error: `Ошибка при загрузке заказов: ${ordersError.message}` };
     }
 
     if (!ordersData || ordersData.length === 0) {
-      return { orders: [], error: null };
+      return { orders: [], error: null }; // No orders is a valid state, not an error.
     }
 
     const orderIds = ordersData.map(o => o.id);
 
-    // 2. Fetch all items for all found orders in a single query, using the correct table name 'order_details'.
+    // 2. Fetch all items for all found orders in a single query.
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_details')
       .select('id, order_id, product_id, quantity, price, name')
@@ -64,7 +64,8 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     if (itemsError) {
       console.error('Error fetching order items:', itemsError);
-      throw new Error('Не удалось загрузить детализацию заказов.');
+      // IMPORTANT: Return the actual database error message for diagnostics.
+      return { orders: [], error: `Ошибка при загрузке состава заказов: ${itemsError.message}` };
     }
 
     // 3. Group items by order_id for easy mapping.
