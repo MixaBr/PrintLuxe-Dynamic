@@ -49,10 +49,10 @@ export default async function ProfilePage() {
   };
 
   const menuItems = [
-    { href: "/profile/orders", label: "Мои заказы", icon: <ShoppingCart /> },
-    { href: "/profile/payments", label: "Мои оплаты", icon: <CreditCard /> },
-    { href: "/profile/purchases", label: "Мои покупки", icon: <ShoppingBag /> },
-    { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star /> },
+    { href: "/profile/orders", label: "Мои заказы", icon: <ShoppingCart className="mr-2 h-4 w-4"/> },
+    { href: "/profile/payments", label: "Мои оплаты", icon: <CreditCard className="mr-2 h-4 w-4"/> },
+    { href: "/profile/purchases", label: "Мои покупки", icon: <ShoppingBag className="mr-2 h-4 w-4"/> },
+    { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star className="mr-2 h-4 w-4"/> },
   ];
   
   const formatDate = (dateString: string | null) => {
