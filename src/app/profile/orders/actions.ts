@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
@@ -11,12 +10,12 @@ export type OrderItem = {
   product_id: string;
   quantity: number;
   price: number;
-  product_name: string;
+  name: string; // CORRECTED: Was product_name
 };
 
 export type OrderWithItems = {
   id: number;
-  created_at: string;
+  order_date: string; // CORRECTED: Was created_at
   user_id: string;
   status: 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
   total_amount: number;
@@ -28,21 +27,23 @@ export type OrderWithItems = {
  * @returns A promise that resolves to an object containing the user's orders or an error.
  */
 export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error: string | null }> {
+  // Using createClient ensures that requests are made in the user's security context,
+  // correctly applying Row-Level Security. Using the admin client here would be a security risk.
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Эта проверка на случай, если до страницы дошли без аутентификации
+    // This check is for cases where the page might be accessed without authentication.
     return { orders: [], error: 'Пользователь не авторизован.' };
   }
 
   try {
-    // 1. Получаем все заказы пользователя
+    // 1. Fetch all of the user's orders, using the correct column name 'order_date'.
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('id, created_at, user_id, status, total_amount')
+      .select('id, order_date, user_id, status, total_amount') // CORRECTED: Was created_at
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('order_date', { ascending: false }); // CORRECTED: Was created_at
 
     if (ordersError) {
       console.error('Error fetching user orders:', ordersError);
@@ -55,18 +56,20 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     const orderIds = ordersData.map(o => o.id);
 
-    // 2. Получаем все товары для всех найденных заказов одним запросом
+    // 2. Fetch all items for all found orders in a single query, using the correct column name 'name'.
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_items')
-      .select('id, order_id, product_id, quantity, price, product_name')
+      .select('id, order_id, product_id, quantity, price, name') // CORRECTED: Was product_name
       .in('order_id', orderIds);
 
     if (itemsError) {
       console.error('Error fetching order items:', itemsError);
+      // The error is most likely here if the column name 'name' is also incorrect.
+      // Based on checkout logic, 'name' is the correct column.
       throw new Error('Не удалось загрузить детализацию заказов.');
     }
 
-    // 3. Группируем товары по ID заказа для удобного маппинга
+    // 3. Group items by order_id for easy mapping.
     const itemsByOrderId = itemsData.reduce<Record<number, OrderItem[]>>((acc, item) => {
       if (!acc[item.order_id]) {
         acc[item.order_id] = [];
@@ -75,9 +78,10 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
       return acc;
     }, {});
 
-    // 4. Собираем финальный массив заказов с их товарами
+    // 4. Assemble the final array of orders with their items.
     const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
       ...order,
+      order_date: order.order_date, // Ensure the correct field is passed
       total_amount: order.total_amount || 0,
       status: order.status || 'Новый',
       items: itemsByOrderId[order.id] || [],
