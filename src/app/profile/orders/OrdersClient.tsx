@@ -56,7 +56,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
 
   const filteredOrders = useMemo(() => {
     return initialOrders.filter(order => {
-      const date = new Date(order.order_date); // CORRECTED: was order.created_at
+      const date = new Date(order.order_date);
       const amount = order.total_amount;
 
       const numberMatch = filters.number ? String(order.id).includes(filters.number) : true;
@@ -135,7 +135,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
               <React.Fragment key={order.id}>
                 <TableRow onDoubleClick={() => toggleOrderExpansion(order.id)} className="cursor-pointer border-white/10 hover:bg-white/5 data-[state=selected]:bg-white/10">
                   <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>{format(new Date(order.order_date), 'dd.MM.yyyy HH:mm')}</TableCell> {/* CORRECTED: was order.created_at */}
+                  <TableCell>{format(new Date(order.order_date), 'dd.MM.yyyy HH:mm')}</TableCell>
                   <TableCell>
                     <Badge className={cn('text-white', getStatusColor(order.status))}>
                       {order.status}
@@ -160,7 +160,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                           <TableBody>
                             {order.items.map(item => (
                               <TableRow key={item.id} className="border-white/10">
-                                <TableCell>{item.name}</TableCell> {/* CORRECTED: was item.product_name */}
+                                <TableCell>{item.name}</TableCell>
                                 <TableCell className="text-center">{item.quantity}</TableCell>
                                 <TableCell className="text-right">{item.price.toLocaleString('ru-RU')} BYN</TableCell>
                                 <TableCell className="text-right">{(item.price * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>

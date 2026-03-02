@@ -10,12 +10,12 @@ export type OrderItem = {
   product_id: string;
   quantity: number;
   price: number;
-  name: string; // CORRECTED: Was product_name
+  name: string;
 };
 
 export type OrderWithItems = {
   id: number;
-  order_date: string; // CORRECTED: Was created_at
+  order_date: string;
   user_id: string;
   status: 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
   total_amount: number;
@@ -41,9 +41,9 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
     // 1. Fetch all of the user's orders, using the correct column name 'order_date'.
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('id, order_date, user_id, status, total_amount') // CORRECTED: Was created_at
+      .select('id, order_date, user_id, status, total_amount')
       .eq('user_id', user.id)
-      .order('order_date', { ascending: false }); // CORRECTED: Was created_at
+      .order('order_date', { ascending: false });
 
     if (ordersError) {
       console.error('Error fetching user orders:', ordersError);
@@ -56,16 +56,14 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     const orderIds = ordersData.map(o => o.id);
 
-    // 2. Fetch all items for all found orders in a single query, using the correct column name 'name'.
+    // 2. Fetch all items for all found orders in a single query, using the correct table name 'order_details'.
     const { data: itemsData, error: itemsError } = await supabase
-      .from('order_items')
-      .select('id, order_id, product_id, quantity, price, name') // CORRECTED: Was product_name
+      .from('order_details')
+      .select('id, order_id, product_id, quantity, price, name')
       .in('order_id', orderIds);
 
     if (itemsError) {
       console.error('Error fetching order items:', itemsError);
-      // The error is most likely here if the column name 'name' is also incorrect.
-      // Based on checkout logic, 'name' is the correct column.
       throw new Error('Не удалось загрузить детализацию заказов.');
     }
 
@@ -81,7 +79,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
     // 4. Assemble the final array of orders with their items.
     const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
       ...order,
-      order_date: order.order_date, // Ensure the correct field is passed
+      order_date: order.order_date,
       total_amount: order.total_amount || 0,
       status: order.status || 'Новый',
       items: itemsByOrderId[order.id] || [],
