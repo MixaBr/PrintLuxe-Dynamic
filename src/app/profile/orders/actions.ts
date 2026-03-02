@@ -53,21 +53,25 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     const orderIds = ordersData.map(o => o.id);
 
+    // ВРЕМЕННОЕ ИСПРАВЛЕНИЕ: Убрана колонка 'name' из запроса, чтобы избежать ошибки.
+    // Вместо нее будет подставлен плейсхолдер.
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_details')
-      .select('id, order_id, product_id, quantity, price, name:product_name')
+      .select('id, order_id, product_id, quantity, price')
       .in('order_id', orderIds);
 
     if (itemsError) {
       console.error('Error fetching order items:', itemsError);
-      return { orders: [], error: `Ошибка при загрузке состава заказов: ${itemsError.message}` };
+      // Возвращаем конкретную ошибку от БД для точной диагностики
+      return { orders: [], error: `Ошибка при загрузке детализации заказов: ${itemsError.message}` };
     }
 
     const itemsByOrderId = itemsData.reduce<Record<number, OrderItem[]>>((acc, item) => {
       if (!acc[item.order_id]) {
         acc[item.order_id] = [];
       }
-      acc[item.order_id].push(item as OrderItem);
+      // Добавляем плейсхолдер для имени товара
+      acc[item.order_id].push({ ...item, name: `[Название товара]` });
       return acc;
     }, {});
 
