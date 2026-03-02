@@ -3,7 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/service';
-import { getProductById } from '@/lib/data';
+import { getProductById as getProductData } from '@/lib/data';
 import type { Product } from '@/lib/definitions';
 import { revalidatePath } from 'next/cache';
 
@@ -11,14 +11,14 @@ import { revalidatePath } from 'next/cache';
  * Fetches the full product details on the server, accounting for the user's authentication status and purchase history.
  * This is a Server Action designed to be called from Client Components.
  */
-export async function getFullProductDetails(productId: string): Promise<Product | null> {
+export async function getFullProductDetails(productId: number): Promise<Product | null> {
   // createClient from server.ts handles cookies internally.
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   // Fetch the product using the existing data-access function, 
   // passing the user object to calculate the correct tiered price.
-  const product = await getProductById(productId, user);
+  const product = await getProductData(productId, user);
   
   return product;
 }
@@ -27,12 +27,12 @@ export async function getFullProductDetails(productId: string): Promise<Product 
  * Increments the view count for a given product.
  * This is a Server Action that can be called from any context.
  */
-export async function incrementProductViewCount(productId: string) {
+export async function incrementProductViewCount(productId: number) {
   // ИСПРАВЛЕНО: Используем admin-клиент для обхода RLS
   const supabase = createAdminClient();
 
   // Use a remote procedure call (RPC) in Supabase to increment the view count.
-  const { error } = await supabase.rpc('increment_view_count', { product_id: productId });
+  const { error } = await supabase.rpc('increment_view_count', { p_product_id: productId });
 
   if (error) {
     console.error('Error incrementing view count:', error.message);

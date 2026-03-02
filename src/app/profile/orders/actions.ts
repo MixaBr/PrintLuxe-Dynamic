@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export type OrderItem = {
   id: number;
   order_id: number;
-  product_id: string;
+  product_id: number;
   quantity: number;
   price: number;
   name: string;

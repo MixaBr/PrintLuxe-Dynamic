@@ -163,7 +163,7 @@ export async function getFeaturedProducts(ids: number[], user: User | null): Pro
   return pricedProducts;
 }
 
-export async function getProductById(id: string, user: User | null): Promise<Product | null> {
+export async function getProductById(id: number, user: User | null): Promise<Product | null> {
     const supabase = createClient();
     const { data: productData, error } = await supabase.from('products').select('*').eq('id', id).single();
 

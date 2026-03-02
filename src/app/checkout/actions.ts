@@ -20,7 +20,7 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  product_id: string; 
+  product_id: number; 
 };
 
 async function getPickupAddress() {

@@ -34,7 +34,7 @@ export default function CartPage() {
   
   const total = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = (productId: number, newQuantity: number) => {
     if (newQuantity < 1) {
       // If quantity is zero, do nothing, deletion is handled by trash icon
     } else {
