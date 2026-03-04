@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Link2, Gem } from "lucide-react";
+import { LogOut, UserCircle, ShoppingCart, CreditCard, ShoppingBag, Star, Home, User, Mail, Phone, Calendar, BarChart2, Save, PlusCircle, Link2, Gem, FileText } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -50,6 +50,7 @@ export default async function ProfilePage() {
 
   const menuItems = [
     { href: "/profile/orders", label: "Мои заказы", icon: <ShoppingCart className="mr-2 h-4 w-4"/> },
+    { href: "/profile/invoices", label: "Мои счета", icon: <FileText className="mr-2 h-4 w-4"/> },
     { href: "/profile/payments", label: "Мои оплаты", icon: <CreditCard className="mr-2 h-4 w-4"/> },
     { href: "/profile/purchases", label: "Мои покупки", icon: <ShoppingBag className="mr-2 h-4 w-4"/> },
     { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star className="mr-2 h-4 w-4"/> },
