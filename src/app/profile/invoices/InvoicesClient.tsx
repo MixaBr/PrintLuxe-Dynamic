@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from 'react';
 import type { Invoice } from './actions';
-import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import ClientSideDate from '@/components/ui/ClientSideDate';
 
 type Status = 'Оплачен' | 'Ожидает оплаты' | 'Частично оплачен';
 const allStatuses: Status[] = ['Оплачен', 'Ожидает оплаты', 'Частично оплачен'];
@@ -45,7 +45,7 @@ export default function InvoicesClient({ initialInvoices }: InvoicesClientProps)
       const numberMatch = filters.number ? (invoice.invoice_number?.includes(filters.number) || String(invoice.id).includes(filters.number)) : true;
       const orderIdMatch = filters.orderId ? String(invoice.order_id).includes(filters.orderId) : true;
       const statusMatch = filters.status === 'all' ? true : invoice.status === filters.status;
-      const dateMatch = filters.date ? format(date, 'yyyy-MM-dd') === filters.date : true;
+      const dateMatch = filters.date ? new Date(date.toDateString()).toISOString().split('T')[0] === filters.date : true;
 
       return numberMatch && statusMatch && dateMatch && orderIdMatch;
     });
@@ -109,7 +109,9 @@ export default function InvoicesClient({ initialInvoices }: InvoicesClientProps)
             filteredInvoices.map(invoice => (
               <TableRow key={invoice.id} className="border-white/10">
                 <TableCell className="font-medium">{invoice.invoice_number || `Счет #${invoice.id}`}</TableCell>
-                <TableCell>{format(new Date(invoice.invoice_date), 'dd.MM.yyyy HH:mm')}</TableCell>
+                <TableCell>
+                  <ClientSideDate dateString={invoice.invoice_date} />
+                </TableCell>
                 <TableCell>
                     <Link href={`/profile/orders`} className="hover:underline">
                         #{invoice.order_id}

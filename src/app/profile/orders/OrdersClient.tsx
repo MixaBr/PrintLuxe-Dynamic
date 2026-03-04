@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import React, { useState, useMemo, useTransition, useEffect } from 'react';
 import type { OrderWithItems, OrderItem } from './actions';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import ClientSideDate from '@/components/ui/ClientSideDate';
 
 type Status = 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
 const allStatuses: Status[] = ['Новый', 'В обработке', 'В пути', 'Доставлен', 'Отменен'];
@@ -61,7 +60,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
 
       const numberMatch = filters.number ? String(order.id).includes(filters.number) : true;
       const statusMatch = filters.status === 'all' ? true : order.status === filters.status;
-      const dateMatch = filters.date ? format(date, 'yyyy-MM-dd') === filters.date : true;
+      const dateMatch = filters.date ? new Date(date.toDateString()).toISOString().split('T')[0] === filters.date : true;
       const amountMinMatch = filters.amountMin ? amount >= parseFloat(filters.amountMin) : true;
       const amountMaxMatch = filters.amountMax ? amount <= parseFloat(filters.amountMax) : true;
 
@@ -135,7 +134,9 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
               <React.Fragment key={order.id}>
                 <TableRow onDoubleClick={() => toggleOrderExpansion(order.id)} className="cursor-pointer border-white/10 hover:bg-white/5 data-[state=selected]:bg-white/10">
                   <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>{format(new Date(order.order_date), 'dd.MM.yyyy HH:mm')}</TableCell>
+                  <TableCell>
+                    <ClientSideDate dateString={order.order_date} />
+                  </TableCell>
                   <TableCell>
                     <Badge className={cn('text-white', getStatusColor(order.status))}>
                       {order.status}
@@ -160,7 +161,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                           <TableBody>
                             {order.items.map(item => (
                               <TableRow key={item.id} className="border-white/10">
-                                <TableCell>{item.name}</TableCell>
+                                <TableCell>{item.product_name}</TableCell>
                                 <TableCell className="text-center">{item.quantity}</TableCell>
                                 <TableCell className="text-right">{item.price.toLocaleString('ru-RU')} BYN</TableCell>
                                 <TableCell className="text-right">{(item.price * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
@@ -186,6 +187,3 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
     </div>
   );
 }
-
-// Dummy React import to satisfy the linter
-import React from 'react';

@@ -7,8 +7,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { format } from 'date-fns';
-import { ru } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateProfile } from "./actions";
@@ -16,6 +14,7 @@ import DeleteAccountButton from "./DeleteAccountButton";
 import AddressManager from "./AddressManager";
 import type { Address } from "@/lib/definitions";
 import TelegramIcon from "@/components/icons/TelegramIcon";
+import ClientSideDate from "@/components/ui/ClientSideDate";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -55,39 +54,6 @@ export default async function ProfilePage() {
     { href: "/profile/purchases", label: "Мои покупки", icon: <ShoppingBag className="mr-2 h-4 w-4"/> },
     { href: "/profile/bonuses", label: "Мои бонусы", icon: <Star className="mr-2 h-4 w-4"/> },
   ];
-  
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '';
-    try {
-        // Adding a time to handle timezone issues and ensure it's parsed as local
-        return format(new Date(`${dateString}T00:00:00`), 'yyyy-MM-dd');
-    } catch (e) {
-        console.warn(`Invalid date string received: ${dateString}`);
-        return '';
-    }
-  }
-
-  const formatLoginTime = (dateString: string | null) => {
-    if (!dateString) return 'Не записывался';
-    try {
-      const loginDate = new Date(dateString);
-      loginDate.setHours(loginDate.getHours() + 3);
-      return format(loginDate, 'dd.MM.yyyy HH:mm');
-    } catch (e) {
-      console.warn(`Invalid login date string received: ${dateString}`);
-      return 'Ошибка формата';
-    }
-  };
-
-  const formatDisplayDate = (dateString: string | null) => {
-    if (!dateString) return 'Неизвестно';
-    try {
-      return format(new Date(dateString), 'd MMMM yyyy г.', { locale: ru });
-    } catch (e) {
-      console.warn(`Invalid display date string received: ${dateString}`);
-      return 'Ошибка формата';
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 md:px-8 space-y-4">
@@ -154,7 +120,7 @@ export default async function ProfilePage() {
                           </div>
                           <div className="space-y-1">
                               <label htmlFor="birth_date" className="text-xs font-medium text-gray-300">Дата рождения</label>
-                              <Input id="birth_date" name="birth_date" type="date" defaultValue={formatDate(profile?.birth_date)} className="h-9 text-sm bg-white/10 border-white/20 text-white" />
+                              <Input id="birth_date" name="birth_date" type="date" defaultValue={profile?.birth_date || ''} className="h-9 text-sm bg-white/10 border-white/20 text-white" />
                           </div>
                            <div className="space-y-1">
                               <label htmlFor="gender" className="text-xs font-medium text-gray-300">Пол</label>
@@ -223,7 +189,9 @@ export default async function ProfilePage() {
                           </div>
                           <div className="space-y-1">
                               <p className="text-xs font-medium text-gray-300">Последний вход</p>
-                              <p className="text-sm">{formatLoginTime(profile?.last_login_at)}</p>
+                              <p className="text-sm">
+                                <ClientSideDate dateString={profile?.last_login_at} placeholder="Не записывался" />
+                              </p>
                           </div>
                           <div className="space-y-1">
                             <p className="text-xs font-medium text-gray-300 flex items-center gap-1"><Star className="h-3 w-3" /> VIP Статус</p>
@@ -232,7 +200,9 @@ export default async function ProfilePage() {
                           {profile?.is_vip && (
                               <div className="space-y-1">
                                   <p className="text-xs font-medium text-gray-300">VIP с даты</p>
-                                  <p className="text-sm">{formatDisplayDate(profile.vip_since)}</p>
+                                  <p className="text-sm">
+                                    <ClientSideDate dateString={profile.vip_since} formatString="d MMMM yyyy г." placeholder="Неизвестно" />
+                                  </p>
                               </div>
                           )}
                       </div>
