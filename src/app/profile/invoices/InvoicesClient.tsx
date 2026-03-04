@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,14 +11,14 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ClientSideDate from '@/components/ui/ClientSideDate';
 
-type Status = 'Оплачен' | 'Ожидает оплаты' | 'Частично оплачен';
-const allStatuses: Status[] = ['Оплачен', 'Ожидает оплаты', 'Частично оплачен'];
+type Status = 'Не оплачен' | 'Частично оплачен' | 'Оплачен';
+const allStatuses: Status[] = ['Не оплачен', 'Частично оплачен', 'Оплачен'];
 
 const getStatusColor = (status: Status) => {
   switch (status) {
     case 'Оплачен': return 'bg-green-500 hover:bg-green-500';
     case 'Частично оплачен': return 'bg-yellow-500 hover:bg-yellow-500';
-    case 'Ожидает оплаты': return 'bg-red-500 hover:bg-red-500';
+    case 'Не оплачен': return 'bg-red-500 hover:bg-red-500';
     default: return 'bg-gray-500 hover:bg-gray-500';
   }
 };

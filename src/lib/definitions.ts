@@ -63,3 +63,12 @@ export type Address = {
   address_type: 'delivery' | 'billing' | 'other' | null;
 };
 
+export type OrderWithItems = {
+  id: number;
+  order_date: string;
+  user_id: string;
+  status: 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
+  total_amount: number;
+  items: any[]; // Can be more specific if item structure is known
+  invoice_created: boolean;
+};

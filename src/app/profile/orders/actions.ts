@@ -3,14 +3,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-// Определяем типы для заказов и их содержимого
 export type OrderItem = {
   id: number;
   order_id: number;
   product_id: number;
   quantity: number;
   price: number;
-  name: string;
+  product_name: string;
 };
 
 export type OrderWithItems = {
@@ -20,9 +19,9 @@ export type OrderWithItems = {
   status: 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
   total_amount: number;
   items: OrderItem[];
+  invoice_created: boolean;
 };
 
-// Вспомогательный тип для данных, получаемых из Supabase
 type FetchedItem = {
   id: number;
   order_id: number;
@@ -31,14 +30,9 @@ type FetchedItem = {
   price: number;
   products: {
     name: string;
-  } | null; // Supabase возвращает связанную запись как объект или null
+  } | null;
 };
 
-
-/**
- * Fetches all orders for the currently authenticated user, along with their items.
- * @returns A promise that resolves to an object containing the user's orders or an error.
- */
 export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error: string | null }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -50,7 +44,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
   try {
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('id, order_date, user_id, status, total_amount')
+      .select('id, order_date, user_id, status, total_amount, invoice_created')
       .eq('user_id', user.id)
       .order('order_date', { ascending: false });
 
@@ -64,9 +58,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
     }
 
     const orderIds = ordersData.map(o => o.id);
-
-    // ИСПРАВЛЕННЫЙ ЗАПРОС: Получаем детали и связываем их с названием товара из таблицы 'products'.
-    // Это предполагает, что существует связь по внешнему ключу от 'order_details.product_id' к 'products.id'.
+    
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_details')
       .select('id, order_id, product_id, quantity, price, products(name)')
@@ -74,11 +66,9 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
 
     if (itemsError) {
       console.error('Error fetching order items with product names:', itemsError);
-      // Возвращаем точное сообщение об ошибке от Supabase для диагностики
       return { orders: [], error: `Ошибка при загрузке детализации заказов: ${itemsError.message}` };
     }
 
-    // Обрабатываем полученные данные, чтобы создать удобную структуру для клиента.
     const itemsByOrderId = (itemsData as FetchedItem[]).reduce<Record<number, OrderItem[]>>((acc, item) => {
       if (!acc[item.order_id]) {
         acc[item.order_id] = [];
@@ -89,8 +79,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.price,
-        // Безопасно получаем название из вложенного объекта 'products', с резервным вариантом.
-        name: item.products?.name || `[Товар удален или не найден, ID: ${item.product_id}]`
+        product_name: item.products?.name || `[Товар удален, ID: ${item.product_id}]`
       });
       return acc;
     }, {});
@@ -101,6 +90,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
       total_amount: order.total_amount || 0,
       status: order.status || 'Новый',
       items: itemsByOrderId[order.id] || [],
+      invoice_created: order.invoice_created ?? false,
     }));
 
     return { orders: ordersWithItems, error: null };

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useTransition, useEffect } from 'react';
@@ -8,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import ClientSideDate from '@/components/ui/ClientSideDate';
+import { FileCheck2, FileClock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Status = 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
 const allStatuses: Status[] = ['Новый', 'В обработке', 'В пути', 'Доставлен', 'Отменен'];
@@ -126,58 +129,75 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                 />
               </div>
             </TableHead>
+             <TableHead className="w-[100px] text-center">Счет</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
-              <React.Fragment key={order.id}>
-                <TableRow onDoubleClick={() => toggleOrderExpansion(order.id)} className="cursor-pointer border-white/10 hover:bg-white/5 data-[state=selected]:bg-white/10">
-                  <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>
-                    <ClientSideDate dateString={order.order_date} />
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn('text-white', getStatusColor(order.status))}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{order.total_amount.toLocaleString('ru-RU', { style: 'currency', currency: 'BYN' })}</TableCell>
-                </TableRow>
-                {expandedOrderIds.has(order.id) && (
-                  <TableRow className="bg-black/20 hover:bg-black/20">
-                    <TableCell colSpan={4} className="p-0">
-                      <div className="p-4">
-                        <h4 className="font-semibold mb-2 text-md">Состав заказа #{order.id}</h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="hover:bg-transparent border-white/10">
-                              <TableHead className="text-white">Название товара</TableHead>
-                              <TableHead className="text-center text-white">Кол-во</TableHead>
-                              <TableHead className="text-right text-white">Цена за шт.</TableHead>
-                              <TableHead className="text-right text-white">Сумма</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.items.map(item => (
-                              <TableRow key={item.id} className="border-white/10">
-                                <TableCell>{item.product_name}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-right">{item.price.toLocaleString('ru-RU')} BYN</TableCell>
-                                <TableCell className="text-right">{(item.price * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+            <TooltipProvider>
+              {filteredOrders.map(order => (
+                <React.Fragment key={order.id}>
+                  <TableRow onDoubleClick={() => toggleOrderExpansion(order.id)} className="cursor-pointer border-white/10 hover:bg-white/5 data-[state=selected]:bg-white/10">
+                    <TableCell className="font-medium">#{order.id}</TableCell>
+                    <TableCell>
+                      <ClientSideDate dateString={order.order_date} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn('text-white', getStatusColor(order.status))}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{order.total_amount.toLocaleString('ru-RU', { style: 'currency', currency: 'BYN' })}</TableCell>
+                    <TableCell className="text-center">
+                        <Tooltip>
+                            <TooltipTrigger>
+                                {order.invoice_created ? (
+                                    <FileCheck2 className="h-5 w-5 text-green-400 mx-auto" />
+                                ) : (
+                                    <FileClock className="h-5 w-5 text-yellow-400 mx-auto" />
+                                )}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{order.invoice_created ? 'Счет по заказу создан' : 'Счет ожидает создания'}</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </TableCell>
                   </TableRow>
-                )}
-              </React.Fragment>
-            ))
+                  {expandedOrderIds.has(order.id) && (
+                    <TableRow className="bg-black/20 hover:bg-black/20">
+                      <TableCell colSpan={5} className="p-0">
+                        <div className="p-4">
+                          <h4 className="font-semibold mb-2 text-md">Состав заказа #{order.id}</h4>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="hover:bg-transparent border-white/10">
+                                <TableHead className="text-white">Название товара</TableHead>
+                                <TableHead className="text-center text-white">Кол-во</TableHead>
+                                <TableHead className="text-right text-white">Цена за шт.</TableHead>
+                                <TableHead className="text-right text-white">Сумма</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {order.items.map(item => (
+                                <TableRow key={item.id} className="border-white/10">
+                                  <TableCell>{item.product_name}</TableCell>
+                                  <TableCell className="text-center">{item.quantity}</TableCell>
+                                  <TableCell className="text-right">{item.price.toLocaleString('ru-RU')} BYN</TableCell>
+                                  <TableCell className="text-right">{(item.price * item.quantity).toLocaleString('ru-RU')} BYN</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))}
+            </TooltipProvider>
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center text-white/70">
+              <TableCell colSpan={5} className="h-24 text-center text-white/70">
                 Заказы, соответствующие фильтрам, не найдены.
               </TableCell>
             </TableRow>
