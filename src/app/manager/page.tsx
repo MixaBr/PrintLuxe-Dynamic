@@ -5,26 +5,27 @@ import { Button } from "@/components/ui/button"
 
 export default function ManagerDashboardPage() {
     const stats = [
-        { title: "Новые заказы", value: "125", icon: <ShoppingCart className="h-4 w-4 text-muted-foreground" /> },
-        { title: "Новые клиенты", value: "+34", icon: <Users className="h-4 w-4 text-muted-foreground" /> },
-        { title: "Товаров на складе", value: "1,234", icon: <Package className="h-4 w-4 text-muted-foreground" /> },
-        { title: "Выручка за день", value: "50,345 BYN", icon: <DollarSign className="h-4 w-4 text-muted-foreground" /> },
+        { title: "Заказы", description: "Просмотр и управление заказами.", icon: <ShoppingCart className="h-8 w-8 text-muted-foreground" />, href: "/manager/orders" },
+        { title: "Продажи и счета", description: "Создание счетов и регистрация оплат.", icon: <DollarSign className="h-8 w-8 text-muted-foreground" />, href: "/manager/sales" },
+        { title: "Клиенты", description: "Просмотр и управление клиентами.", icon: <Users className="h-8 w-8 text-muted-foreground" />, href: "/manager/clients" },
+        { title: "Товары", description: "Управление каталогом товаров.", icon: <Package className="h-8 w-8 text-muted-foreground" />, href: "/manager/products" },
     ]
 
     const menuItems = [
-        { href: "/manager", label: "Панель управления" },
+        { href: "/manager", label: "Панель" },
         { href: "/manager/orders", label: "Заказы" },
         { href: "/manager/products", label: "Товары" },
         { href: "/manager/clients", label: "Клиенты" },
+        { href: "/manager/sales", label: "Продажи" },
     ]
 
     return (
         <div className="container mx-auto px-4 py-12 md:px-8 md:py-16 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="font-headline text-3xl font-bold">Панель менеджера</h1>
-                <nav className="flex items-center gap-2">
+                <nav className="hidden md:flex items-center gap-2">
                     {menuItems.map(item => (
-                        <Button key={item.href} variant="outline" asChild>
+                        <Button key={item.href} variant={item.href === '/manager' ? 'default' : 'outline'} asChild>
                             <Link href={item.href}>{item.label}</Link>
                         </Button>
                     ))}
@@ -34,14 +35,16 @@ export default function ManagerDashboardPage() {
             <h2 className="font-headline text-2xl font-bold">Панель управления</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {stats.map(stat => (
-                    <Card key={stat.title}>
+                    <Card key={stat.title} className="hover:shadow-lg transition-shadow">
+                      <Link href={stat.href}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                            <CardTitle className="text-xl font-medium">{stat.title}</CardTitle>
                             {stat.icon}
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stat.value}</div>
+                            <p className="text-sm text-muted-foreground">{stat.description}</p>
                         </CardContent>
+                      </Link>
                     </Card>
                 ))}
             </div>
