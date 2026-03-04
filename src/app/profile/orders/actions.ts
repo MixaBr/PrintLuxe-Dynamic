@@ -30,7 +30,7 @@ type FetchedItem = {
   price: number;
   products: {
     name: string;
-  } | null;
+  }[] | null;
 };
 
 export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error: string | null }> {
@@ -79,7 +79,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.price,
-        product_name: item.products?.name || `[Товар удален, ID: ${item.product_id}]`
+        product_name: item.products?.[0]?.name || `[Товар удален, ID: ${item.product_id}]`
       });
       return acc;
     }, {});
