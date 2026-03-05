@@ -138,6 +138,20 @@ export function InvoiceManager({ ordersToInvoice, invoicesToPay }: InvoiceManage
                             <Label htmlFor="payment_date">Дата оплаты</Label>
                             <Input id="payment_date" name="payment_date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} />
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="payment_method">Метод оплаты</Label>
+                            <Select name="payment_method" required>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Выберите метод..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Наличные">Наличные</SelectItem>
+                                    <SelectItem value="Банковская карта">Банковская карта</SelectItem>
+                                    <SelectItem value="ЕРИП">ЕРИП</SelectItem>
+                                    <SelectItem value="Безналичный расчет">Безналичный расчет</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <RegisterPaymentSubmitButton />
                     </form>
                 </CardContent>

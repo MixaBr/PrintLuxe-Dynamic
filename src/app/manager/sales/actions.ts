@@ -80,8 +80,9 @@ export async function registerPayment(prevState: FormState, formData: FormData):
     const invoiceId = formData.get('invoice_id');
     const paymentSum = parseFloat(formData.get('payment_sum') as string);
     const paymentDate = formData.get('payment_date') as string;
+    const paymentMethod = formData.get('payment_method') as string;
 
-    if (!invoiceId || isNaN(paymentSum) || !paymentDate) {
+    if (!invoiceId || isNaN(paymentSum) || !paymentDate || !paymentMethod) {
         return { status: 'error', message: 'Все поля обязательны для заполнения.' };
     }
     
@@ -94,7 +95,23 @@ export async function registerPayment(prevState: FormState, formData: FormData):
     try {
         // --- This entire block should be a single database transaction/RPC ---
 
-        // 1. Get current invoice and user profile
+        // 1. Create a record in the 'payments' table
+        const { error: paymentInsertError } = await supabase
+            .from('payments')
+            .insert({
+                invoice_id: Number(invoiceId),
+                payment_date: paymentDate,
+                payment_amount: paymentSum,
+                payment_method: paymentMethod,
+                payment_status: 'completed' // Assuming direct registration means it's completed
+            });
+
+        if (paymentInsertError) {
+            console.error(`Error inserting into payments table:`, paymentInsertError);
+            throw new Error(`Не удалось записать платеж: ${paymentInsertError.message}`);
+        }
+
+        // 2. Get current invoice and user profile
         const { data: invoice, error: invoiceError } = await supabase
             .from('invoices')
             .select('*, orders(user_id)')
@@ -120,7 +137,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             throw new Error(`Профиль для пользователя ${userId} не найден.`);
         }
 
-        // 2. Calculate new values based on your logic
+        // 3. Calculate new values based on your logic
         const newPaymentAmount = (invoice.payment_amount || 0) + paymentSum;
         const newDebt = newPaymentAmount - (invoice.invoice_amount || 0);
 
@@ -131,7 +148,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             newStatus = 'Частично оплачен';
         }
 
-        // 3. Update invoice
+        // 4. Update invoice
         const { error: updateInvoiceError } = await supabase
             .from('invoices')
             .update({
@@ -145,7 +162,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             throw new Error(`Ошибка при обновлении счета: ${updateInvoiceError.message}`);
         }
 
-        // 4. Handle overpayment
+        // 5. Handle overpayment
         if (newDebt > 0) {
             const newBalance = (profile.balance || 0) + newDebt;
             const { error: updateProfileError } = await supabase
