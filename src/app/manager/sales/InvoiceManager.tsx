@@ -145,9 +145,9 @@ export function InvoiceManager({ ordersToInvoice, invoicesToPay }: InvoiceManage
                                     <SelectValue placeholder="Выберите метод..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Наличные">Наличные</SelectItem>
-                                    <SelectItem value="Банковская карта">Банковская карта</SelectItem>
-                                    <SelectItem value="ЕРИП">ЕРИП</SelectItem>
+                                    <SelectItem value="Наличный расчет">Наличный расчет</SelectItem>
+                                    <SelectItem value="Оплата банковской картой">Оплата банковской картой</SelectItem>
+                                    <SelectItem value="Оплата через ЕРИП">Оплата через ЕРИП</SelectItem>
                                     <SelectItem value="Безналичный расчет">Безналичный расчет</SelectItem>
                                 </SelectContent>
                             </Select>
