@@ -83,7 +83,9 @@ export default async function ManagerProductsPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Действия</DropdownMenuLabel>
-                                                    <DropdownMenuItem>Редактировать</DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                      <Link href={`/manager/products/${product.id}/edit`}>Редактировать</Link>
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem>Удалить</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
