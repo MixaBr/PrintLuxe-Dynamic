@@ -22,17 +22,6 @@ export type OrderWithItems = {
   invoice_created: boolean;
 };
 
-type FetchedItem = {
-  id: number;
-  order_id: number;
-  product_id: number;
-  quantity: number;
-  price: number;
-  products: {
-    name: string;
-  }[] | null;
-};
-
 export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error: string | null }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -61,15 +50,40 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
     
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_details')
-      .select('id, order_id, product_id, quantity, price, products(name)')
+      .select('id, order_id, product_id, quantity, price')
       .in('order_id', orderIds);
 
     if (itemsError) {
-      console.error('Error fetching order items with product names:', itemsError);
+      console.error('Error fetching order items:', itemsError);
       return { orders: [], error: `Ошибка при загрузке детализации заказов: ${itemsError.message}` };
     }
 
-    const itemsByOrderId = (itemsData as FetchedItem[]).reduce<Record<number, OrderItem[]>>((acc, item) => {
+    if (!itemsData || itemsData.length === 0) {
+        const ordersWithEmptyItems: OrderWithItems[] = ordersData.map(order => ({
+            ...order,
+            order_date: order.order_date,
+            total_amount: order.total_amount || 0,
+            status: order.status || 'Новый',
+            items: [],
+            invoice_created: order.invoice_created ?? false,
+        }));
+        return { orders: ordersWithEmptyItems, error: null };
+    }
+
+    const productIds = [...new Set(itemsData.map(item => item.product_id))];
+    const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, name')
+        .in('id', productIds);
+
+    if (productsError) {
+        console.error('Error fetching product names:', productsError);
+        return { orders: [], error: `Ошибка при загрузке названий товаров: ${productsError.message}` };
+    }
+
+    const productNamesMap = new Map(productsData.map(p => [p.id, p.name]));
+
+    const itemsByOrderId = itemsData.reduce<Record<number, OrderItem[]>>((acc, item) => {
       if (!acc[item.order_id]) {
         acc[item.order_id] = [];
       }
@@ -79,7 +93,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.price,
-        product_name: item.products?.[0]?.name || `[Товар удален, ID: ${item.product_id}]`
+        product_name: productNamesMap.get(item.product_id) || `[Товар удален, ID: ${item.product_id}]`
       });
       return acc;
     }, {});
