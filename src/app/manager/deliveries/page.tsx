@@ -43,7 +43,7 @@ export default async function ManagerDeliveriesPage() {
                         <div>
                             <CardTitle>Заказы к отправке</CardTitle>
                             <CardDescription>
-                                Список оплаченных заказов, ожидающих отправки или находящихся в пути.
+                                Список оплаченных заказов, ожидающих отправки или находящихся в пути. Заказы с самовывозом здесь не отображаются.
                             </CardDescription>
                         </div>
                     </div>

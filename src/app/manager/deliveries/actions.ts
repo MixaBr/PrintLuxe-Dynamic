@@ -122,16 +122,13 @@ export async function updateDeliveryStatus(formData: FormData): Promise<{ succes
                 let emailSubject = '';
                 let emailBody = '';
 
-                if (newStatus === 'В пути') {
+                if (newStatus === 'В пути' && trackingNumber) {
                     emailSubject = `Ваш заказ №${orderId} отправлен!`;
                     emailBody = `<p>Здравствуйте! Ваш заказ был передан в службу доставки.</p>
                                <p>Вы можете отследить его по трек-номеру: <strong><a href="https://www.google.com/search?q=${trackingNumber}">${trackingNumber}</a></strong></p>`;
                 } else if (newStatus === 'Доставлен') {
                      emailSubject = `Ваш заказ №${orderId} доставлен!`;
                      emailBody = `<p>Здравствуйте! Ваш заказ успешно доставлен. Спасибо за покупку!</p>`;
-                } else if (newStatus === 'Готов к самовывозу') {
-                     emailSubject = `Ваш заказ №${orderId} готов к выдаче!`;
-                     emailBody = `<p>Здравствуйте! Ваш заказ готов к выдаче в нашем пункте самовывоза. Не забудьте назвать номер заказа при получении.</p>`;
                 }
 
                 if (emailSubject && emailBody) {
