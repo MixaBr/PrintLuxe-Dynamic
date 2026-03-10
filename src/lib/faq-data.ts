@@ -1,7 +1,7 @@
 
 'use server';
 
-import { supabase } from './supabaseClient'; // Use simple client for ISR/SSG
+import { createClient } from './supabase/server';
 
 export interface FaqItem {
   question: string;
@@ -16,6 +16,7 @@ export interface FaqPageData {
 }
 
 export async function getFaqPageData(): Promise<FaqPageData> {
+  const supabase = createClient();
   const defaultData: FaqPageData = {
     main_title: 'Часто задаваемые вопросы',
     main_subtitle: 'Здесь вы найдете ответы на самые популярные вопросы.',

@@ -7,7 +7,6 @@ import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Metadata } from 'next';
-import { supabase as simpleSupabaseClient } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import LegalDocActions from '@/components/legal/LegalDocActions';
@@ -51,17 +50,6 @@ export async function generateMetadata({ params }: LegalDocPageProps): Promise<M
     title: doc.title,
     description: `Юридическая информация: ${doc.title}`,
   }
-}
-
-export async function generateStaticParams() {
-  const { data: documents } = await simpleSupabaseClient
-    .from('documents')
-    .select('slug')
-    .eq('category', 'legal');
- 
-  return documents?.map((doc) => ({
-    slug: doc.slug,
-  })) || [];
 }
 
 export default async function LegalDocPage({ params }: LegalDocPageProps) {

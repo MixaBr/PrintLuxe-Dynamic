@@ -1,7 +1,7 @@
 
 'use server';
 
-import { supabase } from './supabaseClient'; // Use simple client for ISR
+import { createClient } from './supabase/server';
 
 export interface Service {
   title: string;
@@ -16,6 +16,7 @@ export interface ServicesPageData {
 }
 
 export async function getServicesPageData(): Promise<ServicesPageData> {
+  const supabase = createClient();
   const defaultData: ServicesPageData = {
     main_title: 'Наши Услуги',
     main_subtitle: 'Мы предлагаем широкий спектр услуг для вашей техники.',
