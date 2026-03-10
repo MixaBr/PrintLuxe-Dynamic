@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import LegalDocActions from '@/components/legal/LegalDocActions';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 
 interface LegalDocPageProps {

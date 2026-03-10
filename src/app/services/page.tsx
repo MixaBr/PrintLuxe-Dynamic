@@ -2,7 +2,7 @@
 import { getServicesPageData } from '@/lib/services-data';
 import ServicesPageClient from './ServicesPageClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function ServicesPage() {
   const servicesData = await getServicesPageData();
