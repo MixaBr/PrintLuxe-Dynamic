@@ -16,7 +16,7 @@ export type OrderWithItems = {
   id: number;
   order_date: string;
   user_id: string;
-  status: 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
+  status: string;
   total_amount: number;
   items: OrderItem[];
   invoice_created: boolean;

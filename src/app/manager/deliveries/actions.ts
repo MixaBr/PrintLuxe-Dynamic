@@ -4,6 +4,7 @@
 import { createAdminClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendMail } from '@/lib/mail';
 
 export type Delivery = {
     id: number;
@@ -14,9 +15,10 @@ export type Delivery = {
     delivery_method: string;
     status: string;
     tracking_number: string | null;
+    guest_email: string | null;
 };
 
-// Fetches all deliveries that are not yet completed
+// Fetches all deliveries that are not yet completed or cancelled
 export async function getDeliveries(): Promise<{ deliveries: Delivery[], error: string | null }> {
     try {
         const supabase = createAdminClient();
@@ -29,6 +31,7 @@ export async function getDeliveries(): Promise<{ deliveries: Delivery[], error: 
                 status,
                 tracking_number,
                 delivery_address,
+                guest_email,
                 profiles ( first_name, last_name, phone ),
                 guest_first_name,
                 guest_last_name,
@@ -47,12 +50,13 @@ export async function getDeliveries(): Promise<{ deliveries: Delivery[], error: 
             return {
                 id: d.id,
                 order_date: d.order_date,
-                customer_name: isGuest ? `${d.guest_first_name} ${d.guest_last_name}` : `${d.profiles?.first_name} ${d.profiles?.last_name}`,
-                customer_phone: isGuest ? d.guest_phone : d.profiles?.phone,
+                customer_name: isGuest ? `${d.guest_first_name || ''} ${d.guest_last_name || ''}`.trim() : `${d.profiles?.first_name || ''} ${d.profiles?.last_name || ''}`.trim(),
+                customer_phone: isGuest ? d.guest_phone || 'Не указан' : d.profiles?.phone || 'Не указан',
                 delivery_address: address,
                 delivery_method: d.delivery_method,
                 status: d.status,
                 tracking_number: d.tracking_number,
+                guest_email: d.guest_email,
             }
         });
 
@@ -75,7 +79,7 @@ export async function updateDeliveryStatus(formData: FormData): Promise<{ succes
         return { success: false, message: 'Отсутствуют необходимые данные (ID заказа или статус).' };
     }
     
-    const supabase = createAdminClient();
+    const supabaseAdmin = createAdminClient();
     const { data: { user } } = await createClient().auth.getUser();
 
     if (!user) {
@@ -83,8 +87,11 @@ export async function updateDeliveryStatus(formData: FormData): Promise<{ succes
     }
 
     try {
+        const { data: orderData, error: fetchError } = await supabaseAdmin.from('orders').select('guest_email').eq('id', orderId).single();
+        if (fetchError) throw new Error(`Не удалось найти заказ #${orderId} для обновления.`);
+
         // 1. Update the order itself
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
             .from('orders')
             .update({
                 status: newStatus,
@@ -95,7 +102,7 @@ export async function updateDeliveryStatus(formData: FormData): Promise<{ succes
         if (updateError) throw updateError;
         
         // 2. Log this change to the tracking history table
-        const { error: logError } = await supabase
+        const { error: logError } = await supabaseAdmin
             .from('delivery_tracking')
             .insert({
                 order_id: Number(orderId),
@@ -107,6 +114,36 @@ export async function updateDeliveryStatus(formData: FormData): Promise<{ succes
             
         if (logError) {
              console.error(`CRITICAL: Order ${orderId} status updated, but failed to log history. Error:`, logError.message);
+        }
+
+        // 3. Send notification to guest if applicable
+        if (orderData.guest_email) {
+            try {
+                let emailSubject = '';
+                let emailBody = '';
+
+                if (newStatus === 'В пути') {
+                    emailSubject = `Ваш заказ №${orderId} отправлен!`;
+                    emailBody = `<p>Здравствуйте! Ваш заказ был передан в службу доставки.</p>
+                               <p>Вы можете отследить его по трек-номеру: <strong><a href="https://www.google.com/search?q=${trackingNumber}">${trackingNumber}</a></strong></p>`;
+                } else if (newStatus === 'Доставлен') {
+                     emailSubject = `Ваш заказ №${orderId} доставлен!`;
+                     emailBody = `<p>Здравствуйте! Ваш заказ успешно доставлен. Спасибо за покупку!</p>`;
+                } else if (newStatus === 'Готов к самовывозу') {
+                     emailSubject = `Ваш заказ №${orderId} готов к выдаче!`;
+                     emailBody = `<p>Здравствуйте! Ваш заказ готов к выдаче в нашем пункте самовывоза. Не забудьте назвать номер заказа при получении.</p>`;
+                }
+
+                if (emailSubject && emailBody) {
+                    await sendMail({
+                        to: orderData.guest_email,
+                        subject: emailSubject,
+                        html: emailBody,
+                    });
+                }
+            } catch (emailError: any) {
+                console.error(`Status for order ${orderId} updated, but failed to send email to guest. Error:`, emailError.message);
+            }
         }
         
         revalidatePath('/manager/deliveries');

@@ -1,5 +1,4 @@
 
-import { createAdminClient } from "@/lib/supabase/service";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

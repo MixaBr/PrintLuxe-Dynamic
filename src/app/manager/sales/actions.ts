@@ -2,8 +2,8 @@
 'use server';
 
 import { createAdminClient } from "@/lib/supabase/service";
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendMail } from "@/lib/mail";
 
 type FormState = {
     message: string;
@@ -59,10 +59,56 @@ export async function createInvoiceForOrder(prevState: FormState, formData: Form
             .eq('id', orderId);
 
         if (updateOrderError) {
-            // This is not ideal, we should roll back the invoice creation.
-            // For now, we log the error. A transaction/RPC would be better.
             console.error(`CRITICAL: Invoice ${invoiceData.id} created, but failed to mark order ${orderId} as invoiced. Error: ${updateOrderError.message}`);
             throw new Error('Счет создан, но не удалось обновить статус заказа.');
+        }
+
+        // 4. Send email to guest if applicable
+        try {
+            const { data: orderDetails, error: orderDetailsError } = await supabase
+                .from('orders')
+                .select(`
+                    delivery_method,
+                    user_id,
+                    guest_email,
+                    order_details (
+                        quantity,
+                        price,
+                        products ( name )
+                    )
+                `)
+                .eq('id', orderId)
+                .single();
+            
+            if (orderDetailsError) throw orderDetailsError;
+
+            // IF GUEST AND NOT PICKUP, SEND ERIP INSTRUCTIONS
+            if (orderDetails.user_id === null && orderDetails.guest_email && orderDetails.delivery_method !== 'Самовывоз') {
+                const itemsHtml = orderDetails.order_details.map((item: any) => `<li>${item.products?.name} - ${item.quantity} шт. x ${item.price} руб.</li>`).join('');
+
+                const { data: eripInstructionsData, error: eripError } = await supabase
+                    .from('app_config')
+                    .select('value')
+                    .eq('key', 'bot_erip_instructions')
+                    .single();
+
+                if (eripError) console.error("Could not fetch ERIP instructions:", eripError);
+                const eripInstructions = eripInstructionsData?.value || 'Инструкции по оплате будут предоставлены дополнительно.';
+
+                await sendMail({
+                    to: orderDetails.guest_email,
+                    subject: `Счет #${invoiceNumber || invoiceData.id} для вашего заказа №${orderId}`,
+                    html: `<h1>Счет для вашего заказа</h1>
+                           <p>Здравствуйте! Для вашего заказа №${orderId} был сформирован счет №${invoiceNumber || invoiceData.id}.</p>
+                           <h2>Состав заказа:</h2>
+                           <ul>${itemsHtml}</ul>
+                           <hr>
+                           <h2>Инструкции по оплате через ЕРИП:</h2>
+                           <div>${eripInstructions}</div>`
+                });
+            }
+        } catch (emailError: any) {
+            console.error(`Invoice ${invoiceData.id} created, but failed to send email notification. Error: ${emailError.message}`);
         }
         
         revalidatePath('/manager/sales');
@@ -94,9 +140,6 @@ export async function registerPayment(prevState: FormState, formData: FormData):
     const supabaseAdmin = createAdminClient();
 
     try {
-        // --- This entire block should be a single database transaction/RPC ---
-
-        // 1. Create a record in the 'payments' table
         const { error: paymentInsertError } = await supabaseAdmin
             .from('payments')
             .insert({
@@ -104,15 +147,13 @@ export async function registerPayment(prevState: FormState, formData: FormData):
                 payment_date: paymentDate,
                 payment_amount: paymentSum,
                 payment_method: paymentMethod,
-                payment_status: 'completed' // Assuming direct registration means it's completed
+                payment_status: 'completed'
             });
 
         if (paymentInsertError) {
-            console.error(`Error inserting into payments table:`, paymentInsertError);
             throw new Error(`Не удалось записать платеж: ${paymentInsertError.message}`);
         }
 
-        // 2. Get current invoice and user profile
         const { data: invoice, error: invoiceError } = await supabaseAdmin
             .from('invoices')
             .select('*, orders(user_id, delivery_method)')
@@ -124,21 +165,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         }
         
         const userId = invoice.orders?.user_id;
-        if (!userId) {
-            throw new Error(`Не удалось определить пользователя для счета #${invoiceId}.`);
-        }
-
-        const { data: profile, error: profileError } = await supabaseAdmin
-            .from('profiles')
-            .select('balance')
-            .eq('user_id', userId)
-            .single();
         
-        if (profileError || !profile) {
-            throw new Error(`Профиль для пользователя ${userId} не найден.`);
-        }
-
-        // 3. Calculate new values based on your logic
         const newPaymentAmount = (invoice.payment_amount || 0) + paymentSum;
         const newDebt = newPaymentAmount - (invoice.invoice_amount || 0);
 
@@ -149,7 +176,6 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             newStatus = 'Частично оплачен';
         }
 
-        // 4. Update invoice
         const { error: updateInvoiceError } = await supabaseAdmin
             .from('invoices')
             .update({
@@ -163,13 +189,12 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             throw new Error(`Ошибка при обновлении счета: ${updateInvoiceError.message}`);
         }
 
-        // 5. Handle overpayment
-        if (newDebt > 0) {
+        if (userId && newDebt > 0) {
+            const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('balance').eq('user_id', userId).single();
+            if (profileError || !profile) throw new Error(`Профиль для пользователя ${userId} не найден.`);
+
             const newBalance = (profile.balance || 0) + newDebt;
-            const { error: updateProfileError } = await supabaseAdmin
-                .from('profiles')
-                .update({ balance: newBalance })
-                .eq('user_id', userId);
+            const { error: updateProfileError } = await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('user_id', userId);
             
             if (updateProfileError) {
                  console.error(`CRITICAL: Overpayment processed for invoice ${invoiceId}, but failed to update user ${userId} balance. Error: ${updateProfileError.message}`);
@@ -177,14 +202,13 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             }
         }
         
-        // 6. [NEW LOGIC] If invoice is fully paid, update order status for delivery
         if (newStatus === 'Оплачен') {
             const deliveryMethod = invoice.orders?.delivery_method;
             let orderUpdateData: { status: string } | null = null;
             
             if (deliveryMethod === 'Самовывоз') {
                 orderUpdateData = { status: 'Готов к самовывозу' };
-            } else if (deliveryMethod) { // Any other delivery method
+            } else if (deliveryMethod) {
                 orderUpdateData = { status: 'Ждет доставки' };
             }
 
@@ -195,8 +219,6 @@ export async function registerPayment(prevState: FormState, formData: FormData):
                     .eq('id', invoice.order_id);
                 
                 if (orderUpdateError) {
-                    // Log a critical error but don't fail the whole transaction,
-                    // as the payment itself was successful.
                     console.error(`CRITICAL: Payment for order ${invoice.order_id} processed, but failed to update order status to "${orderUpdateData.status}". Error: ${orderUpdateError.message}`);
                 }
             }
@@ -205,6 +227,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         revalidatePath('/manager/sales');
         revalidatePath('/manager/deliveries');
         revalidatePath('/profile/invoices');
+        revalidatePath('/profile/orders');
         revalidatePath('/profile');
         
         return { status: 'success', message: `Оплата по счету #${invoiceId} на сумму ${paymentSum} BYN успешно зарегистрирована.` };

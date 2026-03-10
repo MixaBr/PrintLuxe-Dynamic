@@ -1,8 +1,8 @@
 
 'use client';
 
-import React, { useState, useMemo, useTransition, useEffect } from 'react';
-import type { OrderWithItems, OrderItem } from './actions';
+import React, { useState, useMemo } from 'react';
+import type { OrderWithItems } from './actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +12,7 @@ import ClientSideDate from '@/components/ui/ClientSideDate';
 import { FileCheck2, FileClock, Track } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-type Status = 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен' | 'Готов к самовывозу' | 'Ждет доставки';
+type Status = 'Новый' | 'В обработке' | 'Ждет доставки' | 'Готов к самовывозу' | 'В пути' | 'Доставлен' | 'Отменен';
 const allStatuses: Status[] = ['Новый', 'В обработке', 'Ждет доставки', 'Готов к самовывозу', 'В пути', 'Доставлен', 'Отменен'];
 
 const getStatusColor = (status: Status) => {
