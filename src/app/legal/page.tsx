@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { List } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getLegalDocs() {
     const supabase = createClient();
     // RLS (Row Level Security) handles filtering for published documents.
