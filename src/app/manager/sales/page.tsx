@@ -1,4 +1,3 @@
-
 import { createAdminClient } from "@/lib/supabase/service";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -45,9 +44,10 @@ export default async function ManagerSalesPage() {
     const menuItems = [
         { href: "/manager", label: "Панель" },
         { href: "/manager/orders", label: "Заказы" },
+        { href: "/manager/sales", label: "Продажи" },
+        { href: "/manager/deliveries", label: "Доставки" },
         { href: "/manager/products", label: "Товары" },
         { href: "/manager/clients", label: "Клиенты" },
-        { href: "/manager/sales", label: "Продажи" },
     ];
 
     const data = await getDataForManager();

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { DollarSign, Users, Package, ShoppingCart } from "lucide-react"
+import { DollarSign, Users, Package, ShoppingCart, Truck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -7,6 +7,7 @@ export default function ManagerDashboardPage() {
     const stats = [
         { title: "Заказы", description: "Просмотр и управление заказами.", icon: <ShoppingCart className="h-8 w-8 text-muted-foreground" />, href: "/manager/orders" },
         { title: "Продажи и счета", description: "Создание счетов и регистрация оплат.", icon: <DollarSign className="h-8 w-8 text-muted-foreground" />, href: "/manager/sales" },
+        { title: "Доставки", description: "Управление отправкой и отслеживанием заказов.", icon: <Truck className="h-8 w-8 text-muted-foreground" />, href: "/manager/deliveries" },
         { title: "Клиенты", description: "Просмотр и управление клиентами.", icon: <Users className="h-8 w-8 text-muted-foreground" />, href: "/manager/clients" },
         { title: "Товары", description: "Управление каталогом товаров.", icon: <Package className="h-8 w-8 text-muted-foreground" />, href: "/manager/products" },
     ]
@@ -14,9 +15,10 @@ export default function ManagerDashboardPage() {
     const menuItems = [
         { href: "/manager", label: "Панель" },
         { href: "/manager/orders", label: "Заказы" },
+        { href: "/manager/sales", label: "Продажи" },
+        { href: "/manager/deliveries", label: "Доставки" },
         { href: "/manager/products", label: "Товары" },
         { href: "/manager/clients", label: "Клиенты" },
-        { href: "/manager/sales", label: "Продажи" },
     ]
 
     return (
@@ -33,7 +35,7 @@ export default function ManagerDashboardPage() {
             </div>
             
             <h2 className="font-headline text-2xl font-bold">Панель управления</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {stats.map(stat => (
                     <Card key={stat.title} className="hover:shadow-lg transition-shadow">
                       <Link href={stat.href}>

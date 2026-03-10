@@ -9,16 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import ClientSideDate from '@/components/ui/ClientSideDate';
-import { FileCheck2, FileClock } from 'lucide-react';
+import { FileCheck2, FileClock, Track } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-type Status = 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен';
-const allStatuses: Status[] = ['Новый', 'В обработке', 'В пути', 'Доставлен', 'Отменен'];
+type Status = 'Новый' | 'В обработке' | 'В пути' | 'Доставлен' | 'Отменен' | 'Готов к самовывозу' | 'Ждет доставки';
+const allStatuses: Status[] = ['Новый', 'В обработке', 'Ждет доставки', 'Готов к самовывозу', 'В пути', 'Доставлен', 'Отменен'];
 
 const getStatusColor = (status: Status) => {
   switch (status) {
     case 'Новый': return 'bg-blue-500 hover:bg-blue-500';
-    case 'В обработке': return 'bg-yellow-500 hover:bg-yellow-500';
+    case 'В обработке': return 'bg-purple-500 hover:bg-purple-500';
+    case 'Ждет доставки': return 'bg-yellow-500 hover:bg-yellow-500';
+    case 'Готов к самовывозу': return 'bg-yellow-400 hover:bg-yellow-400';
     case 'В пути': return 'bg-orange-500 hover:bg-orange-500';
     case 'Доставлен': return 'bg-green-500 hover:bg-green-500';
     case 'Отменен': return 'bg-red-500 hover:bg-red-500';
@@ -110,24 +112,11 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                 </SelectContent>
               </Select>
             </TableHead>
-            <TableHead className="min-w-[200px]">
+            <TableHead className="w-[150px]">
+               <p className="mb-1 text-white">Трек-номер</p>
+            </TableHead>
+            <TableHead className="min-w-[150px] text-right">
               <p className="mb-1 text-white">Сумма (BYN)</p>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  placeholder="От"
-                  value={filters.amountMin}
-                  onChange={(e) => handleFilterChange('amountMin', e.target.value)}
-                  className="h-8 bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                />
-                <Input
-                  type="number"
-                  placeholder="До"
-                  value={filters.amountMax}
-                  onChange={(e) => handleFilterChange('amountMax', e.target.value)}
-                  className="h-8 bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                />
-              </div>
             </TableHead>
              <TableHead className="w-[100px] text-center">Счет</TableHead>
           </TableRow>
@@ -143,9 +132,23 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                       <ClientSideDate dateString={order.order_date} />
                     </TableCell>
                     <TableCell>
-                      <Badge className={cn('text-white', getStatusColor(order.status))}>
+                      <Badge className={cn('text-white', getStatusColor(order.status as Status))}>
                         {order.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {order.tracking_number ? (
+                        <a 
+                          href={`https://www.google.com/search?q=${order.tracking_number}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:underline text-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Track className="h-4 w-4" />
+                          {order.tracking_number}
+                        </a>
+                      ) : '—'}
                     </TableCell>
                     <TableCell className="text-right">{order.total_amount.toLocaleString('ru-RU', { style: 'currency', currency: 'BYN' })}</TableCell>
                     <TableCell className="text-center">
@@ -165,7 +168,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                   </TableRow>
                   {expandedOrderIds.has(order.id) && (
                     <TableRow className="bg-black/20 hover:bg-black/20">
-                      <TableCell colSpan={5} className="p-0">
+                      <TableCell colSpan={6} className="p-0">
                         <div className="p-4">
                           <h4 className="font-semibold mb-2 text-md">Состав заказа #{order.id}</h4>
                           <Table>
@@ -197,7 +200,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
             </TooltipProvider>
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-white/70">
+              <TableCell colSpan={6} className="h-24 text-center text-white/70">
                 Заказы, соответствующие фильтрам, не найдены.
               </TableCell>
             </TableRow>

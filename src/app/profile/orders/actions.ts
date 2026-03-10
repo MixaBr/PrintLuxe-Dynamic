@@ -20,6 +20,7 @@ export type OrderWithItems = {
   total_amount: number;
   items: OrderItem[];
   invoice_created: boolean;
+  tracking_number: string | null;
 };
 
 export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error: string | null }> {
@@ -33,7 +34,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
   try {
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('id, order_date, user_id, status, total_amount, invoice_created')
+      .select('id, order_date, user_id, status, total_amount, invoice_created, tracking_number')
       .eq('user_id', user.id)
       .order('order_date', { ascending: false });
 
@@ -66,6 +67,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
             status: order.status || 'Новый',
             items: [],
             invoice_created: order.invoice_created ?? false,
+            tracking_number: order.tracking_number,
         }));
         return { orders: ordersWithEmptyItems, error: null };
     }
@@ -105,6 +107,7 @@ export async function getUserOrders(): Promise<{ orders: OrderWithItems[], error
       status: order.status || 'Новый',
       items: itemsByOrderId[order.id] || [],
       invoice_created: order.invoice_created ?? false,
+      tracking_number: order.tracking_number,
     }));
 
     return { orders: ordersWithItems, error: null };

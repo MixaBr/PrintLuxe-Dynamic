@@ -2,6 +2,7 @@
 'use server';
 
 import { createAdminClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 type FormState = {
@@ -90,13 +91,13 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         return { status: 'error', message: 'Сумма оплаты должна быть положительной.' };
     }
     
-    const supabase = createAdminClient();
+    const supabaseAdmin = createAdminClient();
 
     try {
         // --- This entire block should be a single database transaction/RPC ---
 
         // 1. Create a record in the 'payments' table
-        const { error: paymentInsertError } = await supabase
+        const { error: paymentInsertError } = await supabaseAdmin
             .from('payments')
             .insert({
                 invoice_id: Number(invoiceId),
@@ -112,9 +113,9 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         }
 
         // 2. Get current invoice and user profile
-        const { data: invoice, error: invoiceError } = await supabase
+        const { data: invoice, error: invoiceError } = await supabaseAdmin
             .from('invoices')
-            .select('*, orders(user_id)')
+            .select('*, orders(user_id, delivery_method)')
             .eq('id', invoiceId)
             .single();
 
@@ -127,7 +128,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             throw new Error(`Не удалось определить пользователя для счета #${invoiceId}.`);
         }
 
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('balance')
             .eq('user_id', userId)
@@ -149,7 +150,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         }
 
         // 4. Update invoice
-        const { error: updateInvoiceError } = await supabase
+        const { error: updateInvoiceError } = await supabaseAdmin
             .from('invoices')
             .update({
                 payment_amount: newPaymentAmount,
@@ -165,7 +166,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
         // 5. Handle overpayment
         if (newDebt > 0) {
             const newBalance = (profile.balance || 0) + newDebt;
-            const { error: updateProfileError } = await supabase
+            const { error: updateProfileError } = await supabaseAdmin
                 .from('profiles')
                 .update({ balance: newBalance })
                 .eq('user_id', userId);
@@ -176,9 +177,33 @@ export async function registerPayment(prevState: FormState, formData: FormData):
             }
         }
         
-        // --- End of transaction block ---
+        // 6. [NEW LOGIC] If invoice is fully paid, update order status for delivery
+        if (newStatus === 'Оплачен') {
+            const deliveryMethod = invoice.orders?.delivery_method;
+            let orderUpdateData: { status: string } | null = null;
+            
+            if (deliveryMethod === 'Самовывоз') {
+                orderUpdateData = { status: 'Готов к самовывозу' };
+            } else if (deliveryMethod) { // Any other delivery method
+                orderUpdateData = { status: 'Ждет доставки' };
+            }
+
+            if (orderUpdateData) {
+                const { error: orderUpdateError } = await supabaseAdmin
+                    .from('orders')
+                    .update(orderUpdateData)
+                    .eq('id', invoice.order_id);
+                
+                if (orderUpdateError) {
+                    // Log a critical error but don't fail the whole transaction,
+                    // as the payment itself was successful.
+                    console.error(`CRITICAL: Payment for order ${invoice.order_id} processed, but failed to update order status to "${orderUpdateData.status}". Error: ${orderUpdateError.message}`);
+                }
+            }
+        }
 
         revalidatePath('/manager/sales');
+        revalidatePath('/manager/deliveries');
         revalidatePath('/profile/invoices');
         revalidatePath('/profile');
         

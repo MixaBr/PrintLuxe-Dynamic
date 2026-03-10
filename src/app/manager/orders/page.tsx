@@ -6,9 +6,10 @@ export default function ManagerOrdersPage() {
     const menuItems = [
         { href: "/manager", label: "Панель" },
         { href: "/manager/orders", label: "Заказы" },
+        { href: "/manager/sales", label: "Продажи" },
+        { href: "/manager/deliveries", label: "Доставки" },
         { href: "/manager/products", label: "Товары" },
         { href: "/manager/clients", label: "Клиенты" },
-        { href: "/manager/sales", label: "Продажи" },
     ]
 
     return (
