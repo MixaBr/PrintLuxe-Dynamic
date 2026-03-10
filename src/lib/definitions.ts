@@ -71,4 +71,5 @@ export type OrderWithItems = {
   total_amount: number;
   items: any[]; // Can be more specific if item structure is known
   invoice_created: boolean;
+  tracking_number: string | null;
 };

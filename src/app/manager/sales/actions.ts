@@ -156,7 +156,7 @@ export async function registerPayment(prevState: FormState, formData: FormData):
 
         const { data: invoice, error: invoiceError } = await supabaseAdmin
             .from('invoices')
-            .select('*, orders(user_id, delivery_method)')
+            .select('*, orders(user_id, delivery_method, guest_email)')
             .eq('id', invoiceId)
             .single();
 
@@ -220,6 +220,19 @@ export async function registerPayment(prevState: FormState, formData: FormData):
                 
                 if (orderUpdateError) {
                     console.error(`CRITICAL: Payment for order ${invoice.order_id} processed, but failed to update order status to "${orderUpdateData.status}". Error: ${orderUpdateError.message}`);
+                }
+                
+                // Send email to guest if status is "Готов к самовывозу"
+                if (orderUpdateData.status === 'Готов к самовывозу' && !invoice.orders?.user_id && invoice.orders?.guest_email) {
+                    const {data: pickupAddressData} = await supabaseAdmin.from('settings').select('value').eq('key', 'pickup_address').single();
+
+                    await sendMail({
+                        to: invoice.orders.guest_email,
+                        subject: `Ваш заказ №${invoice.order_id} готов к выдаче`,
+                        html: `<p>Здравствуйте! Ваш заказ №${invoice.order_id} собран и готов к выдаче.</p>
+                               <p>Забрать его можно по адресу: <strong>${pickupAddressData?.value || 'Адрес уточняется'}</strong></p>
+                               <p>При получении, пожалуйста, назовите номер заказа или счета: <strong>${invoice.invoice_number || `#${invoice.id}`}</strong>.</p>`
+                    });
                 }
             }
         }

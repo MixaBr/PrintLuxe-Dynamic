@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import ClientSideDate from '@/components/ui/ClientSideDate';
-import { FileCheck2, FileClock, Track } from 'lucide-react';
+import { FileCheck2, FileClock, Truck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Status = 'Новый' | 'В обработке' | 'Ждет доставки' | 'Готов к самовывозу' | 'В пути' | 'Доставлен' | 'Отменен';
@@ -145,7 +145,7 @@ export default function OrdersClient({ initialOrders }: OrdersClientProps) {
                           className="flex items-center gap-1 hover:underline text-primary"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Track className="h-4 w-4" />
+                          <Truck className="h-4 w-4" />
                           {order.tracking_number}
                         </a>
                       ) : '—'}
