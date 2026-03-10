@@ -12,18 +12,6 @@ export type Payment = {
   order_id: number;
 };
 
-type FetchedPayment = {
-    id: number;
-    payment_date: string;
-    payment_amount: number;
-    payment_method: string;
-    invoice_id: number;
-    invoices: {
-        order_id: number;
-        invoice_number: string | null;
-    } | null;
-}
-
 export async function getUserPayments(): Promise<{ payments: Payment[], error: string | null }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,15 +56,24 @@ export async function getUserPayments(): Promise<{ payments: Payment[], error: s
         throw paymentsError;
     }
     
-    const payments: Payment[] = (paymentsData as FetchedPayment[]).map(p => ({
-        id: p.id,
-        payment_date: p.payment_date,
-        payment_amount: p.payment_amount,
-        payment_method: p.payment_method,
-        invoice_id: p.invoice_id,
-        invoice_number: p.invoices?.invoice_number || null,
-        order_id: p.invoices?.order_id || 0, // Fallback, though should always exist
-    }));
+    if (!paymentsData) {
+        return { payments: [], error: null };
+    }
+
+    const payments: Payment[] = paymentsData.map(p => {
+        // FIX: Correctly handle that `p.invoices` can be an array from the join
+        const invoiceData = Array.isArray(p.invoices) ? p.invoices[0] : p.invoices;
+        
+        return {
+            id: p.id,
+            payment_date: p.payment_date,
+            payment_amount: p.payment_amount,
+            payment_method: p.payment_method,
+            invoice_id: p.invoice_id,
+            invoice_number: invoiceData?.invoice_number || null,
+            order_id: invoiceData?.order_id || 0, // Fallback
+        }
+    });
 
     return { payments, error: null };
 
