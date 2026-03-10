@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/hooks/use-cart-store';
 
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Trash2 } from 'lucide-react';
+import { ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,6 +31,11 @@ export default function CartPage() {
   const { items, removeFromCart, updateQuantity } = useCartStore();
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [isConsentGiven, setIsConsentGiven] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const total = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
 
@@ -51,6 +56,17 @@ export default function CartPage() {
       router.push('/checkout?consent=true');
     }
   };
+
+  if (!isMounted) {
+    return (
+      <div className="container mx-auto px-4 py-8 md:px-8 h-full flex flex-col items-center justify-center">
+        <div className="text-center bg-black/50 text-white p-12 rounded-lg shadow-lg border-none backdrop-blur-sm">
+          <Loader2 className="mx-auto h-16 w-16 text-gray-400 animate-spin" />
+          <h2 className="mt-6 text-2xl font-semibold">Загрузка корзины...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

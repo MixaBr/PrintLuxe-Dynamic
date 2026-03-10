@@ -1,5 +1,5 @@
 
-import { createClient } from './supabase/server';
+import { supabase } from './supabaseClient';
 
 export interface TeamMember {
   name?: string;
@@ -29,7 +29,6 @@ export interface AboutPageData {
 // This function fetches all key-value pairs from the settings table where the key starts with 'about_'.
 // It then transforms the array of {key, value} into a single structured object.
 export async function getAboutPageData(): Promise<AboutPageData> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from('settings')
     .select('key, value')
