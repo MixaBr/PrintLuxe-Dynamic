@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,9 +5,9 @@ import Autoplay from "embla-carousel-autoplay";
 import type { Product } from '@/lib/definitions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { Table, TableBody, TableCell, TableRow } from '../ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { incrementProductViewCount } from '@/app/catalog/actions';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Carousel,
   CarouselContent,
@@ -17,7 +16,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import ProductSchema from '@/components/seo/ProductSchema';
 
