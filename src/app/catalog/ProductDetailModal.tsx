@@ -82,7 +82,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col">
-          <ProductSchema product={product} />
+          
           <DialogHeader className='p-6'>
             <DialogTitle className="font-headline text-2xl">{product.name}</DialogTitle>
           </DialogHeader>

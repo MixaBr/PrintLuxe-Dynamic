@@ -2,6 +2,7 @@
 import { getAllProducts, getProductsCount } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import ProductSchema from '@/components/seo/ProductSchema';
 
 // Указываем, что страница всегда должна быть динамической
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,7 @@ interface CatalogPageProps {
     query?: string;
     category?: string;
     page?: string;
+    product?: string;
   };
 }
 
@@ -56,6 +58,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   return (
     <div className="container mx-auto px-4 pt-2 md:px-8">
+      {/* Add product schemas for SEO for products on the current page */}
+      {products.map(product => <ProductSchema key={`schema-${product.id}`} product={product} />)}
+      
       <div className="text-center mb-4">
         <h1 className="text-4xl md:text-6xl font-bold font-headline text-white">Каталог продукции</h1>
         <p className="mt-2 max-w-2xl mx-auto text-lg md:text-xl text-white/90">

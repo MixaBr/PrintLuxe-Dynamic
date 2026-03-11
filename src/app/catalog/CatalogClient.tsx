@@ -55,7 +55,27 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
     if (newCategory !== selectedCategory) {
       setSelectedCategory(newCategory);
     }
-  }, [searchParams]);
+  }, [searchParams, searchTerm, selectedCategory]);
+
+  // Effect to handle deep-linking from URL and opening the modal
+  useEffect(() => {
+    const productIdFromUrl = searchParams.get('product');
+    if (productIdFromUrl && Number(productIdFromUrl) !== selectedProduct?.id) {
+      const fetchAndSetProduct = async (id: number) => {
+        const product = await getFullProductDetails(id);
+        if (product) {
+          setSelectedProduct(product);
+        } else {
+          toast({ variant: 'destructive', title: 'Ошибка', description: 'Товар не найден.' });
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete('product');
+          router.replace(`/catalog?${params.toString()}`, { scroll: false });
+        }
+      };
+      fetchAndSetProduct(Number(productIdFromUrl));
+    }
+  }, [searchParams, router, toast, selectedProduct]);
+
 
   const handleFilterChange = () => {
     startTransition(() => {
@@ -86,10 +106,22 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
   };
 
   const handleCardClick = async (product: Product) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('product', String(product.id));
+    router.push(`/catalog?${params.toString()}`, { scroll: false });
+    
+    // Fetch full details and open modal
     const fullProduct = await getFullProductDetails(product.id);
     setSelectedProduct(fullProduct || product);
   };
   
+  const handleModalClose = () => {
+    setSelectedProduct(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('product');
+    router.push(`/catalog?${params.toString()}`, { scroll: false });
+  };
+
   const handleAddToCart = (product: Product) => {
     addToCart(product);
     toast({
@@ -234,7 +266,7 @@ export default function CatalogClient({ products, categories }: CatalogClientPro
       <ProductDetailModal
         product={selectedProduct}
         isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
+        onClose={handleModalClose}
         onAddToCart={handleAddToCart}
       />
     </>
