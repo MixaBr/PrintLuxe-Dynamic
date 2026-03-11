@@ -1,10 +1,10 @@
 import { MetadataRoute } from 'next';
-import { getAllProducts } from '@/lib/data';
+import { getProductsForSitemap } from '@/lib/data';
 import { getPageLastModified } from '@/lib/settings-data';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Получаем все товары для генерации ссылок
-  const products = await getAllProducts();
+  const products = await getProductsForSitemap();
   const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
     url: `https://remontprintlux.by/catalog/${product.id}`,
     lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),

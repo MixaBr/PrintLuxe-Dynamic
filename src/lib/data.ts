@@ -1,5 +1,6 @@
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/service';
 import type { Product } from './definitions';
 import type { User } from '@supabase/supabase-js';
 export type { Product } from './definitions';
@@ -214,3 +215,17 @@ export async function getAppBackground(): Promise<string | null> {
 
   return data?.value || null;
 }
+
+export async function getProductsForSitemap(): Promise<{ id: number; updated_at: string }[]> {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, updated_at');
+  
+    if (error) {
+      console.error('Error fetching products for sitemap:', error);
+      return [];
+    }
+  
+    return data || [];
+  }
